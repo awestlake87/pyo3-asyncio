@@ -24,6 +24,7 @@ lazy_static! {
 }
 
 static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
+static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
 static CALL_SOON: OnceCell<PyObject> = OnceCell::new();
 static CREATE_TASK: OnceCell<PyObject> = OnceCell::new();
 static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
@@ -34,12 +35,16 @@ static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 pub fn try_init(py: Python) -> PyResult<()> {
     let asyncio = py.import("asyncio")?;
     let event_loop = asyncio.call_method0("get_event_loop")?;
+    let executor = py.import("concurrent.futures.thread")?.getattr("ThreadPoolExecutor")?.call0()?;
+
+    event_loop.call_method1("set_default_executor", (executor,))?;
 
     let call_soon = event_loop.getattr("call_soon_threadsafe")?;
     let create_task = asyncio.getattr("run_coroutine_threadsafe")?;
     let create_future = event_loop.getattr("create_future")?;
 
     EVENT_LOOP.get_or_init(|| event_loop.into());
+    EXECUTOR.get_or_init(|| executor.into());
     CALL_SOON.get_or_init(|| call_soon.into());
     CREATE_TASK.get_or_init(|| create_task.into());
     CREATE_FUTURE.get_or_init(|| create_future.into());
@@ -87,7 +92,15 @@ where
 }
 
 pub fn close(py: Python) -> PyResult<()> {
+    // Shutdown the executor and wait until all threads are cleaned up
+    EXECUTOR.get().unwrap().call_method0(py, "shutdown")?;
+    
+    EVENT_LOOP
+        .get()
+        .unwrap()
+        .call_method0(py, "stop")?;
     EVENT_LOOP.get().unwrap().call_method0(py, "close")?;
+    
     Ok(())
 }
 
