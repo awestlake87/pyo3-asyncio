@@ -56,6 +56,10 @@ pub fn try_init(py: Python) -> PyResult<()> {
     Ok(())
 }
 
+pub fn get_event_loop() -> PyObject {
+    EVENT_LOOP.get().unwrap().clone()
+}
+
 /// Run the event loop forever
 ///
 /// This function must be called on the main thread
