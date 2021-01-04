@@ -16,5 +16,5 @@ clap = "2.33"
 futures = "0.3"
 lazy_static = "1.4"
 once_cell = "1.5"
-pyo3 = { git = "https://github.com/awestlake87/pyo3", rev = "1ac57f7a3ca663fa4a18f8ff13ffebc39e9bd9e1" }
+pyo3 = { git = "https://github.com/awestlake87/pyo3", branch = "finalization-bugfix" }
 tokio = { version = "0.3", features = ["full"] }
