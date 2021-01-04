@@ -3,7 +3,7 @@ use std::{future::Future, thread, time::Duration};
 use futures::stream::{self};
 use pyo3::prelude::*;
 
-use pyo3_asyncio::test::{test_harness, Test};
+use pyo3_asyncio::test::{parse_args, test_harness, Test};
 
 fn dump_err<'p>(py: Python<'p>) -> impl FnOnce(PyErr) + 'p {
     move |e| {
@@ -43,14 +43,19 @@ fn test_blocking_sleep() -> PyResult<()> {
 }
 
 fn py_main(py: Python) -> PyResult<()> {
+    let args = parse_args("Pyo3 Asyncio Test Suite");
+
     pyo3_asyncio::try_init(py)?;
 
     pyo3_asyncio::run_until_complete(
         py,
-        test_harness(stream::iter(vec![
-            Test::new_async("test_async_sleep".into(), test_async_sleep(py)?),
-            Test::new_sync("test_blocking_sleep".into(), test_blocking_sleep),
-        ])),
+        test_harness(
+            stream::iter(vec![
+                Test::new_async("test_async_sleep".into(), test_async_sleep(py)?),
+                Test::new_sync("test_blocking_sleep".into(), test_blocking_sleep),
+            ]),
+            args,
+        ),
     )?;
 
     Ok(())

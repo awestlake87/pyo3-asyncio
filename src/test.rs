@@ -1,7 +1,31 @@
 use std::{future::Future, pin::Pin};
 
+use clap::{App, Arg};
 use futures::stream::{Stream, StreamExt};
 use pyo3::prelude::*;
+
+pub struct Args {
+    filter: Option<String>,
+}
+
+impl Default for Args {
+    fn default() -> Self {
+        Self { filter: None }
+    }
+}
+
+pub fn parse_args(suite_name: &str) -> Args {
+    let matches = App::new(suite_name)
+        .arg(
+            Arg::with_name("TESTNAME")
+                .help("If specified, only run tests containing this string in their names"),
+        )
+        .get_matches();
+
+    Args {
+        filter: matches.value_of("TESTNAME").map(|name| name.to_string()),
+    }
+}
 
 pub struct Test {
     pub name: String,
@@ -30,11 +54,23 @@ impl Test {
     }
 }
 
-pub async fn test_harness(tests: impl Stream<Item = Test>) -> PyResult<()> {
+pub async fn test_harness(tests: impl Stream<Item = Test>, args: Args) -> PyResult<()> {
     tests
-        .for_each_concurrent(Some(4), |test| async move {
-            test.task.await.unwrap();
-            println!("test {} ... ok", test.name);
+        .for_each_concurrent(Some(4), |test| {
+            let mut ignore = false;
+
+            if let Some(filter) = args.filter.as_ref() {
+                if !test.name.contains(filter) {
+                    ignore = true;
+                }
+            }
+
+            async move {
+                if !ignore {
+                    test.task.await.unwrap();
+                    println!("test {} ... ok", test.name);
+                }
+            }
         })
         .await;
 
