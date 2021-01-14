@@ -175,8 +175,11 @@ fn try_init(py: Python) -> PyResult<()> {
 }
 
 /// Get a reference to the Python Event Loop from Rust
-pub fn get_event_loop() -> PyObject {
-    EVENT_LOOP.get().unwrap().clone()
+pub fn get_event_loop(py: Python) -> &PyAny {
+    EVENT_LOOP
+        .get()
+        .expect("PyO3 Asyncio Event Loop has not been initialized")
+        .as_ref(py)
 }
 
 /// Run the event loop forever
@@ -201,14 +204,13 @@ pub fn get_event_loop() -> PyObject {
 /// pyo3_asyncio::spawn(async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Python::with_gil(|py| {
-///         let event_loop = pyo3_asyncio::get_event_loop();
+///         let event_loop = pyo3_asyncio::get_event_loop(py);
 ///         
 ///         event_loop
 ///             .call_method1(
-///                 py,
 ///                 "call_soon_threadsafe",
 ///                 (event_loop
-///                     .getattr(py, "stop")
+///                     .getattr("stop")
 ///                     .map_err(|e| e.print_and_set_sys_last_vars(py))
 ///                     .unwrap(),),
 ///                 )

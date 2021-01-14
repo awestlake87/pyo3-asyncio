@@ -17,16 +17,12 @@ fn main() {
                 tokio::time::sleep(Duration::from_secs(1)).await;
 
                 Python::with_gil(|py| {
-                    let event_loop = pyo3_asyncio::get_event_loop();
+                    let event_loop = pyo3_asyncio::get_event_loop(py);
 
                     event_loop
                         .call_method1(
-                            py,
                             "call_soon_threadsafe",
-                            (event_loop
-                                .getattr(py, "stop")
-                                .map_err(dump_err(py))
-                                .unwrap(),),
+                            (event_loop.getattr("stop").map_err(dump_err(py)).unwrap(),),
                         )
                         .map_err(dump_err(py))
                         .unwrap();
