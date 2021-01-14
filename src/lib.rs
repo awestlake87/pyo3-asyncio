@@ -180,6 +180,50 @@ pub fn get_event_loop() -> PyObject {
 }
 
 /// Run the event loop forever
+///
+/// This can be called instead of [`run_until_complete`] to run the event loop
+/// until `stop` is called rather than driving a future to completion.
+///
+/// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
+/// [`run_forever`]
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::time::Duration;
+/// # use pyo3::prelude::*;
+/// # Python::with_gil(|py| {
+/// # pyo3_asyncio::with_runtime(py, || {
+/// // Wait 1 second, then stop the event loop
+/// pyo3_asyncio::spawn(async move {
+///     tokio::time::sleep(Duration::from_secs(1)).await;
+///     Python::with_gil(|py| {
+///         let event_loop = pyo3_asyncio::get_event_loop();
+///         
+///         event_loop
+///             .call_method1(
+///                 py,
+///                 "call_soon_threadsafe",
+///                 (event_loop
+///                     .getattr(py, "stop")
+///                     .map_err(|e| e.print_and_set_sys_last_vars(py))
+///                     .unwrap(),),
+///                 )
+///                 .map_err(|e| e.print_and_set_sys_last_vars(py))
+///                 .unwrap();
+///     })
+/// });        
+///
+/// // block until stop is called
+/// pyo3_asyncio::run_forever(py)?;
+/// # Ok(())
+/// # })
+/// # .map_err(|e| e.print_and_set_sys_last_vars(py))
+/// # .unwrap();
+/// # })
 pub fn run_forever(py: Python) -> PyResult<()> {
     if let Err(e) = EVENT_LOOP.get().unwrap().call_method0(py, "run_forever") {
         if e.is_instance::<PyKeyboardInterrupt>(py) {
@@ -193,6 +237,37 @@ pub fn run_forever(py: Python) -> PyResult<()> {
 }
 
 /// Run the event loop until the given Future completes
+///
+/// The event loop runs until the given future is complete.
+///
+/// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
+/// [`run_forever`]
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The future to drive to completion
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::time::Duration;
+/// # use pyo3::prelude::*;
+/// #
+/// # Python::with_gil(|py| {
+/// # pyo3_asyncio::with_runtime(py, || {
+/// pyo3_asyncio::run_until_complete(py, async move {
+///     tokio::time::sleep(Duration::from_secs(1)).await;
+///     Ok(())
+/// })?;
+/// # Ok(())
+/// # })
+/// # .map_err(|e| {
+/// #    e.print_and_set_sys_last_vars(py);  
+/// # })
+/// # .unwrap();
+/// # });
+/// ```
+///
 pub fn run_until_complete<F>(py: Python, fut: F) -> PyResult<()>
 where
     F: Future<Output = PyResult<()>> + Send + 'static,
@@ -220,7 +295,40 @@ fn try_close(py: Python) -> PyResult<()> {
     Ok(())
 }
 
-/// Spawn a Future onto the executor
+/// Spawn a Future onto the Rust executor
+///
+/// This method should be used in place of [`tokio::spawn`] when it is called on a thread that is not
+/// owned by the `tokio` runtime. [`tokio::spawn`] should still work fine from inside a task on the
+/// event loop as the current event loop is stored in Thread-Local storage.
+///
+/// # Arguments
+/// * `fut` - The future to spawn on the Rust event loop
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::time::Duration;
+/// # use pyo3::prelude::*;
+/// #
+/// # Python::with_gil(|py| {
+/// # pyo3_asyncio::with_runtime(py, || {
+/// # pyo3_asyncio::run_until_complete(py, async move {
+/// #
+/// pyo3_asyncio::spawn(async move {
+///     tokio::time::sleep(Duration::from_secs(1)).await;
+/// })
+/// .await;
+/// #
+/// # Ok(())
+/// # })?;
+/// # Ok(())
+/// # })
+/// # .map_err(|e| {
+/// #    e.print_and_set_sys_last_vars(py);  
+/// # })
+/// # .unwrap();
+/// # });
+/// ```
 pub fn spawn<F>(fut: F) -> JoinHandle<F::Output>
 where
     F: Future + Send + 'static,
@@ -229,7 +337,41 @@ where
     CURRENT_THREAD_RUNTIME.spawn(fut)
 }
 
-/// Spawn a blocking task onto the executor
+/// Spawn a blocking task onto Rust the executor
+///
+/// This method should be used in place of [`tokio::task::spawn_blocking`] when it is called on a
+/// thread that is not owned by the `tokio` runtime. [`tokio::task::spawn_blocking`] should still
+/// work fine from inside a task on the event loop as the current event loop is stored in
+/// Thread-Local storage.
+///
+/// # Arguments
+/// * `func` - The blocking task to spawn on the Rust event loop
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::time::Duration;
+/// # use pyo3::prelude::*;
+/// #
+/// # Python::with_gil(|py| {
+/// # pyo3_asyncio::with_runtime(py, || {
+/// # pyo3_asyncio::run_until_complete(py, async move {
+/// #
+/// pyo3_asyncio::spawn_blocking(|| {
+///     std::thread::sleep(Duration::from_secs(1))
+/// })
+/// .await;
+/// #
+/// # Ok(())
+/// # })?;
+/// # Ok(())
+/// # })
+/// # .map_err(|e| {
+/// #    e.print_and_set_sys_last_vars(py);  
+/// # })
+/// # .unwrap();
+/// # });
+/// ```
 pub fn spawn_blocking<F, R>(func: F) -> JoinHandle<R>
 where
     F: FnOnce() -> R + Send + 'static,
@@ -264,6 +406,50 @@ impl PyTaskCompleter {
 }
 
 /// Convert a Python coroutine into a Rust Future
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `coro` - The Python coroutine to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// const PYTHON_CODE: &'static str = r#"
+/// import asyncio
+///
+/// async def py_sleep(duration):
+///     await asyncio.sleep(duration)
+/// "#;
+///
+/// async fn py_sleep(seconds: f32) -> PyResult<()> {
+///     let test_mod = Python::with_gil(|py| -> PyResult<PyObject> {
+///         Ok(
+///             PyModule::from_code(
+///                 py,
+///                 PYTHON_CODE,
+///                 "test_into_future/test_mod.py",
+///                 "test_mod"
+///             )?
+///             .into()
+///         )
+///     })?;
+///
+///     Python::with_gil(|py| {
+///         pyo3_asyncio::into_future(
+///             py,
+///             test_mod
+///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
+///                 .as_ref(py),
+///         )
+///     })?
+///     .await?;
+///     Ok(())    
+/// }
+/// ```
 pub fn into_future(
     py: Python,
     coro: &PyAny,
@@ -305,6 +491,29 @@ fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
 }
 
 /// Convert a Rust Future into a Python coroutine
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
+///     let secs = secs.extract()?;
+///
+///     pyo3_asyncio::into_coroutine(py, async move {
+///         tokio::time::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///    })
+/// }
+/// ```
 pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
