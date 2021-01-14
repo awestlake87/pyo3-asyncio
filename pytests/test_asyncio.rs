@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 
 use pyo3_asyncio::test::{parse_args, test_harness, Test};
 
-fn dump_err<'p>(py: Python<'p>) -> impl FnOnce(PyErr) + 'p {
+fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
     move |e| {
         // We can't display Python exceptions via std::fmt::Display,
         // so print the error here manually.
@@ -34,12 +34,10 @@ fn test_async_sleep<'p>(
     })
 }
 
-fn test_blocking_sleep() -> PyResult<()> {
+fn test_blocking_sleep() {
     println!("blocking sleep for 1s");
     thread::sleep(Duration::from_secs(1));
     println!("success");
-
-    Ok(())
 }
 
 fn py_main(py: Python) -> PyResult<()> {
@@ -52,7 +50,10 @@ fn py_main(py: Python) -> PyResult<()> {
         test_harness(
             stream::iter(vec![
                 Test::new_async("test_async_sleep".into(), test_async_sleep(py)?),
-                Test::new_sync("test_blocking_sleep".into(), test_blocking_sleep),
+                Test::new_sync("test_blocking_sleep".into(), || {
+                    test_blocking_sleep();
+                    Ok(())
+                }),
             ]),
             args,
         ),

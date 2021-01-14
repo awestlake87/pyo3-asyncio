@@ -142,7 +142,7 @@ impl PyTaskCompleter {
             Err(e) => Err(e),
         };
 
-        if let Err(_) = self.tx.take().unwrap().send(result) {
+        if self.tx.take().unwrap().send(result).is_err() {
             // cancellation is not an error
         }
 
@@ -183,7 +183,7 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
     Ok(())
 }
 
-fn dump_err<'p>(py: Python<'p>) -> impl FnOnce(PyErr) + 'p {
+fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
     move |e| {
         // We can't display Python exceptions via std::fmt::Display,
         // so print the error here manually.
