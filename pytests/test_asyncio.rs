@@ -11,25 +11,19 @@ fn test_async_sleep<'p>(
     let asyncio = PyObject::from(py.import("asyncio")?);
 
     Ok(async move {
-        println!("async sleep for 1s");
         tokio::time::sleep(Duration::from_secs(1)).await;
 
-        println!("asyncio sleep for 1s");
         Python::with_gil(|py| {
             pyo3_asyncio::into_future(py, asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
         })?
         .await?;
-
-        println!("success!");
 
         Ok(())
     })
 }
 
 fn test_blocking_sleep() {
-    println!("blocking sleep for 1s");
     thread::sleep(Duration::from_secs(1));
-    println!("success");
 }
 
 fn main() {

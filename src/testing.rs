@@ -6,6 +6,10 @@ use pyo3::prelude::*;
 
 use crate::{dump_err, run_until_complete, with_runtime};
 
+/// Args that should be provided to the test program
+///
+/// These args are meant to mirror the default test harness's args.
+/// > Currently only `--filter` is supported.
 pub struct Args {
     filter: Option<String>,
 }
@@ -16,6 +20,10 @@ impl Default for Args {
     }
 }
 
+/// Parse the test args from the command line
+///
+/// This should be called at the start of your test harness to give the CLI some
+/// control over how our tests are run.
 pub fn parse_args(suite_name: &str) -> Args {
     let matches = App::new(suite_name)
         .arg(
@@ -29,12 +37,14 @@ pub fn parse_args(suite_name: &str) -> Args {
     }
 }
 
+/// Wrapper around a test function or future to be passed to the test harness
 pub struct Test {
-    pub name: String,
-    pub task: Pin<Box<dyn Future<Output = PyResult<()>> + Send>>,
+    name: String,
+    task: Pin<Box<dyn Future<Output = PyResult<()>> + Send>>,
 }
 
 impl Test {
+    /// Construct a test from a future
     pub fn new_async(
         name: String,
         fut: impl Future<Output = PyResult<()>> + Send + 'static,
@@ -45,6 +55,7 @@ impl Test {
         }
     }
 
+    /// Construct a test from a blocking function (like the traditional `#[test]` attribute)
     pub fn new_sync<F>(name: String, func: F) -> Self
     where
         F: FnOnce() -> PyResult<()> + Send + 'static,
@@ -56,6 +67,7 @@ impl Test {
     }
 }
 
+/// Run a sequence of tests while applying any necessary filtering from the `Args`
 pub async fn test_harness(tests: impl Stream<Item = Test>, args: Args) -> PyResult<()> {
     tests
         .for_each_concurrent(Some(4), |test| {
@@ -79,6 +91,11 @@ pub async fn test_harness(tests: impl Stream<Item = Test>, args: Args) -> PyResu
     Ok(())
 }
 
+/// Default main function for the test harness.
+///
+/// This is meant to perform the necessary initialization for most test cases. If you want
+/// additional control over the initialization (i.e. env_logger initialization), you can use this
+/// function as a template.
 pub fn test_main(tests: impl Stream<Item = Test> + Send + 'static) {
     Python::with_gil(|py| {
         with_runtime(py, || {
