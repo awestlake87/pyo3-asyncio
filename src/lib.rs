@@ -98,6 +98,9 @@ lazy_static! {
     };
 }
 
+const EXPECT_INIT: &'static str = "PyO3 Asyncio has not been initialized";
+
+static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
 static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
 static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
 static CALL_SOON: OnceCell<PyObject> = OnceCell::new();
@@ -161,6 +164,7 @@ fn try_init(py: Python) -> PyResult<()> {
     let create_task = asyncio.getattr("run_coroutine_threadsafe")?;
     let create_future = event_loop.getattr("create_future")?;
 
+    ASYNCIO.get_or_init(|| asyncio.into());
     EVENT_LOOP.get_or_init(|| event_loop.into());
     EXECUTOR.get_or_init(|| executor.into());
     CALL_SOON.get_or_init(|| call_soon.into());
@@ -176,10 +180,7 @@ fn try_init(py: Python) -> PyResult<()> {
 
 /// Get a reference to the Python Event Loop from Rust
 pub fn get_event_loop(py: Python) -> &PyAny {
-    EVENT_LOOP
-        .get()
-        .expect("PyO3 Asyncio Event Loop has not been initialized")
-        .as_ref(py)
+    EVENT_LOOP.get().expect(EXPECT_INIT).as_ref(py)
 }
 
 /// Run the event loop forever
@@ -227,7 +228,7 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// # .unwrap();
 /// # })
 pub fn run_forever(py: Python) -> PyResult<()> {
-    if let Err(e) = EVENT_LOOP.get().unwrap().call_method0(py, "run_forever") {
+    if let Err(e) = get_event_loop(py).call_method0("run_forever") {
         if e.is_instance::<PyKeyboardInterrupt>(py) {
             Ok(())
         } else {
@@ -279,10 +280,7 @@ where
         Ok(Python::with_gil(|py| py.None()))
     })?;
 
-    EVENT_LOOP
-        .get()
-        .unwrap()
-        .call_method1(py, "run_until_complete", (coro,))?;
+    get_event_loop(py).call_method1("run_until_complete", (coro,))?;
 
     Ok(())
 }
@@ -290,10 +288,13 @@ where
 /// Shutdown the event loops and perform any necessary cleanup
 fn try_close(py: Python) -> PyResult<()> {
     // Shutdown the executor and wait until all threads are cleaned up
-    EXECUTOR.get().unwrap().call_method0(py, "shutdown")?;
+    EXECUTOR
+        .get()
+        .expect(EXPECT_INIT)
+        .call_method0(py, "shutdown")?;
 
-    EVENT_LOOP.get().unwrap().call_method0(py, "stop")?;
-    EVENT_LOOP.get().unwrap().call_method0(py, "close")?;
+    get_event_loop(py).call_method0("stop")?;
+    get_event_loop(py).call_method0("close")?;
     Ok(())
 }
 
@@ -399,8 +400,14 @@ impl PyTaskCompleter {
             Err(e) => Err(e),
         };
 
-        if self.tx.take().unwrap().send(result).is_err() {
-            // cancellation is not an error
+        // unclear to me whether or not this should be a panic or silent error.
+        //
+        // calling PyTaskCompleter twice should not be possible, but I don't think it really hurts
+        // anything if it happens.
+        if let Some(tx) = self.tx.take() {
+            if tx.send(result).is_err() {
+                // cancellation is not an error
+            }
         }
 
         Ok(())
@@ -460,24 +467,43 @@ pub fn into_future(
 
     let task = CREATE_TASK
         .get()
-        .unwrap()
-        .call1(py, (coro, EVENT_LOOP.get().unwrap()))?;
+        .expect(EXPECT_INIT)
+        .call1(py, (coro, get_event_loop(py)))?;
     let on_complete = PyTaskCompleter { tx: Some(tx) };
 
     task.call_method1(py, "add_done_callback", (on_complete,))?;
 
-    Ok(async move { rx.await.unwrap() })
+    Ok(async move {
+        match rx.await {
+            Ok(item) => item,
+            Err(_) => Python::with_gil(|py| {
+                Err(PyErr::from_instance(
+                    ASYNCIO
+                        .get()
+                        .expect(EXPECT_INIT)
+                        .call_method0(py, "CancelledError")?
+                        .as_ref(py),
+                ))
+            }),
+        }
+    })
 }
 
 fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
     match result {
         Ok(val) => {
             let set_result = future.getattr("set_result")?;
-            CALL_SOON.get().unwrap().call1(py, (set_result, val))?;
+            CALL_SOON
+                .get()
+                .expect(EXPECT_INIT)
+                .call1(py, (set_result, val))?;
         }
         Err(err) => {
             let set_exception = future.getattr("set_exception")?;
-            CALL_SOON.get().unwrap().call1(py, (set_exception, err))?;
+            CALL_SOON
+                .get()
+                .expect(EXPECT_INIT)
+                .call1(py, (set_exception, err))?;
         }
     }
 
@@ -520,7 +546,7 @@ pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    let future_rx = CREATE_FUTURE.get().unwrap().call0(py)?;
+    let future_rx = CREATE_FUTURE.get().expect(EXPECT_INIT).call0(py)?;
     let future_tx1 = future_rx.clone();
     let future_tx2 = future_rx.clone();
 
@@ -529,22 +555,29 @@ where
             let result = fut.await;
 
             Python::with_gil(move |py| {
-                set_result(py, future_tx1.as_ref(py), result)
+                if set_result(py, future_tx1.as_ref(py), result)
                     .map_err(dump_err(py))
-                    .unwrap()
+                    .is_err()
+                {
+
+                    // Cancelled
+                }
             });
         })
         .await
         {
             if e.is_panic() {
                 Python::with_gil(move |py| {
-                    set_result(
+                    if set_result(
                         py,
                         future_tx2.as_ref(py),
                         Err(PyException::new_err("rust future panicked")),
                     )
                     .map_err(dump_err(py))
-                    .unwrap()
+                    .is_err()
+                    {
+                        // Cancelled
+                    }
                 });
             }
         }
