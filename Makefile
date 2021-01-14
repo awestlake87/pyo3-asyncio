@@ -4,3 +4,15 @@ clippy:
 	cargo clippy --tests -- -Dwarnings
 	cargo clippy  --tests -- -Dwarnings
 	# for example in examples/*; do cargo clippy --manifest-path $$example/Cargo.toml -- -Dwarnings || exit 1; done
+
+fmt:
+	cargo fmt --all -- --check
+
+lint: fmt clippy
+	@true
+
+test: lint
+	cargo test --features testing
+
+publish: test
+	cargo publish

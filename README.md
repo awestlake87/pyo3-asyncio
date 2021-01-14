@@ -11,6 +11,8 @@
 
 * Contributing Notes: [github](https://github.com/awestlake87/pyo3-asyncio/blob/master/Contributing.md)
 
+> PyO3 Asyncio is a _brand new_ part of the broader PyO3 ecosystem. Feel free to open any issues for feature requests or bugfixes for this crate.
+
 ## Quickstart
 
 Here we initialize the runtime, import Python's `asyncio` library and run the given future to completion using Python's default `EventLoop` and Tokio. Inside the future, we convert `asyncio` sleep into a Rust future and await it.
