@@ -3,15 +3,7 @@ use std::{future::Future, thread, time::Duration};
 use futures::stream::{self};
 use pyo3::prelude::*;
 
-use pyo3_asyncio::test::{parse_args, test_harness, Test};
-
-fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
-    move |e| {
-        // We can't display Python exceptions via std::fmt::Display,
-        // so print the error here manually.
-        e.print_and_set_sys_last_vars(py);
-    }
-}
+use pyo3_asyncio::testing::{test_main, Test};
 
 fn test_async_sleep<'p>(
     py: Python<'p>,
@@ -40,30 +32,21 @@ fn test_blocking_sleep() {
     println!("success");
 }
 
-fn py_main(py: Python) -> PyResult<()> {
-    let args = parse_args("Pyo3 Asyncio Test Suite");
-
-    pyo3_asyncio::try_init(py)?;
-
-    pyo3_asyncio::run_until_complete(
-        py,
-        test_harness(
-            stream::iter(vec![
-                Test::new_async("test_async_sleep".into(), test_async_sleep(py)?),
-                Test::new_sync("test_blocking_sleep".into(), || {
-                    test_blocking_sleep();
-                    Ok(())
-                }),
-            ]),
-            args,
-        ),
-    )?;
-
-    Ok(())
-}
-
 fn main() {
-    Python::with_gil(|py| {
-        py_main(py).map_err(dump_err(py)).unwrap();
-    });
+    test_main(stream::iter(vec![
+        Test::new_async(
+            "test_async_sleep".into(),
+            Python::with_gil(|py| {
+                test_async_sleep(py)
+                    .map_err(|e| {
+                        e.print_and_set_sys_last_vars(py);
+                    })
+                    .unwrap()
+            }),
+        ),
+        Test::new_sync("test_blocking_sleep".into(), || {
+            test_blocking_sleep();
+            Ok(())
+        }),
+    ]))
 }

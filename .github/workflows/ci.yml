@@ -85,28 +85,28 @@ jobs:
         run: echo LD_LIBRARY_PATH=${pythonLocation}/lib >> $GITHUB_ENV
 
       - name: Build docs
-        run: cargo doc --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
+        run: cargo doc --no-default-features --features testing --verbose --target ${{ matrix.platform.rust-target }}
 
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
 
       - name: Build (all additive features)
-        run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
+        run: cargo build --no-default-features --features testing --verbose --target ${{ matrix.platform.rust-target }}
 
       # Run tests (except on PyPy, because no embedding API).
       - if: matrix.python-version != 'pypy-3.6'
         name: Test
-        run: cargo test --no-default-features --target ${{ matrix.platform.rust-target }}
+        run: cargo test --no-default-features --features testing --target ${{ matrix.platform.rust-target }}
 
       # Run tests again, but in abi3 mode
       - if: matrix.python-version != 'pypy-3.6'
         name: Test (abi3)
-        run: cargo test --no-default-features --target ${{ matrix.platform.rust-target }}
+        run: cargo test --no-default-features --features testing --target ${{ matrix.platform.rust-target }}
 
       # Run tests again, for abi3-py36 (the minimal Python version)
       - if: (matrix.python-version != 'pypy-3.6') && (matrix.python-version != '3.6')
         name: Test (abi3-py36)
-        run: cargo test --no-default-features --target ${{ matrix.platform.rust-target }}
+        run: cargo test --no-default-features --features testing --target ${{ matrix.platform.rust-target }}
 
       - name: Install python test dependencies
         run: |

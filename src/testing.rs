@@ -4,6 +4,8 @@ use clap::{App, Arg};
 use futures::stream::{Stream, StreamExt};
 use pyo3::prelude::*;
 
+use crate::{dump_err, run_until_complete, with_runtime};
+
 pub struct Args {
     filter: Option<String>,
 }
@@ -75,4 +77,17 @@ pub async fn test_harness(tests: impl Stream<Item = Test>, args: Args) -> PyResu
         .await;
 
     Ok(())
+}
+
+pub fn test_main(tests: impl Stream<Item = Test> + Send + 'static) {
+    Python::with_gil(|py| {
+        with_runtime(py, || {
+            let args = parse_args("Pyo3 Asyncio Test Suite");
+
+            run_until_complete(py, test_harness(tests, args))?;
+            Ok(())
+        })
+        .map_err(dump_err(py))
+        .unwrap();
+    })
 }

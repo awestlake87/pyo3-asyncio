@@ -7,7 +7,7 @@
 
 [Rust](http://www.rust-lang.org/) bindings for [Python](https://www.python.org/). This includes running and interacting with Python code from a Rust binary, as well as writing native Python modules.
 
-* API Documentation: [stable](https://docs.rs/pyo3-asyncio/)
+* API Documentation: [stable](https://docs.rs/pyo3-asyncio/) | [master](https://awestlake87.github.io/pyo3-asyncio/master/doc)
 
 * Contributing Notes: [github](https://github.com/awestlake87/pyo3-asyncio/blob/master/Contributing.md)
 
@@ -34,12 +34,3 @@ event loop like before, but may cause unexpected behaviour if a Rust future
 awaits a Python coroutine that awaits a Rust future that panics.
 
 > These scenarios are currently untested in this crate.
-
-## Running the Test
-
-You can run the example test the same way you'd run any other Cargo integration
-test.
-
-```
-$ cargo test
-```
