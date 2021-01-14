@@ -112,12 +112,12 @@ jobs:
         run: |
           python -m pip install -U pip setuptools
           pip install setuptools-rust pytest pytest-benchmark tox tox-venv
-      - name: Test example extension modules
-        shell: bash
-        run: |
-          for example_dir in examples/*; do
-              tox --discover $(which python) -c $example_dir -e py
-          done
+      # - name: Test example extension modules
+      #   shell: bash
+      #   run: |
+      #     for example_dir in examples/*; do
+      #         tox --discover $(which python) -c $example_dir -e py
+      #     done
     env:
       RUST_BACKTRACE: 1
       RUSTFLAGS: "-D warnings"
