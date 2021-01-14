@@ -15,7 +15,7 @@ use tokio::{
 };
 
 lazy_static! {
-    static ref MULTI_RUNTIME: Runtime = {
+    static ref CURRENT_THREAD_RUNTIME: Runtime = {
         Builder::new_current_thread()
             .enable_all()
             .build()
@@ -35,7 +35,10 @@ static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 pub fn try_init(py: Python) -> PyResult<()> {
     let asyncio = py.import("asyncio")?;
     let event_loop = asyncio.call_method0("get_event_loop")?;
-    let executor = py.import("concurrent.futures.thread")?.getattr("ThreadPoolExecutor")?.call0()?;
+    let executor = py
+        .import("concurrent.futures.thread")?
+        .getattr("ThreadPoolExecutor")?
+        .call0()?;
 
     event_loop.call_method1("set_default_executor", (executor,))?;
 
@@ -50,7 +53,7 @@ pub fn try_init(py: Python) -> PyResult<()> {
     CREATE_FUTURE.get_or_init(|| create_future.into());
 
     thread::spawn(|| {
-        MULTI_RUNTIME.block_on(future::pending::<()>());
+        CURRENT_THREAD_RUNTIME.block_on(future::pending::<()>());
     });
 
     Ok(())
@@ -98,13 +101,9 @@ where
 pub fn close(py: Python) -> PyResult<()> {
     // Shutdown the executor and wait until all threads are cleaned up
     EXECUTOR.get().unwrap().call_method0(py, "shutdown")?;
-    
-    EVENT_LOOP
-        .get()
-        .unwrap()
-        .call_method0(py, "stop")?;
+
+    EVENT_LOOP.get().unwrap().call_method0(py, "stop")?;
     EVENT_LOOP.get().unwrap().call_method0(py, "close")?;
-    
     Ok(())
 }
 
@@ -114,7 +113,7 @@ where
     F: Future + Send + 'static,
     F::Output: Send + 'static,
 {
-    MULTI_RUNTIME.spawn(fut)
+    CURRENT_THREAD_RUNTIME.spawn(fut)
 }
 
 /// Spawn a blocking task onto the executor
@@ -123,7 +122,7 @@ where
     F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,
 {
-    MULTI_RUNTIME.spawn_blocking(func)
+    CURRENT_THREAD_RUNTIME.spawn_blocking(func)
 }
 
 #[pyclass]
