@@ -1,6 +1,6 @@
 # PyO3 Asyncio
 
-[![Actions Status](https://github.com/awestlake87/pyo3-asyncio/workflows/Test/badge.svg)](https://github.com/awestlake87/pyo3-asyncio/actions)
+[![Actions Status](https://github.com/awestlake87/pyo3-asyncio/workflows/CI/badge.svg)](https://github.com/awestlake87/pyo3-asyncio/actions)
 [![codecov](https://codecov.io/gh/awestlake87/pyo3-asyncio/branch/master/graph/badge.svg)](https://codecov.io/gh/awestlake87/pyo3-asyncio)
 [![crates.io](http://meritbadge.herokuapp.com/pyo3-asyncio)](https://crates.io/crates/pyo3-asyncio)
 [![minimum rustc 1.45](https://img.shields.io/badge/rustc-1.45+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
