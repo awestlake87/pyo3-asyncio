@@ -1,4 +1,3 @@
-#![feature(doc_cfg)]
 #![warn(missing_docs)]
 
 //! Rust Bindings to the Python Asyncio Event Loop
@@ -52,9 +51,8 @@
 //! features = ["testing"]
 //! ```
 
-/// Utilities for writing PyO3 Asyncio tests
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Utilities for writing PyO3 Asyncio tests
 #[cfg(feature = "testing")]
-#[doc(cfg(testing))]
 #[doc(inline)]
 pub mod testing;
 
