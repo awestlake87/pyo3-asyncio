@@ -22,6 +22,7 @@ jobs:
       - name: Build the doc
         run: |
           cargo doc --no-deps
+          mkdir -p gh-pages-build
           cp -r target/doc gh-pages-build/doc
           echo "<meta http-equiv=refresh content=0;url=pyo3/index.html>" > gh-pages-build/doc/index.html
 
