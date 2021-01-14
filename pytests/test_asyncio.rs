@@ -1,6 +1,5 @@
 use std::{future::Future, thread, time::Duration};
 
-use futures::stream::{self};
 use pyo3::{prelude::*, wrap_pyfunction};
 
 use pyo3_asyncio::testing::{test_main, Test};
@@ -91,7 +90,7 @@ fn test_blocking_sleep() {
 }
 
 fn main() {
-    test_main(stream::iter(vec![
+    test_main(vec![
         Test::new_async(
             "test_async_sleep".into(),
             Python::with_gil(|py| {
@@ -126,5 +125,5 @@ fn main() {
                     .unwrap()
             }),
         ),
-    ]))
+    ])
 }

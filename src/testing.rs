@@ -1,7 +1,7 @@
 use std::{future::Future, pin::Pin};
 
 use clap::{App, Arg};
-use futures::stream::{Stream, StreamExt};
+use futures::stream::{self, StreamExt};
 use pyo3::prelude::*;
 
 use crate::{dump_err, run_until_complete, with_runtime};
@@ -68,8 +68,8 @@ impl Test {
 }
 
 /// Run a sequence of tests while applying any necessary filtering from the `Args`
-pub async fn test_harness(tests: impl Stream<Item = Test>, args: Args) -> PyResult<()> {
-    tests
+pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
+    stream::iter(tests)
         .for_each_concurrent(Some(4), |test| {
             let mut ignore = false;
 
@@ -96,7 +96,7 @@ pub async fn test_harness(tests: impl Stream<Item = Test>, args: Args) -> PyResu
 /// This is meant to perform the necessary initialization for most test cases. If you want
 /// additional control over the initialization (i.e. env_logger initialization), you can use this
 /// function as a template.
-pub fn test_main(tests: impl Stream<Item = Test> + Send + 'static) {
+pub fn test_main(tests: Vec<Test>) {
     Python::with_gil(|py| {
         with_runtime(py, || {
             let args = parse_args("Pyo3 Asyncio Test Suite");
