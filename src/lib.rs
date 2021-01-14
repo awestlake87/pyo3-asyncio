@@ -106,6 +106,7 @@ static CALL_SOON: OnceCell<PyObject> = OnceCell::new();
 static CREATE_TASK: OnceCell<PyObject> = OnceCell::new();
 static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 
+#[allow(clippy::needless_doctest_main)]
 /// Wraps the provided function with the initialization and finalization for PyO3 Asyncio
 ///
 /// This function **_MUST_** be called from the main thread.
