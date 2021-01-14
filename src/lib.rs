@@ -98,7 +98,7 @@ lazy_static! {
     };
 }
 
-const EXPECT_INIT: &'static str = "PyO3 Asyncio has not been initialized";
+const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
 
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
 static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();

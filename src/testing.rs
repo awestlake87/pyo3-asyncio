@@ -1,3 +1,83 @@
+//! # PyO3 Asyncio Testing Utilities
+//!
+//! This module provides some utilities for parsing test arguments as well as running and filtering
+//! a sequence of tests.
+//!
+//! As mentioned [here](crate#pythons-event-loop), PyO3 Asyncio tests cannot use the default test
+//! harness since it doesn't allow Python to gain control over the main thread. Instead, we have to
+//! provide our own test harness in order to create integration tests.
+//!
+//! ## Creating A PyO3 Asyncio Integration Test
+//!
+//! ### Main Test File
+//! First, we need to create the test's main file. Although these tests are considered integration
+//! tests, we cannot put them in the `tests` directory since that is a special directory owned by
+//! Cargo. Instead, we put our tests in a `pytests` directory, although the name `pytests` is just
+//! a convention.
+//!
+//! `pytests/test_example.rs`
+//! ```no_run
+//!
+//! fn main() {
+//!
+//! }
+//! ```
+//!
+//! ### Test Manifest Entry
+//! Next, we need to add our test file to the Cargo manifest. Add the following section to your
+//! `Cargo.toml`
+//!
+//! ```toml
+//! [[test]]
+//! name = "test_example"
+//! path = "pytests/test_example.rs"
+//! harness = false
+//! ```
+//!
+//! At this point you should be able to run the test via `cargo test`
+//!
+//! ### Using the PyO3 Asyncio Test Harness
+//! Now that we've got our test registered with `cargo test`, we can start using the PyO3 Asyncio
+//! test harness.
+//!
+//! In your `Cargo.toml` add the testing feature to `pyo3-asyncio`:
+//! ```toml
+//! pyo3-asyncio = { version = "0.13", features = ["testing"] }
+//! ```
+//!
+//! Now, in your test's main file, call [`testing::test_main`]:
+//!
+//! ```no_run
+//! fn main() {
+//!     pyo3_asyncio::testing::test_main(vec![]);
+//! }
+//! ```
+//!
+//! ### Adding Tests to the PyO3 Asyncio Test Harness
+//!
+//! ```no_run
+//! use pyo3_asyncio::testing::Test;
+//!
+//! fn main() {
+//!     pyo3_asyncio::testing::test_main(vec![
+//!         Test::new_async(
+//!             "test_async_sleep".into(),
+//!              async move {
+//!                  // async test body
+//!                 Ok(())
+//!              }
+//!         ),
+//!         Test::new_sync(
+//!             "test_blocking_sleep".into(),
+//!             || {
+//!                 // blocking test body
+//!                 Ok(())
+//!             }
+//!         ),
+//!     ]);
+//! }
+//! ```
+
 use std::{future::Future, pin::Pin};
 
 use clap::{App, Arg};
@@ -24,6 +104,34 @@ impl Default for Args {
 ///
 /// This should be called at the start of your test harness to give the CLI some
 /// control over how our tests are run.
+///
+/// Ideally, we should mirror the default test harness's arguments exactly, but
+/// for the sake of simplicity, only filtering is supported for now. If you want
+/// more features, feel free to request them
+/// [here](https://github.com/awestlake87/pyo3-asyncio/issues).
+///
+/// # Examples
+///
+/// Running the following function:
+/// ```no_run
+/// # use pyo3_asyncio::testing::parse_args;
+/// let args = parse_args("PyO3 Asyncio Example Test Suite");
+/// ```
+///
+/// Produces the following usage string:
+///
+/// ```bash
+/// Pyo3 Asyncio Example Test Suite
+/// USAGE:
+/// test_example [TESTNAME]
+///
+/// FLAGS:
+/// -h, --help       Prints help information
+/// -V, --version    Prints version information
+///
+/// ARGS:
+/// <TESTNAME>    If specified, only run tests containing this string in their names
+/// ```
 pub fn parse_args(suite_name: &str) -> Args {
     let matches = App::new(suite_name)
         .arg(
