@@ -47,7 +47,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.1.0"
+//! version = "0.13.0"
 //! features = ["testing"]
 //! ```
 

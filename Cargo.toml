@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-asyncio"
-version = "0.1.0"
+version = "0.13.0"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
 edition = "2018"
 
