@@ -49,7 +49,7 @@
 //!
 //! ```no_run
 //! fn main() {
-//!     pyo3_asyncio::testing::test_main(vec![]);
+//!     pyo3_asyncio::testing::test_main("Example Test Suite", vec![]);
 //! }
 //! ```
 //!
@@ -59,22 +59,25 @@
 //! use pyo3_asyncio::testing::Test;
 //!
 //! fn main() {
-//!     pyo3_asyncio::testing::test_main(vec![
-//!         Test::new_async(
-//!             "test_async_sleep".into(),
-//!              async move {
-//!                  // async test body
-//!                 Ok(())
-//!              }
-//!         ),
-//!         Test::new_sync(
-//!             "test_blocking_sleep".into(),
-//!             || {
-//!                 // blocking test body
-//!                 Ok(())
-//!             }
-//!         ),
-//!     ]);
+//!     pyo3_asyncio::testing::test_main(
+//!         "Example Test Suite",
+//!         vec![
+//!             Test::new_async(
+//!                 "test_async_sleep".into(),
+//!                 async move {
+//!                      // async test body
+//!                     Ok(())
+//!                 }
+//!             ),
+//!             Test::new_sync(
+//!                 "test_blocking_sleep".into(),
+//!                 || {
+//!                     // blocking test body
+//!                     Ok(())
+//!                 }
+//!             ),
+//!         ]
+//!     );
 //! }
 //! ```
 
@@ -204,10 +207,10 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
 /// This is meant to perform the necessary initialization for most test cases. If you want
 /// additional control over the initialization (i.e. env_logger initialization), you can use this
 /// function as a template.
-pub fn test_main(tests: Vec<Test>) {
+pub fn test_main(suite_name: &str, tests: Vec<Test>) {
     Python::with_gil(|py| {
         with_runtime(py, || {
-            let args = parse_args("Pyo3 Asyncio Test Suite");
+            let args = parse_args(suite_name);
 
             run_until_complete(py, test_harness(tests, args))?;
             Ok(())

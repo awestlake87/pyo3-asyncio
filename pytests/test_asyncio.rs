@@ -90,40 +90,43 @@ fn test_blocking_sleep() {
 }
 
 fn main() {
-    test_main(vec![
-        Test::new_async(
-            "test_async_sleep".into(),
-            Python::with_gil(|py| {
-                test_async_sleep(py)
-                    .map_err(|e| {
-                        e.print_and_set_sys_last_vars(py);
-                    })
-                    .unwrap()
+    test_main(
+        "PyO3 Asyncio Test Suite",
+        vec![
+            Test::new_async(
+                "test_async_sleep".into(),
+                Python::with_gil(|py| {
+                    test_async_sleep(py)
+                        .map_err(|e| {
+                            e.print_and_set_sys_last_vars(py);
+                        })
+                        .unwrap()
+                }),
+            ),
+            Test::new_sync("test_blocking_sleep".into(), || {
+                test_blocking_sleep();
+                Ok(())
             }),
-        ),
-        Test::new_sync("test_blocking_sleep".into(), || {
-            test_blocking_sleep();
-            Ok(())
-        }),
-        Test::new_async(
-            "test_into_coroutine".into(),
-            Python::with_gil(|py| {
-                test_into_coroutine(py)
-                    .map_err(|e| {
-                        e.print_and_set_sys_last_vars(py);
-                    })
-                    .unwrap()
-            }),
-        ),
-        Test::new_async(
-            "test_into_future".into(),
-            Python::with_gil(|py| {
-                test_into_future(py)
-                    .map_err(|e| {
-                        e.print_and_set_sys_last_vars(py);
-                    })
-                    .unwrap()
-            }),
-        ),
-    ])
+            Test::new_async(
+                "test_into_coroutine".into(),
+                Python::with_gil(|py| {
+                    test_into_coroutine(py)
+                        .map_err(|e| {
+                            e.print_and_set_sys_last_vars(py);
+                        })
+                        .unwrap()
+                }),
+            ),
+            Test::new_async(
+                "test_into_future".into(),
+                Python::with_gil(|py| {
+                    test_into_future(py)
+                        .map_err(|e| {
+                            e.print_and_set_sys_last_vars(py);
+                        })
+                        .unwrap()
+                }),
+            ),
+        ],
+    )
 }
