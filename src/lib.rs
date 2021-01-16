@@ -134,17 +134,17 @@ static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 ///     })
 /// }
 /// ```
-pub fn with_runtime<F>(py: Python, f: F) -> PyResult<()>
+pub fn with_runtime<F, R>(py: Python, f: F) -> PyResult<R>
 where
-    F: FnOnce() -> PyResult<()>,
+    F: FnOnce() -> PyResult<R>,
 {
     try_init(py)?;
 
-    (f)()?;
+    let result = (f)()?;
 
     try_close(py)?;
 
-    Ok(())
+    Ok(result)
 }
 
 /// Attempt to initialize the Python and Rust event loops
