@@ -1,14 +1,32 @@
-use std::{future::Future, thread, time::Duration};
+use std::{
+    future::{pending, Future},
+    thread,
+    time::Duration,
+};
 
+use lazy_static::lazy_static;
 use pyo3::{prelude::*, wrap_pyfunction};
+use tokio::runtime::{Builder, Runtime};
 
-use pyo3_asyncio::testing::{test_main, Test};
+use pyo3_asyncio::{
+    testing::Test,
+    tokio::testing::{new_sync_test, test_main},
+};
+
+lazy_static! {
+    static ref CURRENT_THREAD_RUNTIME: Runtime = {
+        Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("Couldn't build the runtime")
+    };
+}
 
 #[pyfunction]
 fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
     let secs = secs.extract()?;
 
-    pyo3_asyncio::into_coroutine(py, async move {
+    pyo3_asyncio::tokio::into_coroutine(py, &CURRENT_THREAD_RUNTIME, async move {
         tokio::time::sleep(Duration::from_secs(secs)).await;
         Python::with_gil(|py| Ok(py.None()))
     })
@@ -90,8 +108,13 @@ fn test_blocking_sleep() {
 }
 
 fn main() {
+    thread::spawn(|| {
+        CURRENT_THREAD_RUNTIME.block_on(pending::<()>());
+    });
+
     test_main(
         "PyO3 Asyncio Test Suite",
+        &CURRENT_THREAD_RUNTIME,
         vec![
             Test::new_async(
                 "test_async_sleep".into(),
@@ -103,7 +126,7 @@ fn main() {
                         .unwrap()
                 }),
             ),
-            Test::new_sync("test_blocking_sleep".into(), || {
+            new_sync_test("test_blocking_sleep".into(), || {
                 test_blocking_sleep();
                 Ok(())
             }),

@@ -12,7 +12,7 @@ lint: fmt clippy
 	@true
 
 test: lint
-	cargo test --features testing
+	cargo test --features async-std-runtime --features tokio-runtime --features testing
 
 publish: test
 	cargo publish

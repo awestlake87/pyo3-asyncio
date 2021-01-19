@@ -7,20 +7,35 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+async-std-runtime = ["async-std"]
 testing = ["clap"]
+tokio-runtime = ["tokio"]
 default = []
 
-[[test]]
-name = "test_asyncio"
-path = "pytests/test_asyncio.rs"
-harness = false
-required-features = ["testing"]
 
 [[test]]
-name = "test_run_forever"
-path = "pytests/test_run_forever.rs"
+name = "test_async_std_asyncio"
+path = "pytests/test_async_std_asyncio.rs"
 harness = false
-required-features = ["testing"]
+required-features = ["async-std-runtime", "testing"]
+
+[[test]]
+name = "test_async_std_run_forever"
+path = "pytests/test_async_std_run_forever.rs"
+harness = false
+required-features = ["async-std-runtime", "testing"]
+
+[[test]]
+name = "test_tokio_asyncio"
+path = "pytests/test_tokio_asyncio.rs"
+harness = false
+required-features = ["tokio-runtime", "testing"]
+
+[[test]]
+name = "test_tokio_run_forever"
+path = "pytests/test_tokio_run_forever.rs"
+harness = false
+required-features = ["tokio-runtime", "testing"]
 
 [dependencies]
 clap = { version = "2.33", optional = true }
@@ -28,4 +43,13 @@ futures = "0.3"
 lazy_static = "1.4"
 once_cell = "1.5"
 pyo3 = "0.13"
-tokio = { version = "1.0", features = ["full"] }
+
+[dependencies.async-std]
+version = "1.9"
+features = ["unstable"]
+optional = true
+
+[dependencies.tokio]
+version = "1.0" 
+features = ["full"]
+optional = true

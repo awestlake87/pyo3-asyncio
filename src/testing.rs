@@ -6,88 +6,12 @@
 //! As mentioned [here](crate#pythons-event-loop), PyO3 Asyncio tests cannot use the default test
 //! harness since it doesn't allow Python to gain control over the main thread. Instead, we have to
 //! provide our own test harness in order to create integration tests.
-//!
-//! ## Creating A PyO3 Asyncio Integration Test
-//!
-//! ### Main Test File
-//! First, we need to create the test's main file. Although these tests are considered integration
-//! tests, we cannot put them in the `tests` directory since that is a special directory owned by
-//! Cargo. Instead, we put our tests in a `pytests` directory, although the name `pytests` is just
-//! a convention.
-//!
-//! `pytests/test_example.rs`
-//! ```no_run
-//!
-//! fn main() {
-//!
-//! }
-//! ```
-//!
-//! ### Test Manifest Entry
-//! Next, we need to add our test file to the Cargo manifest. Add the following section to your
-//! `Cargo.toml`
-//!
-//! ```toml
-//! [[test]]
-//! name = "test_example"
-//! path = "pytests/test_example.rs"
-//! harness = false
-//! ```
-//!
-//! At this point you should be able to run the test via `cargo test`
-//!
-//! ### Using the PyO3 Asyncio Test Harness
-//! Now that we've got our test registered with `cargo test`, we can start using the PyO3 Asyncio
-//! test harness.
-//!
-//! In your `Cargo.toml` add the testing feature to `pyo3-asyncio`:
-//! ```toml
-//! pyo3-asyncio = { version = "0.13", features = ["testing"] }
-//! ```
-//!
-//! Now, in your test's main file, call [`testing::test_main`]:
-//!
-//! ```no_run
-//! fn main() {
-//!     pyo3_asyncio::testing::test_main("Example Test Suite", vec![]);
-//! }
-//! ```
-//!
-//! ### Adding Tests to the PyO3 Asyncio Test Harness
-//!
-//! ```no_run
-//! use pyo3_asyncio::testing::Test;
-//!
-//! fn main() {
-//!     pyo3_asyncio::testing::test_main(
-//!         "Example Test Suite",
-//!         vec![
-//!             Test::new_async(
-//!                 "test_async_sleep".into(),
-//!                 async move {
-//!                      // async test body
-//!                     Ok(())
-//!                 }
-//!             ),
-//!             Test::new_sync(
-//!                 "test_blocking_sleep".into(),
-//!                 || {
-//!                     // blocking test body
-//!                     Ok(())
-//!                 }
-//!             ),
-//!         ]
-//!     );
-//! }
-//! ```
 
 use std::{future::Future, pin::Pin};
 
 use clap::{App, Arg};
 use futures::stream::{self, StreamExt};
 use pyo3::prelude::*;
-
-use crate::{dump_err, run_until_complete, with_runtime};
 
 /// Args that should be provided to the test program
 ///
@@ -165,17 +89,6 @@ impl Test {
             task: Box::pin(fut),
         }
     }
-
-    /// Construct a test from a blocking function (like the traditional `#[test]` attribute)
-    pub fn new_sync<F>(name: String, func: F) -> Self
-    where
-        F: FnOnce() -> PyResult<()> + Send + 'static,
-    {
-        Self {
-            name,
-            task: Box::pin(async move { crate::spawn_blocking(func).await.unwrap() }),
-        }
-    }
 }
 
 /// Run a sequence of tests while applying any necessary filtering from the `Args`
@@ -200,22 +113,4 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
         .await;
 
     Ok(())
-}
-
-/// Default main function for the test harness.
-///
-/// This is meant to perform the necessary initialization for most test cases. If you want
-/// additional control over the initialization (i.e. env_logger initialization), you can use this
-/// function as a template.
-pub fn test_main(suite_name: &str, tests: Vec<Test>) {
-    Python::with_gil(|py| {
-        with_runtime(py, || {
-            let args = parse_args(suite_name);
-
-            run_until_complete(py, test_harness(tests, args))?;
-            Ok(())
-        })
-        .map_err(dump_err(py))
-        .unwrap();
-    })
 }

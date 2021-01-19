@@ -13,6 +13,15 @@
 
 > PyO3 Asyncio is a _brand new_ part of the broader PyO3 ecosystem. Feel free to open any issues for feature requests or bugfixes for this crate.
 
+## Known Problems
+
+Currently, this library can give spurious failures during finalization. A solution should be released for PyO3 soon, but in the meantime you can add this patch to your `Cargo.toml` to use the master branch for PyO3
+
+```toml
+[patch.crates-io]
+pyo3 = { git = "https://github.com/PyO3/pyo3" }
+```
+
 ## Quickstart
 
 Here we initialize the runtime, import Python's `asyncio` library and run the given future to completion using Python's default `EventLoop` and Tokio. Inside the future, we convert `asyncio` sleep into a Rust future and await it.
@@ -29,7 +38,7 @@ fn main() {
             let asyncio: PyObject = py.import("asyncio")?.into();
             
             // Run the event loop until the given future completes
-            pyo3_asyncio::run_until_complete(py, async move {
+            pyo3_asyncio::async_std::run_until_complete(py, async move {
                 Python::with_gil(|py| {
                     // convert asyncio.sleep into a Rust Future
                     pyo3_asyncio::into_future(
