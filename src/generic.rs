@@ -1,6 +1,5 @@
 use std::future::Future;
 
-use futures::channel::oneshot;
 use pyo3::{exceptions::PyException, prelude::*};
 
 use crate::{dump_err, get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
@@ -103,37 +102,6 @@ where
     get_event_loop(py).call_method1("run_until_complete", (coro,))?;
 
     Ok(())
-}
-
-#[pyclass]
-struct PyTaskCompleter {
-    tx: Option<oneshot::Sender<PyResult<PyObject>>>,
-}
-
-#[pymethods]
-impl PyTaskCompleter {
-    #[call]
-    #[args(task)]
-    pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
-        debug_assert!(task.call_method0("done")?.extract()?);
-
-        let result = match task.call_method0("result") {
-            Ok(val) => Ok(val.into()),
-            Err(e) => Err(e),
-        };
-
-        // unclear to me whether or not this should be a panic or silent error.
-        //
-        // calling PyTaskCompleter twice should not be possible, but I don't think it really hurts
-        // anything if it happens.
-        if let Some(tx) = self.tx.take() {
-            if tx.send(result).is_err() {
-                // cancellation is not an error
-            }
-        }
-
-        Ok(())
-    }
 }
 
 fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
