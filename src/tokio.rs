@@ -7,11 +7,10 @@ use ::tokio::{
     runtime::{Builder, Runtime},
     task,
 };
-use futures::channel::oneshot;
 use lazy_static::lazy_static;
 use pyo3::prelude::*;
 
-use crate::{generic, CALL_SOON, EXPECT_INIT};
+use crate::generic;
 
 lazy_static! {
     static ref CURRENT_THREAD_RUNTIME: Runtime = {
@@ -95,66 +94,6 @@ where
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
     generic::run_until_complete::<TokioRuntime, _>(py, fut)
-}
-
-#[pyclass]
-struct PyTaskCompleter {
-    tx: Option<oneshot::Sender<PyResult<PyObject>>>,
-}
-
-#[pymethods]
-impl PyTaskCompleter {
-    #[call]
-    #[args(task)]
-    pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
-        debug_assert!(task.call_method0("done")?.extract()?);
-
-        let result = match task.call_method0("result") {
-            Ok(val) => Ok(val.into()),
-            Err(e) => Err(e),
-        };
-
-        // unclear to me whether or not this should be a panic or silent error.
-        //
-        // calling PyTaskCompleter twice should not be possible, but I don't think it really hurts
-        // anything if it happens.
-        if let Some(tx) = self.tx.take() {
-            if tx.send(result).is_err() {
-                // cancellation is not an error
-            }
-        }
-
-        Ok(())
-    }
-}
-
-fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
-    match result {
-        Ok(val) => {
-            let set_result = future.getattr("set_result")?;
-            CALL_SOON
-                .get()
-                .expect(EXPECT_INIT)
-                .call1(py, (set_result, val))?;
-        }
-        Err(err) => {
-            let set_exception = future.getattr("set_exception")?;
-            CALL_SOON
-                .get()
-                .expect(EXPECT_INIT)
-                .call1(py, (set_exception, err))?;
-        }
-    }
-
-    Ok(())
-}
-
-fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
-    move |e| {
-        // We can't display Python exceptions via std::fmt::Display,
-        // so print the error here manually.
-        e.print_and_set_sys_last_vars(py);
-    }
 }
 
 /// Convert a Rust Future into a Python coroutine
@@ -275,8 +214,8 @@ pub mod testing {
     use pyo3::prelude::*;
 
     use crate::{
+        dump_err,
         testing::{parse_args, test_harness, Test},
-        tokio::dump_err,
         with_runtime,
     };
 

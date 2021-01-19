@@ -3,16 +3,22 @@ use std::future::Future;
 use futures::channel::oneshot;
 use pyo3::{exceptions::PyException, prelude::*};
 
-use crate::{get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
+use crate::{dump_err, get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
 
+/// Generic utilities for a JoinError
 pub trait JoinError {
+    /// Check if the spawned task exited because of a panic
     fn is_panic(&self) -> bool;
 }
 
+/// Generic Rust async/await runtime
 pub trait Runtime {
+    /// The type of errors that a JoinHandle can return after awaited
     type JoinError: JoinError + Send;
+    /// A future that completes with the result of the spawned task
     type JoinHandle: Future<Output = Result<(), Self::JoinError>> + Send;
 
+    /// Spawn a function onto this runtime's event loop
     fn spawn<F>(fut: F) -> Self::JoinHandle
     where
         F: Future<Output = ()> + Send + 'static;
@@ -153,14 +159,6 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
     Ok(())
 }
 
-fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
-    move |e| {
-        // We can't display Python exceptions via std::fmt::Display,
-        // so print the error here manually.
-        e.print_and_set_sys_last_vars(py);
-    }
-}
-
 /// Convert a Rust Future into a Python coroutine with a generic runtime
 ///
 /// # Arguments
@@ -272,7 +270,8 @@ pub mod testing {
     use pyo3::prelude::*;
 
     use crate::{
-        generic::{dump_err, run_until_complete, Runtime},
+        dump_err,
+        generic::{run_until_complete, Runtime},
         testing::{parse_args, test_harness, Test},
         with_runtime,
     };

@@ -1,14 +1,8 @@
 mod common;
 
-use std::{
-    future::{pending, Future},
-    thread,
-    time::Duration,
-};
+use std::{future::Future, time::Duration};
 
-use lazy_static::lazy_static;
 use pyo3::{prelude::*, wrap_pyfunction};
-use tokio::runtime::{Builder, Runtime};
 
 use pyo3_asyncio::{
     testing::Test,

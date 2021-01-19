@@ -1,7 +1,6 @@
 use std::future::Future;
 
 use async_std::task;
-use futures::channel::oneshot;
 use pyo3::prelude::*;
 
 use crate::generic::{self, JoinError, Runtime};
@@ -68,45 +67,6 @@ where
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
     generic::run_until_complete::<AsyncStdRuntime, _>(py, fut)
-}
-
-#[pyclass]
-struct PyTaskCompleter {
-    tx: Option<oneshot::Sender<PyResult<PyObject>>>,
-}
-
-#[pymethods]
-impl PyTaskCompleter {
-    #[call]
-    #[args(task)]
-    pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
-        debug_assert!(task.call_method0("done")?.extract()?);
-
-        let result = match task.call_method0("result") {
-            Ok(val) => Ok(val.into()),
-            Err(e) => Err(e),
-        };
-
-        // unclear to me whether or not this should be a panic or silent error.
-        //
-        // calling PyTaskCompleter twice should not be possible, but I don't think it really hurts
-        // anything if it happens.
-        if let Some(tx) = self.tx.take() {
-            if tx.send(result).is_err() {
-                // cancellation is not an error
-            }
-        }
-
-        Ok(())
-    }
-}
-
-fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
-    move |e| {
-        // We can't display Python exceptions via std::fmt::Display,
-        // so print the error here manually.
-        e.print_and_set_sys_last_vars(py);
-    }
 }
 
 /// Convert a Rust Future into a Python coroutine
@@ -230,11 +190,7 @@ pub mod testing {
     use async_std::task;
     use pyo3::prelude::*;
 
-    use crate::{
-        async_std::{dump_err, run_until_complete},
-        testing::{parse_args, test_harness, Test},
-        with_runtime,
-    };
+    use crate::{async_std::AsyncStdRuntime, generic, testing::Test};
 
     /// Construct a test from a blocking function (like the traditional `#[test]` attribute)
     pub fn new_sync_test<F>(name: String, func: F) -> Test
@@ -250,14 +206,6 @@ pub mod testing {
     /// additional control over the initialization (i.e. env_logger initialization), you can use this
     /// function as a template.
     pub fn test_main(suite_name: &str, tests: Vec<Test>) {
-        Python::with_gil(|py| {
-            with_runtime(py, || {
-                let args = parse_args(suite_name);
-                run_until_complete(py, test_harness(tests, args))?;
-                Ok(())
-            })
-            .map_err(dump_err(py))
-            .unwrap();
-        })
+        generic::testing::test_main::<AsyncStdRuntime>(suite_name, tests)
     }
 }

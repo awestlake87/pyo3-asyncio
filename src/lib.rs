@@ -90,6 +90,7 @@ pub mod async_std;
 #[doc(inline)]
 pub mod tokio;
 
+/// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
 pub mod generic;
 
 use std::future::Future;
@@ -371,4 +372,12 @@ pub fn into_future(
             }),
         }
     })
+}
+
+fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
+    move |e| {
+        // We can't display Python exceptions via std::fmt::Display,
+        // so print the error here manually.
+        e.print_and_set_sys_last_vars(py);
+    }
 }
