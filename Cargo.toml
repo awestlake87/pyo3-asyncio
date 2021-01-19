@@ -2,7 +2,16 @@
 name = "pyo3-asyncio"
 version = "0.13.0"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
+readme = "README.md"
+keywords = ["pyo3", "pyo3-asyncio", "python", "cpython", "ffi", "async", "asyncio"]
+homepage = "https://github.com/awestlake87/pyo3-asyncio"
+repository = "https://github.com/awestlake87/pyo3-asyncio"
+documentation = "https://docs.rs/crate/pyo3-asyncio/"
+categories = ["api-bindings", "development-tools::ffi"]
+license = "Apache-2.0"
+exclude = ["/.gitignore", "/codecov.yml", "/Makefile"]
 edition = "2018"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,7 +20,6 @@ async-std-runtime = ["async-std"]
 testing = ["clap"]
 tokio-runtime = ["tokio"]
 default = []
-
 
 [[test]]
 name = "test_async_std_asyncio"
