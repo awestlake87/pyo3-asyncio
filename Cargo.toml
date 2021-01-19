@@ -26,14 +26,26 @@ harness = false
 required-features = ["async-std-runtime", "testing"]
 
 [[test]]
-name = "test_tokio_asyncio"
-path = "pytests/test_tokio_asyncio.rs"
+name = "test_tokio_current_thread_asyncio"
+path = "pytests/test_tokio_current_thread_asyncio.rs"
 harness = false
 required-features = ["tokio-runtime", "testing"]
 
 [[test]]
-name = "test_tokio_run_forever"
-path = "pytests/test_tokio_run_forever.rs"
+name = "test_tokio_current_thread_run_forever"
+path = "pytests/test_tokio_current_thread_run_forever.rs"
+harness = false
+required-features = ["tokio-runtime", "testing"]
+
+[[test]]
+name = "test_tokio_multi_thread_asyncio"
+path = "pytests/test_tokio_multi_thread_asyncio.rs"
+harness = false
+required-features = ["tokio-runtime", "testing"]
+
+[[test]]
+name = "test_tokio_multi_thread_run_forever"
+path = "pytests/test_tokio_multi_thread_run_forever.rs"
 harness = false
 required-features = ["tokio-runtime", "testing"]
 

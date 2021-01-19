@@ -1,13 +1,11 @@
-mod common;
-
 use std::{future::Future, time::Duration};
 
 use pyo3::{prelude::*, wrap_pyfunction};
 
-use pyo3_asyncio::{
-    testing::Test,
-    tokio::testing::{new_sync_test, test_main},
-};
+use pyo3_asyncio::{testing::Test, tokio::testing::new_sync_test};
+
+// enforce the inclusion of the common module
+use crate::common;
 
 #[pyfunction]
 fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
@@ -67,9 +65,9 @@ fn test_async_sleep<'p>(
     })
 }
 
-fn main() {
-    test_main(
-        "PyO3 Asyncio Test Suite",
+pub(super) fn test_main(suite_name: &str) {
+    pyo3_asyncio::tokio::testing::test_main(
+        suite_name,
         vec![
             Test::new_async(
                 "test_async_sleep".into(),

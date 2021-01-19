@@ -1,17 +1,6 @@
-use std::{future::pending, thread, time::Duration};
+use std::time::Duration;
 
-use lazy_static::lazy_static;
 use pyo3::prelude::*;
-use tokio::runtime::{Builder, Runtime};
-
-lazy_static! {
-    static ref CURRENT_THREAD_RUNTIME: Runtime = {
-        Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("Couldn't build the runtime")
-    };
-}
 
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
     move |e| {
@@ -21,14 +10,10 @@ fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
     }
 }
 
-fn main() {
-    thread::spawn(|| {
-        CURRENT_THREAD_RUNTIME.block_on(pending::<()>());
-    });
-
+pub(super) fn test_main() {
     Python::with_gil(|py| {
         pyo3_asyncio::with_runtime(py, || {
-            CURRENT_THREAD_RUNTIME.spawn(async move {
+            pyo3_asyncio::tokio::get_runtime().spawn(async move {
                 tokio::time::sleep(Duration::from_secs(1)).await;
 
                 Python::with_gil(|py| {

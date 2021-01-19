@@ -7,19 +7,14 @@ use ::tokio::{
     runtime::{Builder, Runtime},
     task,
 };
-use lazy_static::lazy_static;
+use once_cell::sync::OnceCell;
 use pyo3::prelude::*;
 
 use crate::generic;
 
-lazy_static! {
-    static ref CURRENT_THREAD_RUNTIME: Runtime = {
-        Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("Couldn't build the runtime")
-    };
-}
+static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
+
+const EXPECT_TOKIO_INIT: &str = "Tokio runtime must be initialized";
 
 impl generic::JoinError for task::JoinError {
     fn is_panic(&self) -> bool {
@@ -37,17 +32,46 @@ impl generic::Runtime for TokioRuntime {
     where
         F: Future<Output = ()> + Send + 'static,
     {
-        CURRENT_THREAD_RUNTIME.spawn(async move {
+        get_runtime().spawn(async move {
             fut.await;
         })
     }
 }
 
-/// Initialize the Tokio Runtime
-pub fn init() {
+/// Initialize the Tokio Runtime with a custom build
+pub fn init(runtime: Runtime) {
+    TOKIO_RUNTIME
+        .set(runtime)
+        .expect("Tokio Runtime has already been initialized");
+}
+
+/// Initialize the Tokio Runtime with current-thread scheduler
+pub fn init_current_thread() {
+    init(
+        Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("Couldn't build the current-thread Tokio runtime"),
+    );
+
     thread::spawn(|| {
-        CURRENT_THREAD_RUNTIME.block_on(pending::<()>());
+        get_runtime().block_on(pending::<()>());
     });
+}
+
+/// Get a reference to the current tokio runtime
+pub fn get_runtime<'a>() -> &'a Runtime {
+    TOKIO_RUNTIME.get().expect(EXPECT_TOKIO_INIT)
+}
+
+/// Initialize the Tokio Runtime with the multi-thread scheduler
+pub fn init_multi_thread() {
+    init(
+        Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("Couldn't build the current-thread Tokio runtime"),
+    );
 }
 
 /// Run the event loop until the given Future completes
@@ -76,7 +100,7 @@ pub fn init() {
 /// #
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
-/// pyo3_asyncio::tokio::init();
+/// pyo3_asyncio::tokio::init_current_thread();
 /// pyo3_asyncio::tokio::run_until_complete(py, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
@@ -234,11 +258,12 @@ pub mod testing {
     /// This is meant to perform the necessary initialization for most test cases. If you want
     /// additional control over the initialization (i.e. env_logger initialization), you can use this
     /// function as a template.
+    ///
+    /// Note: The tokio runtime must be initialized before calling this function!
     pub fn test_main(suite_name: &str, tests: Vec<Test>) {
         Python::with_gil(|py| {
             with_runtime(py, || {
                 let args = parse_args(suite_name);
-                crate::tokio::init();
                 crate::tokio::run_until_complete(py, test_harness(tests, args))?;
 
                 Ok(())
