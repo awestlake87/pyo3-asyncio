@@ -90,6 +90,8 @@ pub mod async_std;
 #[doc(inline)]
 pub mod tokio;
 
+pub mod generic;
+
 use std::future::Future;
 
 use futures::channel::oneshot;
