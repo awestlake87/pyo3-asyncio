@@ -13,20 +13,18 @@ pub trait JoinError {
 
 /// Generic Rust async/await runtime
 pub trait Runtime {
-    /// The type of errors that a JoinHandle can return after awaited
+    /// The error returned by a JoinHandle after being awaited
     type JoinError: JoinError + Send;
     /// A future that completes with the result of the spawned task
     type JoinHandle: Future<Output = Result<(), Self::JoinError>> + Send;
 
-    /// Spawn a function onto this runtime's event loop
+    /// Spawn a future onto this runtime's event loop
     fn spawn<F>(fut: F) -> Self::JoinHandle
     where
         F: Future<Output = ()> + Send + 'static;
 }
 
 /// Run the event loop until the given Future completes
-///
-/// The event loop runs until the given future is complete.
 ///
 /// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
 /// [`crate::run_forever`]
@@ -264,7 +262,7 @@ where
     Ok(future_rx)
 }
 
-/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Testing Utilities for the Tokio runtime.
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Testing utilities for generic runtimes.
 #[cfg(feature = "testing")]
 pub mod testing {
     use pyo3::prelude::*;
@@ -276,10 +274,10 @@ pub mod testing {
         with_runtime,
     };
 
-    /// Default main function for the test harness.
+    /// Default main function for the generic test harness.
     ///
     /// This is meant to perform the necessary initialization for most test cases. If you want
-    /// additional control over the initialization (i.e. env_logger initialization), you can use this
+    /// additional control over the initialization, you can use this
     /// function as a template.
     pub fn test_main<R>(suite_name: &str, tests: Vec<Test>)
     where

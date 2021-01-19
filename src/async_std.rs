@@ -149,7 +149,7 @@ pub mod testing {
     //! pyo3-asyncio = { version = "0.13", features = ["testing", "async-std-runtime"] }
     //! ```
     //!
-    //! Now, in your test's main file, call [`async_std::testing::test_main`]:
+    //! Now, in your test's main file, call [`crate::async_std::testing::test_main`]:
     //!
     //! ```no_run
     //! fn main() {
@@ -200,11 +200,10 @@ pub mod testing {
         Test::new_async(name, async move { task::spawn_blocking(func).await })
     }
 
-    /// Default main function for the test harness.
+    /// Default main function for the async-std test harness.
     ///
     /// This is meant to perform the necessary initialization for most test cases. If you want
-    /// additional control over the initialization (i.e. env_logger initialization), you can use this
-    /// function as a template.
+    /// additional control over the initialization, you can use this function as a template.
     pub fn test_main(suite_name: &str, tests: Vec<Test>) {
         generic::testing::test_main::<AsyncStdRuntime>(suite_name, tests)
     }

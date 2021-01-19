@@ -3,6 +3,10 @@
 //! This module provides some utilities for parsing test arguments as well as running and filtering
 //! a sequence of tests.
 //!
+//! > These utilities are completely independent of the runtime being used. To
+//! > get a more complete picture of how to run tests for PyO3 Asyncio applications, see
+//! > [`crate::async_std::testing`] or [`crate::tokio::testing`] for more details.
+//!
 //! As mentioned [here](crate#pythons-event-loop), PyO3 Asyncio tests cannot use the default test
 //! harness since it doesn't allow Python to gain control over the main thread. Instead, we have to
 //! provide our own test harness in order to create integration tests.

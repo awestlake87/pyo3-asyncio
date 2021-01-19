@@ -100,7 +100,7 @@ pub fn init_multi_thread() {
 /// #
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
-/// pyo3_asyncio::tokio::init_current_thread();
+/// # pyo3_asyncio::tokio::init_current_thread();
 /// pyo3_asyncio::tokio::run_until_complete(py, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
@@ -199,10 +199,13 @@ where
 /// pyo3-asyncio = { version = "0.13", features = ["testing", "tokio-runtime"] }
 /// ```
 ///
-/// Now, in your test's main file, call [`crate::tokio::testing::test_main`]:
+/// Now, in your test's main file, initialize the tokio runtime and call
+/// [`crate::tokio::testing::test_main`]:
 ///
 /// ```no_run
 /// fn main() {
+///     pyo3_asyncio::tokio::init_current_thread();
+///
 ///     pyo3_asyncio::tokio::testing::test_main("Example Test Suite", vec![]);
 /// }
 /// ```
@@ -215,6 +218,8 @@ where
 /// use pyo3_asyncio::testing::Test;
 ///
 /// fn main() {
+///     pyo3_asyncio::tokio::init_current_thread();
+///
 ///     pyo3_asyncio::tokio::testing::test_main(
 ///         "Example Test Suite",
 ///         vec![
@@ -259,7 +264,7 @@ pub mod testing {
     /// additional control over the initialization (i.e. env_logger initialization), you can use this
     /// function as a template.
     ///
-    /// Note: The tokio runtime must be initialized before calling this function!
+    /// > _The tokio runtime must be initialized before calling this function!_
     pub fn test_main(suite_name: &str, tests: Vec<Test>) {
         Python::with_gil(|py| {
             with_runtime(py, || {

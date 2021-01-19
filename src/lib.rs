@@ -15,7 +15,7 @@
 //! Python's coroutines cannot be directly spawned on a Rust event loop. The two coroutine models
 //! require some additional assistance from their event loops, so in all likelihood they will need
 //! a new _unique_ event loop that addresses the needs of both languages if the coroutines are to
-//! be run on the same event loop.
+//! be run on the same loop.
 //!
 //! It's not immediately clear that this would provide worthwhile performance wins either, so in the
 //! interest of keeping things simple, this crate creates and manages the Python event loop and
@@ -218,8 +218,8 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
 /// // Wait 1 second, then stop the event loop
-/// tokio::spawn(async move {
-///     tokio::time::sleep(Duration::from_secs(1)).await;
+/// async_std::task::spawn(async move {
+///     async_std::task::sleep(Duration::from_secs(1)).await;
 ///     Python::with_gil(|py| {
 ///         let event_loop = pyo3_asyncio::get_event_loop(py);
 ///         
