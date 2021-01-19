@@ -18,8 +18,8 @@
 //! be run on the same event loop.
 //!
 //! It's not immediately clear that this would provide worthwhile performance wins either, so in the
-//! interest of keeping things simple, this crate runs both event loops independently and handles
-//! the communication between them.
+//! interest of keeping things simple, this crate creates and manages the Python event loop and
+//! handles the communication between separate Rust event loops.
 //!
 //! ## Python's Event Loop
 //!
@@ -30,13 +30,37 @@
 //!
 //! ## Rust's Event Loop
 //!
-//! Currently only the Tokio runtime is supported by this crate. Tokio makes it easy to construct
-//! and maintain a runtime that runs on background threads only and it provides a single threaded
-//! scheduler to make it easier to work around Python's GIL.
+//! Currently only the async-std and Tokio runtimes are supported by this crate.
 //!
 //! > _In the future, more runtimes may be supported for Rust._
 //!
 //! ## Features
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>async-std-runtime</code></span>
+//! are only available when the `async-std-runtime` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.13.0"
+//! features = ["async-std-runtime"]
+//! ```
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>tokio-runtime</code></span>
+//! are only available when the `tokio-runtime` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.13.0"
+//! features = ["tokio-runtime"]
+//! ```
 //!
 //! Items marked with
 //! <span
@@ -56,10 +80,12 @@
 #[doc(inline)]
 pub mod testing;
 
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>async-std-runtime</code></span> PyO3 Asyncio functions specific to the async-std runtime
 #[cfg(feature = "async-std")]
 #[doc(inline)]
 pub mod async_std;
 
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>tokio-runtime</code></span> PyO3 Asyncio functions specific to the tokio runtime
 #[cfg(feature = "tokio-runtime")]
 #[doc(inline)]
 pub mod tokio;
@@ -172,11 +198,11 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 
 /// Run the event loop forever
 ///
-/// This can be called instead of [`run_until_complete`] to run the event loop
+/// This can be called instead of `run_until_complete` to run the event loop
 /// until `stop` is called rather than driving a future to completion.
 ///
-/// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
-/// [`run_forever`]
+/// After this function returns, the event loop can be resumed with either `run_until_complete` or
+/// [`crate::run_forever`]
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard

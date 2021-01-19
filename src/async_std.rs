@@ -17,7 +17,6 @@
 //!
 //! `pytests/test_example.rs`
 //! ```no_run
-//!
 //! fn main() {
 //!
 //! }
@@ -96,7 +95,7 @@ use crate::{get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
 /// The event loop runs until the given future is complete.
 ///
 /// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
-/// [`run_forever`]
+/// [`crate::run_forever`]
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -265,6 +264,7 @@ where
     Ok(future_rx)
 }
 
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Testing Utilities for the async-std runtime.
 #[cfg(feature = "testing")]
 pub mod testing {
     use async_std::task;

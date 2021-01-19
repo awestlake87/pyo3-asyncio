@@ -24,7 +24,7 @@ pyo3 = { git = "https://github.com/PyO3/pyo3" }
 
 ## Quickstart
 
-Here we initialize the runtime, import Python's `asyncio` library and run the given future to completion using Python's default `EventLoop` and Tokio. Inside the future, we convert `asyncio` sleep into a Rust future and await it.
+Here we initialize the runtime, import Python's `asyncio` library and run the given future to completion using Python's default `EventLoop` and `async-std`. Inside the future, we convert `asyncio` sleep into a Rust future and await it.
 
 More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
 
