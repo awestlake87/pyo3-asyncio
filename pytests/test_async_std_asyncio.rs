@@ -1,4 +1,6 @@
-use std::{future::Future, thread, time::Duration};
+mod common;
+
+use std::{future::Future, time::Duration};
 
 use async_std::task;
 use pyo3::{prelude::*, wrap_pyfunction};
@@ -18,16 +20,6 @@ fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
     })
 }
 
-const TEST_MOD: &'static str = r#"
-import asyncio 
-
-async def py_sleep(duration):
-    await asyncio.sleep(duration)
-
-async def sleep_for_1s(sleep_for):
-    await sleep_for(1)
-"#;
-
 fn test_into_coroutine(
     py: Python,
 ) -> PyResult<impl Future<Output = PyResult<()>> + Send + 'static> {
@@ -37,8 +29,13 @@ fn test_into_coroutine(
         .as_ref(py)
         .add_wrapped(wrap_pyfunction!(sleep_for))?;
 
-    let test_mod: PyObject =
-        PyModule::from_code(py, TEST_MOD, "test_rust_coroutine/test_mod.py", "test_mod")?.into();
+    let test_mod: PyObject = PyModule::from_code(
+        py,
+        common::TEST_MOD,
+        "test_rust_coroutine/test_mod.py",
+        "test_mod",
+    )?
+    .into();
 
     Ok(async move {
         Python::with_gil(|py| {
@@ -46,24 +43,6 @@ fn test_into_coroutine(
                 py,
                 test_mod
                     .call_method1(py, "sleep_for_1s", (sleeper_mod.getattr(py, "sleep_for")?,))?
-                    .as_ref(py),
-            )
-        })?
-        .await?;
-        Ok(())
-    })
-}
-
-fn test_into_future(py: Python) -> PyResult<impl Future<Output = PyResult<()>> + Send + 'static> {
-    let test_mod: PyObject =
-        PyModule::from_code(py, TEST_MOD, "test_rust_coroutine/test_mod.py", "test_mod")?.into();
-
-    Ok(async move {
-        Python::with_gil(|py| {
-            pyo3_asyncio::into_future(
-                py,
-                test_mod
-                    .call_method1(py, "py_sleep", (1.into_py(py),))?
                     .as_ref(py),
             )
         })?
@@ -89,10 +68,6 @@ fn test_async_sleep<'p>(
     })
 }
 
-fn test_blocking_sleep() {
-    thread::sleep(Duration::from_secs(1));
-}
-
 fn main() {
     test_main(
         "PyO3 Asyncio Test Suite",
@@ -108,7 +83,7 @@ fn main() {
                 }),
             ),
             new_sync_test("test_blocking_sleep".into(), || {
-                test_blocking_sleep();
+                common::test_blocking_sleep();
                 Ok(())
             }),
             Test::new_async(
@@ -124,7 +99,7 @@ fn main() {
             Test::new_async(
                 "test_into_future".into(),
                 Python::with_gil(|py| {
-                    test_into_future(py)
+                    common::test_into_future(py)
                         .map_err(|e| {
                             e.print_and_set_sys_last_vars(py);
                         })
