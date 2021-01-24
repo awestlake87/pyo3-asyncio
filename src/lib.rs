@@ -306,9 +306,9 @@ impl PyTaskCompleter {
 
 /// Future for a Python `Awaitable`
 ///
-/// This function converts an `Awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// This struct converts an `Awaitable` into a Python Task using `run_coroutine_threadsafe`. A
 /// completion handler sends the result of this Task through a
-/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
+/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future
 /// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
 ///
 /// # Examples
