@@ -1,6 +1,6 @@
 mod common;
 
-use std::{future::Future, time::Duration};
+use std::{convert::TryFrom, future::Future, time::Duration};
 
 use async_std::task;
 use pyo3::{prelude::*, wrap_pyfunction};
@@ -39,8 +39,7 @@ fn test_into_coroutine(
 
     Ok(async move {
         Python::with_gil(|py| {
-            pyo3_asyncio::into_future(
-                py,
+            pyo3_asyncio::PyFuture::try_from(
                 test_mod
                     .call_method1(py, "sleep_for_1s", (sleeper_mod.getattr(py, "sleep_for")?,))?
                     .as_ref(py),
@@ -60,7 +59,7 @@ fn test_async_sleep<'p>(
         task::sleep(Duration::from_secs(1)).await;
 
         Python::with_gil(|py| {
-            pyo3_asyncio::into_future(py, asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
+            pyo3_asyncio::PyFuture::try_from(asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
         })?
         .await?;
 
@@ -99,7 +98,7 @@ fn main() {
             Test::new_async(
                 "test_into_future".into(),
                 Python::with_gil(|py| {
-                    common::test_into_future(py)
+                    common::test_py_future(py)
                         .map_err(|e| {
                             e.print_and_set_sys_last_vars(py);
                         })

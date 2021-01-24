@@ -29,6 +29,8 @@ Here we initialize the runtime, import Python's `asyncio` library and run the gi
 More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
 
 ```rust no_run
+use std::convert::TryFrom;
+
 use pyo3::prelude::*;
 
 fn main() {
@@ -41,8 +43,7 @@ fn main() {
             pyo3_asyncio::async_std::run_until_complete(py, async move {
                 Python::with_gil(|py| {
                     // convert asyncio.sleep into a Rust Future
-                    pyo3_asyncio::into_future(
-                        py, 
+                    pyo3_asyncio::PyFuture::try_from(
                         asyncio.call_method1(
                             py, 
                             "sleep", 

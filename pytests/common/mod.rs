@@ -1,4 +1,4 @@
-use std::{future::Future, thread, time::Duration};
+use std::{convert::TryFrom, future::Future, thread, time::Duration};
 
 use pyo3::prelude::*;
 
@@ -12,7 +12,7 @@ async def sleep_for_1s(sleep_for):
     await sleep_for(1)
 "#;
 
-pub(super) fn test_into_future(
+pub(super) fn test_py_future(
     py: Python,
 ) -> PyResult<impl Future<Output = PyResult<()>> + Send + 'static> {
     let test_mod: PyObject =
@@ -20,8 +20,7 @@ pub(super) fn test_into_future(
 
     Ok(async move {
         Python::with_gil(|py| {
-            pyo3_asyncio::into_future(
-                py,
+            pyo3_asyncio::PyFuture::try_from(
                 test_mod
                     .call_method1(py, "py_sleep", (1.into_py(py),))?
                     .as_ref(py),

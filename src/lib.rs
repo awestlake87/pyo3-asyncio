@@ -93,11 +93,16 @@ pub mod tokio;
 /// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
 pub mod generic;
 
-use std::future::Future;
+use std::{
+    convert::TryFrom,
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
-use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*};
+use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, PyNativeType};
 
 /// Test README
 #[doc(hidden)]
@@ -299,18 +304,20 @@ impl PyTaskCompleter {
     }
 }
 
-/// Convert a Python coroutine into a Rust Future
+/// Future for a Python `Awaitable`
 ///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `coro` - The Python coroutine to be converted
+/// This function converts an `Awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// completion handler sends the result of this Task through a
+/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
+/// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// use std::time::Duration;
+/// use std::{convert::TryFrom, time::Duration};
 ///
 /// use pyo3::prelude::*;
+/// use pyo3_asyncio::PyFuture;
 ///
 /// const PYTHON_CODE: &'static str = r#"
 /// import asyncio
@@ -333,8 +340,7 @@ impl PyTaskCompleter {
 ///     })?;
 ///
 ///     Python::with_gil(|py| {
-///         pyo3_asyncio::into_future(
-///             py,
+///         PyFuture::try_from(
 ///             test_mod
 ///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
 ///                 .as_ref(py),
@@ -344,34 +350,47 @@ impl PyTaskCompleter {
 ///     Ok(())    
 /// }
 /// ```
-pub fn into_future(
-    py: Python,
-    coro: &PyAny,
-) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    let (tx, rx) = oneshot::channel();
+pub struct PyFuture {
+    rx: oneshot::Receiver<PyResult<PyObject>>,
+}
 
-    let task = CREATE_TASK
-        .get()
-        .expect(EXPECT_INIT)
-        .call1(py, (coro, get_event_loop(py)))?;
-    let on_complete = PyTaskCompleter { tx: Some(tx) };
+impl<'p> TryFrom<&'p PyAny> for PyFuture {
+    type Error = PyErr;
 
-    task.call_method1(py, "add_done_callback", (on_complete,))?;
+    fn try_from(coro: &'p PyAny) -> PyResult<Self> {
+        let py = coro.py();
+        let (tx, rx) = oneshot::channel();
 
-    Ok(async move {
-        match rx.await {
-            Ok(item) => item,
-            Err(_) => Python::with_gil(|py| {
-                Err(PyErr::from_instance(
+        let task = CREATE_TASK
+            .get()
+            .expect(EXPECT_INIT)
+            .call1(py, (coro, get_event_loop(py)))?;
+        let on_complete = PyTaskCompleter { tx: Some(tx) };
+
+        task.call_method1(py, "add_done_callback", (on_complete,))?;
+
+        Ok(Self { rx })
+    }
+}
+
+impl Future for PyFuture {
+    type Output = PyResult<PyObject>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        match Pin::new(&mut self.as_mut().rx).poll(cx) {
+            Poll::Ready(Ok(item)) => Poll::Ready(item),
+            Poll::Ready(Err(_)) => Python::with_gil(|py| {
+                Poll::Ready(Err(PyErr::from_instance(
                     ASYNCIO
                         .get()
                         .expect(EXPECT_INIT)
                         .call_method0(py, "CancelledError")?
                         .as_ref(py),
-                ))
+                )))
             }),
+            Poll::Pending => Poll::Pending,
         }
-    })
+    }
 }
 
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
