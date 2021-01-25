@@ -10,10 +10,10 @@ fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
     }
 }
 
-fn main() {
+pub(super) fn test_main() {
     Python::with_gil(|py| {
         pyo3_asyncio::with_runtime(py, || {
-            pyo3_asyncio::spawn(async move {
+            pyo3_asyncio::tokio::get_runtime().spawn(async move {
                 tokio::time::sleep(Duration::from_secs(1)).await;
 
                 Python::with_gil(|py| {

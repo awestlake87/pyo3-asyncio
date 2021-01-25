@@ -12,7 +12,7 @@ lint: fmt clippy
 	@true
 
 test: lint
-	cargo test --features testing
+	cargo test --all-features
 
 publish: test
 	cargo publish

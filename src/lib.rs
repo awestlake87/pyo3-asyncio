@@ -15,11 +15,11 @@
 //! Python's coroutines cannot be directly spawned on a Rust event loop. The two coroutine models
 //! require some additional assistance from their event loops, so in all likelihood they will need
 //! a new _unique_ event loop that addresses the needs of both languages if the coroutines are to
-//! be run on the same event loop.
+//! be run on the same loop.
 //!
 //! It's not immediately clear that this would provide worthwhile performance wins either, so in the
-//! interest of keeping things simple, this crate runs both event loops independently and handles
-//! the communication between them.
+//! interest of keeping things simple, this crate creates and manages the Python event loop and
+//! handles the communication between separate Rust event loops.
 //!
 //! ## Python's Event Loop
 //!
@@ -30,13 +30,37 @@
 //!
 //! ## Rust's Event Loop
 //!
-//! Currently only the Tokio runtime is supported by this crate. Tokio makes it easy to construct
-//! and maintain a runtime that runs on background threads only and it provides a single threaded
-//! scheduler to make it easier to work around Python's GIL.
+//! Currently only the async-std and Tokio runtimes are supported by this crate.
 //!
 //! > _In the future, more runtimes may be supported for Rust._
 //!
 //! ## Features
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>async-std-runtime</code></span>
+//! are only available when the `async-std-runtime` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.13.0"
+//! features = ["async-std-runtime"]
+//! ```
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>tokio-runtime</code></span>
+//! are only available when the `tokio-runtime` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.13.0"
+//! features = ["tokio-runtime"]
+//! ```
 //!
 //! Items marked with
 //! <span
@@ -56,19 +80,24 @@
 #[doc(inline)]
 pub mod testing;
 
-use std::{future::Future, thread};
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>async-std-runtime</code></span> PyO3 Asyncio functions specific to the async-std runtime
+#[cfg(feature = "async-std")]
+#[doc(inline)]
+pub mod async_std;
 
-use futures::{channel::oneshot, future};
-use lazy_static::lazy_static;
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>tokio-runtime</code></span> PyO3 Asyncio functions specific to the tokio runtime
+#[cfg(feature = "tokio-runtime")]
+#[doc(inline)]
+pub mod tokio;
+
+/// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
+pub mod generic;
+
+use std::future::Future;
+
+use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
-use pyo3::{
-    exceptions::{PyException, PyKeyboardInterrupt},
-    prelude::*,
-};
-use tokio::{
-    runtime::{Builder, Runtime},
-    task::JoinHandle,
-};
+use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*};
 
 /// Test README
 #[doc(hidden)]
@@ -87,15 +116,6 @@ pub mod doc_test {
     }
 
     doctest!("../README.md", readme_md);
-}
-
-lazy_static! {
-    static ref CURRENT_THREAD_RUNTIME: Runtime = {
-        Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("Couldn't build the runtime")
-    };
 }
 
 const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
@@ -171,10 +191,6 @@ fn try_init(py: Python) -> PyResult<()> {
     CREATE_TASK.get_or_init(|| create_task.into());
     CREATE_FUTURE.get_or_init(|| create_future.into());
 
-    thread::spawn(|| {
-        CURRENT_THREAD_RUNTIME.block_on(future::pending::<()>());
-    });
-
     Ok(())
 }
 
@@ -185,11 +201,11 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 
 /// Run the event loop forever
 ///
-/// This can be called instead of [`run_until_complete`] to run the event loop
+/// This can be called instead of `run_until_complete` to run the event loop
 /// until `stop` is called rather than driving a future to completion.
 ///
-/// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
-/// [`run_forever`]
+/// After this function returns, the event loop can be resumed with either `run_until_complete` or
+/// [`crate::run_forever`]
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -202,8 +218,8 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
 /// // Wait 1 second, then stop the event loop
-/// pyo3_asyncio::spawn(async move {
-///     tokio::time::sleep(Duration::from_secs(1)).await;
+/// async_std::task::spawn(async move {
+///     async_std::task::sleep(Duration::from_secs(1)).await;
 ///     Python::with_gil(|py| {
 ///         let event_loop = pyo3_asyncio::get_event_loop(py);
 ///         
@@ -239,52 +255,6 @@ pub fn run_forever(py: Python) -> PyResult<()> {
     }
 }
 
-/// Run the event loop until the given Future completes
-///
-/// The event loop runs until the given future is complete.
-///
-/// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
-/// [`run_forever`]
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The future to drive to completion
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::time::Duration;
-/// # use pyo3::prelude::*;
-/// #
-/// # Python::with_gil(|py| {
-/// # pyo3_asyncio::with_runtime(py, || {
-/// pyo3_asyncio::run_until_complete(py, async move {
-///     tokio::time::sleep(Duration::from_secs(1)).await;
-///     Ok(())
-/// })?;
-/// # Ok(())
-/// # })
-/// # .map_err(|e| {
-/// #    e.print_and_set_sys_last_vars(py);  
-/// # })
-/// # .unwrap();
-/// # });
-/// ```
-///
-pub fn run_until_complete<F>(py: Python, fut: F) -> PyResult<()>
-where
-    F: Future<Output = PyResult<()>> + Send + 'static,
-{
-    let coro = into_coroutine(py, async move {
-        fut.await?;
-        Ok(Python::with_gil(|py| py.None()))
-    })?;
-
-    get_event_loop(py).call_method1("run_until_complete", (coro,))?;
-
-    Ok(())
-}
-
 /// Shutdown the event loops and perform any necessary cleanup
 fn try_close(py: Python) -> PyResult<()> {
     // Shutdown the executor and wait until all threads are cleaned up
@@ -296,91 +266,6 @@ fn try_close(py: Python) -> PyResult<()> {
     get_event_loop(py).call_method0("stop")?;
     get_event_loop(py).call_method0("close")?;
     Ok(())
-}
-
-/// Spawn a Future onto the Rust executor
-///
-/// This method should be used in place of [`tokio::spawn`] when it is called on a thread that is not
-/// owned by the `tokio` runtime. [`tokio::spawn`] should still work fine from inside a task on the
-/// event loop as the current event loop is stored in Thread-Local storage.
-///
-/// # Arguments
-/// * `fut` - The future to spawn on the Rust event loop
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::time::Duration;
-/// # use pyo3::prelude::*;
-/// #
-/// # Python::with_gil(|py| {
-/// # pyo3_asyncio::with_runtime(py, || {
-/// # pyo3_asyncio::run_until_complete(py, async move {
-/// #
-/// pyo3_asyncio::spawn(async move {
-///     tokio::time::sleep(Duration::from_secs(1)).await;
-/// })
-/// .await;
-/// #
-/// # Ok(())
-/// # })?;
-/// # Ok(())
-/// # })
-/// # .map_err(|e| {
-/// #    e.print_and_set_sys_last_vars(py);  
-/// # })
-/// # .unwrap();
-/// # });
-/// ```
-pub fn spawn<F>(fut: F) -> JoinHandle<F::Output>
-where
-    F: Future + Send + 'static,
-    F::Output: Send + 'static,
-{
-    CURRENT_THREAD_RUNTIME.spawn(fut)
-}
-
-/// Spawn a blocking task onto Rust the executor
-///
-/// This method should be used in place of [`tokio::task::spawn_blocking`] when it is called on a
-/// thread that is not owned by the `tokio` runtime. [`tokio::task::spawn_blocking`] should still
-/// work fine from inside a task on the event loop as the current event loop is stored in
-/// Thread-Local storage.
-///
-/// # Arguments
-/// * `func` - The blocking task to spawn on the Rust event loop
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::time::Duration;
-/// # use pyo3::prelude::*;
-/// #
-/// # Python::with_gil(|py| {
-/// # pyo3_asyncio::with_runtime(py, || {
-/// # pyo3_asyncio::run_until_complete(py, async move {
-/// #
-/// pyo3_asyncio::spawn_blocking(|| {
-///     std::thread::sleep(Duration::from_secs(1))
-/// })
-/// .await;
-/// #
-/// # Ok(())
-/// # })?;
-/// # Ok(())
-/// # })
-/// # .map_err(|e| {
-/// #    e.print_and_set_sys_last_vars(py);  
-/// # })
-/// # .unwrap();
-/// # });
-/// ```
-pub fn spawn_blocking<F, R>(func: F) -> JoinHandle<R>
-where
-    F: FnOnce() -> R + Send + 'static,
-    R: Send + 'static,
-{
-    CURRENT_THREAD_RUNTIME.spawn_blocking(func)
 }
 
 #[pyclass]
@@ -489,99 +374,10 @@ pub fn into_future(
     })
 }
 
-fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
-    match result {
-        Ok(val) => {
-            let set_result = future.getattr("set_result")?;
-            CALL_SOON
-                .get()
-                .expect(EXPECT_INIT)
-                .call1(py, (set_result, val))?;
-        }
-        Err(err) => {
-            let set_exception = future.getattr("set_exception")?;
-            CALL_SOON
-                .get()
-                .expect(EXPECT_INIT)
-                .call1(py, (set_exception, err))?;
-        }
-    }
-
-    Ok(())
-}
-
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
     move |e| {
         // We can't display Python exceptions via std::fmt::Display,
         // so print the error here manually.
         e.print_and_set_sys_last_vars(py);
     }
-}
-
-/// Convert a Rust Future into a Python coroutine
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```no_run
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
-///     let secs = secs.extract()?;
-///
-///     pyo3_asyncio::into_coroutine(py, async move {
-///         tokio::time::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
-///    })
-/// }
-/// ```
-pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
-where
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    let future_rx = CREATE_FUTURE.get().expect(EXPECT_INIT).call0(py)?;
-    let future_tx1 = future_rx.clone();
-    let future_tx2 = future_rx.clone();
-
-    spawn(async move {
-        if let Err(e) = spawn(async move {
-            let result = fut.await;
-
-            Python::with_gil(move |py| {
-                if set_result(py, future_tx1.as_ref(py), result)
-                    .map_err(dump_err(py))
-                    .is_err()
-                {
-
-                    // Cancelled
-                }
-            });
-        })
-        .await
-        {
-            if e.is_panic() {
-                Python::with_gil(move |py| {
-                    if set_result(
-                        py,
-                        future_tx2.as_ref(py),
-                        Err(PyException::new_err("rust future panicked")),
-                    )
-                    .map_err(dump_err(py))
-                    .is_err()
-                    {
-                        // Cancelled
-                    }
-                });
-            }
-        }
-    });
-
-    Ok(future_rx)
 }

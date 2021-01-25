@@ -1,4 +1,4 @@
 #!/bin/bash
 
 make clippy
-cargo test --features testing
+make test
