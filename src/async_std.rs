@@ -5,6 +5,9 @@ use pyo3::prelude::*;
 
 use crate::generic::{self, JoinError, Runtime};
 
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::async_std_main as main;
+
 struct AsyncStdJoinError;
 
 impl JoinError for AsyncStdJoinError {
