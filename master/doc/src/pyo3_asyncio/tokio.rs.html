@@ -425,7 +425,7 @@
 <span class="doccomment">///     pyo3_asyncio::tokio::into_coroutine(py, async move {</span>
 <span class="doccomment">///         tokio::time::sleep(Duration::from_secs(secs)).await;</span>
 <span class="doccomment">///         Python::with_gil(|py| Ok(py.None()))</span>
-<span class="doccomment">///    })</span>
+<span class="doccomment">///     })</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_coroutine</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>

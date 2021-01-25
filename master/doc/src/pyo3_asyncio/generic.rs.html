@@ -265,6 +265,12 @@
 <span id="262">262</span>
 <span id="263">263</span>
 <span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">future</span>::<span class="ident">Future</span>;
 
@@ -426,6 +432,12 @@
 <span class="doccomment">/// #</span>
 <span class="doccomment">/// # struct MyCustomRuntime;</span>
 <span class="doccomment">/// #</span>
+<span class="doccomment">/// # impl MyCustomRuntime {</span>
+<span class="doccomment">/// #     async fn sleep(_: Duration) {</span>
+<span class="doccomment">/// #         unreachable!()</span>
+<span class="doccomment">/// #     }</span>
+<span class="doccomment">/// # }</span>
+<span class="doccomment">/// #</span>
 <span class="doccomment">/// # impl Runtime for MyCustomRuntime {</span>
 <span class="doccomment">/// #     type JoinError = MyCustomJoinError;</span>
 <span class="doccomment">/// #     type JoinHandle = MyCustomJoinHandle;</span>
@@ -448,7 +460,7 @@
 <span class="doccomment">///     let secs = secs.extract()?;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">///     pyo3_asyncio::generic::into_coroutine::&lt;MyCustomRuntime, _&gt;(py, async move {</span>
-<span class="doccomment">///         tokio::time::sleep(Duration::from_secs(secs)).await;</span>
+<span class="doccomment">///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;</span>
 <span class="doccomment">///         Python::with_gil(|py| Ok(py.None()))</span>
 <span class="doccomment">///    })</span>
 <span class="doccomment">/// }</span>
