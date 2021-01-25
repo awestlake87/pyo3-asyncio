@@ -158,6 +158,12 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
 /// #
 /// # struct MyCustomRuntime;
 /// #
+/// # impl MyCustomRuntime {
+/// #     async fn sleep(_: Duration) {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
@@ -180,7 +186,7 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
 ///     let secs = secs.extract()?;
 ///
 ///     pyo3_asyncio::generic::into_coroutine::<MyCustomRuntime, _>(py, async move {
-///         tokio::time::sleep(Duration::from_secs(secs)).await;
+///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
 ///    })
 /// }

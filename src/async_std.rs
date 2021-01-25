@@ -88,9 +88,9 @@ where
 ///     let secs = secs.extract()?;
 ///
 ///     pyo3_asyncio::async_std::into_coroutine(py, async move {
-///         tokio::time::sleep(Duration::from_secs(secs)).await;
+///         async_std::task::sleep(Duration::from_secs(secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
-///    })
+///     })
 /// }
 /// ```
 pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>

@@ -141,7 +141,7 @@ where
 ///     pyo3_asyncio::tokio::into_coroutine(py, async move {
 ///         tokio::time::sleep(Duration::from_secs(secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
-///    })
+///     })
 /// }
 /// ```
 pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
