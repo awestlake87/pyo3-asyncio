@@ -25,7 +25,12 @@ default = []
 [[example]]
 name = "async_std"
 path = "examples/async_std.rs"
-required-features = ["async-std-runtime"]
+required-features = ["attributes", "async-std-runtime"]
+
+[[example]]
+name = "tokio"
+path = "examples/tokio.rs"
+required-features = ["attributes", "tokio-runtime"]
 
 [[test]]
 name = "test_async_std_asyncio"

@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 
 use crate::generic::{self, JoinError, Runtime};
 
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span> Sets up the async-std runtime and runs an async fn as main
 #[cfg(feature = "attributes")]
 pub use pyo3_asyncio_macros::async_std_main as main;
 

@@ -40,6 +40,19 @@
 //! <span
 //!   class="module-item stab portability"
 //!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>attributes</code></span>
+//! are only available when the `attributes` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.13.0"
+//! features = ["attributes"]
+//! ```
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
 //! ><code>async-std-runtime</code></span>
 //! are only available when the `async-std-runtime` Cargo feature is enabled:
 //!
