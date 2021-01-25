@@ -42,7 +42,6 @@ fn main() {
                 Python::with_gil(|py| {
                     // convert asyncio.sleep into a Rust Future
                     pyo3_asyncio::into_future(
-                        py, 
                         asyncio.call_method1(
                             py, 
                             "sleep", 

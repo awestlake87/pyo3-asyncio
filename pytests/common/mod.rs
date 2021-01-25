@@ -21,7 +21,6 @@ pub(super) fn test_into_future(
     Ok(async move {
         Python::with_gil(|py| {
             pyo3_asyncio::into_future(
-                py,
                 test_mod
                     .call_method1(py, "py_sleep", (1.into_py(py),))?
                     .as_ref(py),

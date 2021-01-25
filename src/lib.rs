@@ -97,7 +97,7 @@ use std::future::Future;
 
 use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
-use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*};
+use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, PyNativeType};
 
 /// Test README
 #[doc(hidden)]
@@ -299,11 +299,15 @@ impl PyTaskCompleter {
     }
 }
 
-/// Convert a Python coroutine into a Rust Future
+/// Convert a Python `awaitable` into a Rust Future
+///
+/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// completion handler sends the result of this Task through a
+/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
+/// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
 ///
 /// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `coro` - The Python coroutine to be converted
+/// * `awaitable` - The Python `awaitable` to be converted
 ///
 /// # Examples
 ///
@@ -334,7 +338,6 @@ impl PyTaskCompleter {
 ///
 ///     Python::with_gil(|py| {
 ///         pyo3_asyncio::into_future(
-///             py,
 ///             test_mod
 ///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
 ///                 .as_ref(py),
@@ -344,16 +347,14 @@ impl PyTaskCompleter {
 ///     Ok(())    
 /// }
 /// ```
-pub fn into_future(
-    py: Python,
-    coro: &PyAny,
-) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
+pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
+    let py = awaitable.py();
     let (tx, rx) = oneshot::channel();
 
     let task = CREATE_TASK
         .get()
         .expect(EXPECT_INIT)
-        .call1(py, (coro, get_event_loop(py)))?;
+        .call1(py, (awaitable, get_event_loop(py)))?;
     let on_complete = PyTaskCompleter { tx: Some(tx) };
 
     task.call_method1(py, "add_done_callback", (on_complete,))?;

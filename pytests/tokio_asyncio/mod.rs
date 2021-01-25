@@ -37,7 +37,6 @@ fn test_into_coroutine(
     Ok(async move {
         Python::with_gil(|py| {
             pyo3_asyncio::into_future(
-                py,
                 test_mod
                     .call_method1(py, "sleep_for_1s", (sleeper_mod.getattr(py, "sleep_for")?,))?
                     .as_ref(py),
@@ -57,7 +56,7 @@ fn test_async_sleep<'p>(
         tokio::time::sleep(Duration::from_secs(1)).await;
 
         Python::with_gil(|py| {
-            pyo3_asyncio::into_future(py, asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
+            pyo3_asyncio::into_future(asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
         })?
         .await?;
 
