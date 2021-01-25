@@ -32,6 +32,16 @@ name = "tokio"
 path = "examples/tokio.rs"
 required-features = ["attributes", "tokio-runtime"]
 
+[[example]]
+name = "tokio_current_thread"
+path = "examples/tokio_current_thread.rs"
+required-features = ["attributes", "tokio-runtime"]
+
+[[example]]
+name = "tokio_multi_thread"
+path = "examples/tokio_multi_thread.rs"
+required-features = ["attributes", "tokio-runtime"]
+
 [[test]]
 name = "test_async_std_asyncio"
 path = "pytests/test_async_std_asyncio.rs"

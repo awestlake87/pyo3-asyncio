@@ -1,3 +1,5 @@
+use pyo3::prelude::*;
+
 #[pyo3_asyncio::tokio::main]
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {

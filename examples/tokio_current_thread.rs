@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 
-#[pyo3_asyncio::async_std::main]
+#[pyo3_asyncio::tokio::main(flavor = "current_thread")]
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
         let asyncio = py.import("asyncio")?;
