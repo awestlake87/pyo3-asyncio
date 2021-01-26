@@ -3,13 +3,100 @@
 //! This module provides some utilities for parsing test arguments as well as running and filtering
 //! a sequence of tests.
 //!
-//! > These utilities are completely independent of the runtime being used. To
-//! > get a more complete picture of how to run tests for PyO3 Asyncio applications, see
-//! > [`crate::async_std::testing`] or [`crate::tokio::testing`] for more details.
-//!
 //! As mentioned [here](crate#pythons-event-loop), PyO3 Asyncio tests cannot use the default test
 //! harness since it doesn't allow Python to gain control over the main thread. Instead, we have to
 //! provide our own test harness in order to create integration tests.
+//!
+//! ### Main Test File
+//! First, we need to create the test's main file. Although these tests are considered integration
+//! tests, we cannot put them in the `tests` directory since that is a special directory owned by
+//! Cargo. Instead, we put our tests in a `pytests` directory, although the name `pytests` is just
+//! a convention.
+//!
+//! We'll also want to provide the test's main function. It's highly recommended that you use the
+//! [`pyo3_asyncio::testing::test_main!`](pyo3_asyncio_macros::test_main) macro as it will take all of the tests marked with
+//! [`#[pyo3_asyncio::tokio::test]`](crate::tokio::test) or
+//! [`#[pyo3_asyncio::async_std::test]`](crate::async_std::test) and run them automatically.
+//!
+//! `pytests/test_example.rs` for the `tokio` runtime:
+//! ```no_run
+//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::tokio::main], "Example Test Suite");
+//! ```
+//!
+//! `pytests/test_example.rs` for the `async-std` runtime:
+//! ```no_run
+//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+//! ```
+//!
+//! ### Cargo Configuration
+//! Next, we need to add our test file to the Cargo manifest. Add the following section to your
+//! `Cargo.toml`
+//!
+//! ```toml
+//! [[test]]
+//! name = "test_example"
+//! path = "pytests/test_example.rs"
+//! harness = false
+//! ```
+//!
+//! Also, add the `testing` feature to `pyo3-asyncio` and select your preferred runtime:
+//! ```toml
+//! [dependencies]
+//! pyo3-asyncio = { version = "0.13", features = ["testing", "async-std-runtime"] }
+//! ```
+//!
+//! In order for the `test_main!` macro to find your tests, you'll also need to add an extra
+//! `dev-dependency` for [`inventory`](https://github.com/dtolnay/inventory):
+//! ```toml
+//! [dev-dependencies]
+//! inventory = "0.1"
+//! ```
+//!
+//! At this point you should be able to run the test via `cargo test`
+//!
+//! ### Adding Tests to the PyO3 Asyncio Test Harness
+//!
+//! For `async-std` use the [`pyo3_asyncio::async_std::test`](crate::async_std::test) attribute:
+//! ```ignore
+//! use std::{time::Duration, thread};
+//!
+//! use pyo3::prelude::*;
+//!
+//! #[pyo3_asyncio::async_std::test]
+//! async fn test_async_sleep() -> PyResult<()> {
+//!     async_std::task::sleep(Duration::from_secs(1)).await;
+//!     Ok(())
+//! }
+//!
+//! #[pyo3_asyncio::async_std::test]
+//! fn test_blocking_sleep() -> PyResult<()> {
+//!     thread::sleep(Duration::from_secs(1));
+//!     Ok(())
+//! }
+//!
+//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+//! ```
+//!
+//! For `tokio` use the [`pyo3_asyncio::tokio::test`](crate::tokio::test) attribute:
+//! ```ignore
+//! use std::{time::Duration, thread};
+//!
+//! use pyo3::prelude::*;
+//!
+//! #[pyo3_asyncio::tokio::test]
+//! async fn test_async_sleep() -> PyResult<()> {
+//!     tokio::time::sleep(Duration::from_secs(1)).await;
+//!     Ok(())
+//! }
+//!
+//! #[pyo3_asyncio::tokio::test]
+//! fn test_blocking_sleep() -> PyResult<()> {
+//!     thread::sleep(Duration::from_secs(1));
+//!     Ok(())
+//! }
+//!
+//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::tokio::main], "Example Test Suite");
+//! ```
 
 use std::{future::Future, pin::Pin};
 
@@ -80,47 +167,19 @@ pub fn parse_args(suite_name: &str) -> Args {
     }
 }
 
-/// Wrapper around a test function or future to be passed to the test harness
-pub struct Test {
-    name: String,
-    task: Pin<Box<dyn Future<Output = PyResult<()>> + Send>>,
-}
-
 /// Abstract Test Trait
 ///
 /// This trait works in tandem with the pyo3-asyncio-macros to generate test objects that work with
 /// the pyo3-asyncio test harness.
-pub trait TestTrait: Send {
+pub trait Test: Send {
     /// Get the name of the test
     fn name(&self) -> &str;
-    /// Move into the task that runs the test
-    fn task(self) -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>>;
-}
-
-impl TestTrait for Test {
-    fn name(&self) -> &str {
-        self.name.as_str()
-    }
-    fn task(self) -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>> {
-        self.task
-    }
-}
-
-impl Test {
-    /// Construct a test from a future
-    pub fn new_async(
-        name: String,
-        fut: impl Future<Output = PyResult<()>> + Send + 'static,
-    ) -> Self {
-        Self {
-            name,
-            task: Box::pin(fut),
-        }
-    }
+    /// Instantiate the task that runs the test
+    fn task(&self) -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>>;
 }
 
 /// Run a sequence of tests while applying any necessary filtering from the `Args`
-pub async fn test_harness(tests: Vec<impl TestTrait + 'static>, args: Args) -> PyResult<()> {
+pub async fn test_harness(tests: Vec<impl Test + 'static>, args: Args) -> PyResult<()> {
     stream::iter(tests)
         .for_each_concurrent(Some(4), |test| {
             let mut ignore = false;
@@ -133,10 +192,9 @@ pub async fn test_harness(tests: Vec<impl TestTrait + 'static>, args: Args) -> P
 
             async move {
                 if !ignore {
-                    let name = test.name().to_string();
                     test.task().await.unwrap();
 
-                    println!("test {} ... ok", name);
+                    println!("test {} ... ok", test.name());
                 }
             }
         })

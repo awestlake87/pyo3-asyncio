@@ -259,12 +259,12 @@ pub fn test_main(args: TokenStream) -> TokenStream {
             pub test_fn: &'static (dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> + Send + Sync),
         }
 
-        impl pyo3_asyncio::testing::TestTrait for Test {
+        impl pyo3_asyncio::testing::Test for Test {
             fn name(&self) -> &str {
                 self.name.as_str()
             }
 
-            fn task(self) -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
+            fn task(&self) -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
                 (self.test_fn)()
             }
         }
