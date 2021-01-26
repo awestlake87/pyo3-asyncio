@@ -249,9 +249,7 @@ impl Parse for TestMainArgs {
 
 #[cfg(not(test))]
 #[proc_macro]
-pub fn test_main(args: TokenStream) -> TokenStream {
-    let TestMainArgs { attrs, suite_name } = syn::parse_macro_input!(args as TestMainArgs);
-
+pub fn test_structs(_args: TokenStream) -> TokenStream {
     let result = quote! {
         #[derive(Clone)]
         pub(crate) struct Test {
@@ -270,16 +268,37 @@ pub fn test_main(args: TokenStream) -> TokenStream {
         }
 
         inventory::collect!(Test);
+    };
+    result.into()
+}
+
+#[cfg(not(test))]
+#[proc_macro]
+pub fn test_main_body(args: TokenStream) -> TokenStream {
+    let suite_name = syn::parse_macro_input!(args as syn::LitStr);
+
+    let result = quote! {
+        let args = pyo3_asyncio::testing::parse_args(#suite_name);
+
+        pyo3_asyncio::testing::test_harness(
+            inventory::iter::<Test>().map(|test| test.clone()).collect(), args
+        )
+        .await?;
+    };
+    result.into()
+}
+
+#[cfg(not(test))]
+#[proc_macro]
+pub fn test_main(args: TokenStream) -> TokenStream {
+    let TestMainArgs { attrs, suite_name } = syn::parse_macro_input!(args as TestMainArgs);
+
+    let result = quote! {
+        pyo3_asyncio::testing::test_structs!();
 
         #(#attrs)*
         async fn main() -> pyo3::PyResult<()> {
-            let args = pyo3_asyncio::testing::parse_args(#suite_name);
-
-            pyo3_asyncio::testing::test_harness(
-                inventory::iter::<Test>().map(|test| test.clone()).collect(), args
-            )
-            .await?;
-
+            pyo3_asyncio::testing::test_main_body!(#suite_name);
             Ok(())
         }
     };

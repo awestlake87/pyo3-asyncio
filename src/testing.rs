@@ -57,7 +57,7 @@
 //! ### Adding Tests to the PyO3 Asyncio Test Harness
 //!
 //! For `async-std` use the [`pyo3_asyncio::async_std::test`](crate::async_std::test) attribute:
-//! ```ignore
+//! ```no_run
 //! use std::{time::Duration, thread};
 //!
 //! use pyo3::prelude::*;
@@ -74,11 +74,23 @@
 //!     Ok(())
 //! }
 //!
-//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+//! // ...
+//! #
+//! # // Doctests don't detect main fn when using the test_main!() macro, so we expand it into the
+//! # // components of that macro instead.
+//! #
+//! # pyo3_asyncio::testing::test_structs!();
+//! #
+//! # #[pyo3_asyncio::async_std::main]
+//! # async fn main() -> PyResult<()> {
+//! #     pyo3_asyncio::testing::test_main_body!("Example Test Suite");
+//! #
+//! #     Ok(())
+//! # }
 //! ```
 //!
 //! For `tokio` use the [`pyo3_asyncio::tokio::test`](crate::tokio::test) attribute:
-//! ```ignore
+//! ```no_run
 //! use std::{time::Duration, thread};
 //!
 //! use pyo3::prelude::*;
@@ -95,7 +107,102 @@
 //!     Ok(())
 //! }
 //!
-//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::tokio::main], "Example Test Suite");
+//! // ...
+//! #
+//! # // Doctests don't detect main fn when using the test_main!() macro, so we expand it into the
+//! # // components of that macro instead.
+//! #
+//! # pyo3_asyncio::testing::test_structs!();
+//! #
+//! # #[pyo3_asyncio::tokio::main]
+//! # async fn main() -> PyResult<()> {
+//! #     pyo3_asyncio::testing::test_main_body!("Example Test Suite");
+//! #
+//! #     Ok(())
+//! # }
+//! ```
+//!
+//! ### Caveats
+//!
+//! The `test_main!()` macro _must_ be placed in the crate root. The `inventory` crate places
+//! restrictions on the structures used by the `#[test]` attributes that force us to create a custom
+//! `Test` structure in the crate root. If `test_main!()` is not expanded in the crate root, then
+//! the resolution of `crate::Test` will fail and the test will not compile.
+//!
+//! #### Lib Tests and Doc Tests
+//!
+//! Unfortunately, these utilities will only run in integration tests. Running lib tests are out of
+//! the question since we need control over the main function.
+//!
+//! You can however perform compilation checks for lib tests and doc tests. This is more handy for
+//! doc tests than it is for lib tests, but it's there if you want it.
+//!
+//! #### Expanding `test_main!()` for Doc Tests
+//!
+//! For some reason, doc tests don't interpret the `test_main!()` macro as providing `fn main()` and
+//! will wrap the test body in another `fn main()`. For technical reasons listed in the Caveats
+//! section above, this is problematic because the `Test` structure will not be inside the crate
+//! root anymore.
+//!
+//! To get around this, we can instead expand `test_main!()` into its components for the doc test:
+//! * [`test_structs!()`](crate::testing::test_structs)
+//! * [`test_main_body!(suite_name: &'static str)`](crate::testing::test_main_body)
+//!
+//! The following `test_main!()` macro:
+//!
+//! ```no_run
+//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+//! ```
+//!
+//! Is equivalent to this expansion:
+//!
+//! ```no_run
+//! use pyo3::prelude::*;
+//!
+//! pyo3_asyncio::testing::test_structs!();
+//!
+//! #[pyo3_asyncio::async_std::main]
+//! async fn main() -> PyResult<()> {
+//!     pyo3_asyncio::testing::test_main_body!("Example Test Suite");
+//!     Ok(())
+//! }
+//! ```
+//!
+//! #### Allowing Compilation Checks in Lib Tests
+//!
+//! In order to allow the `#[test]` attributes to expand, we need to expand the `test_structs!()`
+//! macro in the crate root. After that, `pyo3-asyncio` tests can be defined anywhere. Again, these
+//! will not run, but they will be compile-checked during testing.
+//!
+//! `my-crate/src/lib.rs`
+//! ```no_run
+//! #[cfg(test)]
+//! pyo3_asyncio::testing::test_structs!();
+//!
+//! #[cfg(test)]
+//! mod tests {
+//!     use pyo3::prelude::*;
+//!
+//!     use crate as pyo3_asyncio;
+//!
+//!     #[pyo3_asyncio::async_std::test]
+//!     async fn test_async_std_async_test_compiles() -> PyResult<()> {
+//!         Ok(())
+//!     }
+//!     #[pyo3_asyncio::async_std::test]
+//!     fn test_async_std_sync_test_compiles() -> PyResult<()> {
+//!         Ok(())
+//!     }
+//!
+//!     #[pyo3_asyncio::tokio::test]
+//!     async fn test_tokio_async_test_compiles() -> PyResult<()> {
+//!         Ok(())
+//!     }
+//!     #[pyo3_asyncio::tokio::test]
+//!     fn test_tokio_sync_test_compiles() -> PyResult<()> {
+//!         Ok(())
+//!     }
+//! }
 //! ```
 
 use std::{future::Future, pin::Pin};
@@ -107,6 +214,14 @@ use pyo3::prelude::*;
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 #[cfg(feature = "attributes")]
 pub use pyo3_asyncio_macros::test_main;
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::test_structs;
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::test_main_body;
 
 /// Args that should be provided to the test program
 ///
@@ -201,4 +316,33 @@ pub async fn test_harness(tests: Vec<impl Test + 'static>, args: Args) -> PyResu
         .await;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use pyo3::prelude::*;
+
+    use crate as pyo3_asyncio;
+
+    #[cfg(feature = "async-std-runtime")]
+    #[pyo3_asyncio::async_std::test]
+    async fn test_async_std_async_test_compiles() -> PyResult<()> {
+        Ok(())
+    }
+    #[cfg(feature = "async-std-runtime")]
+    #[pyo3_asyncio::async_std::test]
+    fn test_async_std_sync_test_compiles() -> PyResult<()> {
+        Ok(())
+    }
+
+    #[cfg(feature = "tokio-runtime")]
+    #[pyo3_asyncio::tokio::test]
+    async fn test_tokio_async_test_compiles() -> PyResult<()> {
+        Ok(())
+    }
+    #[cfg(feature = "tokio-runtime")]
+    #[pyo3_asyncio::tokio::test]
+    fn test_tokio_sync_test_compiles() -> PyResult<()> {
+        Ok(())
+    }
 }
