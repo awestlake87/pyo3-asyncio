@@ -130,7 +130,7 @@ pub mod doc_test {
         };
     }
 
-    #[cfg(feature = "async-std-runtime attributes")]
+    #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
     doctest!("../README.md", readme_md);
 }
 
@@ -403,10 +403,10 @@ fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
 
 /// Alias crate as pyo3_asyncio for test_structs! macro expansion
 #[cfg(test)]
-#[cfg(feature = "testing attributes")]
+#[cfg(all(feature = "testing", feature = "attributes"))]
 use crate as pyo3_asyncio;
 
 // Expand test structs in crate root to allow lib tests to be compile-checked (but not ran)
 #[cfg(test)]
-#[cfg(feature = "testing attributes")]
+#[cfg(all(feature = "testing", feature = "attributes"))]
 testing::test_structs!();

@@ -107,6 +107,32 @@ pub fn tokio_main(args: TokenStream, item: TokenStream) -> TokenStream {
     tokio::main(args, item, true)
 }
 
+/// Registers an `async-std` test with the `pyo3-asyncio` test harness.
+///
+/// This attribute is meant to mirror the `#[test]` attribute and allow you to mark a function for
+/// testing within an integration test. Like the `#[async_std::test]` attribute, it will accept
+/// `async` test functions, but it will also accept blocking functions as well.
+///
+/// # Examples
+/// ```ignore
+/// use std::{time::Duration, thread};
+///
+/// use pyo3::prelude::*;
+///
+/// // async test function
+/// #[pyo3_asyncio::async_std::test]
+/// async fn test_async_sleep() -> PyResult<()> {
+///     async_std::task::sleep(Duration::from_secs(1)).await;
+///     Ok(())
+/// }
+///
+/// // blocking test function
+/// #[pyo3_asyncio::async_std::test]
+/// fn test_blocking_sleep() -> PyResult<()> {
+///     thread::sleep(Duration::from_secs(1));
+///     Ok(())
+/// }
+/// ```
 #[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
 #[proc_macro_attribute]
 pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -153,6 +179,32 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     result.into()
 }
 
+/// Registers a `tokio` test with the `pyo3-asyncio` test harness.
+///
+/// This attribute is meant to mirror the `#[test]` attribute and allow you to mark a function for
+/// testing within an integration test. Like the `#[tokio::test]` attribute, it will accept `async`
+/// test functions, but it will also accept blocking functions as well.
+///
+/// # Examples
+/// ```ignore
+/// use std::{time::Duration, thread};
+///
+/// use pyo3::prelude::*;
+///
+/// // async test function
+/// #[pyo3_asyncio::tokio::test]
+/// async fn test_async_sleep() -> PyResult<()> {
+///     tokio::time::sleep(Duration::from_secs(1)).await;
+///     Ok(())
+/// }
+///
+/// // blocking test function
+/// #[pyo3_asyncio::tokio::test]
+/// fn test_blocking_sleep() -> PyResult<()> {
+///     thread::sleep(Duration::from_secs(1));
+///     Ok(())
+/// }
+/// ```
 #[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
 #[proc_macro_attribute]
 pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -247,6 +299,30 @@ impl Parse for TestMainArgs {
     }
 }
 
+/// Provides the custom `Test` structure for the `pyo3-asyncio` `#[test]` attributes
+///
+/// This macro _must_ be expanded at the root of the test crate. Its main purpose is to manage the
+/// boilerplate for the `inventory` crate.
+///
+/// The following `test_main!()` macro:
+///
+/// ```ignore
+/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+/// ```
+///
+/// Is equivalent to this expansion:
+///
+/// ```ignore
+/// use pyo3::prelude::*;
+///
+/// pyo3_asyncio::testing::test_structs!();
+///
+/// #[pyo3_asyncio::async_std::main]
+/// async fn main() -> PyResult<()> {
+///     pyo3_asyncio::testing::test_main_body!("Example Test Suite");
+///     Ok(())
+/// }
+/// ```
 #[cfg(not(test))]
 #[proc_macro]
 pub fn test_structs(_args: TokenStream) -> TokenStream {
@@ -272,6 +348,30 @@ pub fn test_structs(_args: TokenStream) -> TokenStream {
     result.into()
 }
 
+/// Expands the `pyo3-asyncio` test harness call within the `main` fn.
+///
+/// This macro collects the test structures from the `inventory` boilerplate and forwards them to
+/// the test harness.
+///
+/// The following `test_main!()` macro:
+///
+/// ```ignore
+/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+/// ```
+///
+/// Is equivalent to this expansion:
+///
+/// ```ignore
+/// use pyo3::prelude::*;
+///
+/// pyo3_asyncio::testing::test_structs!();
+///
+/// #[pyo3_asyncio::async_std::main]
+/// async fn main() -> PyResult<()> {
+///     pyo3_asyncio::testing::test_main_body!("Example Test Suite");
+///     Ok(())
+/// }
+/// ```
 #[cfg(not(test))]
 #[proc_macro]
 pub fn test_main_body(args: TokenStream) -> TokenStream {
@@ -281,13 +381,31 @@ pub fn test_main_body(args: TokenStream) -> TokenStream {
         let args = pyo3_asyncio::testing::parse_args(#suite_name);
 
         pyo3_asyncio::testing::test_harness(
-            inventory::iter::<Test>().map(|test| test.clone()).collect(), args
+            inventory::iter::<crate::Test>().map(|test| test.clone()).collect(), args
         )
         .await?;
     };
     result.into()
 }
 
+/// The standard `pyo3-asyncio` test harness `main` fn boilerplate.
+///
+/// This macro combines the `test_structs!` and `test_main_body!` macros to provide the full
+/// boilerplate for the `pyo3-asyncio` test harness in one line.
+///
+/// # Examples
+///
+/// `test_main!` for the `tokio` runtime:
+/// ```ignore
+/// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
+/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::tokio::main], "Example Test Suite");
+/// ```
+///
+/// `test_main!` for the `async-std` runtime:
+/// ```ignore
+/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
+/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+/// ```
 #[cfg(not(test))]
 #[proc_macro]
 pub fn test_main(args: TokenStream) -> TokenStream {
