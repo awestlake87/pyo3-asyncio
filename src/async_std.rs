@@ -8,6 +8,11 @@ use crate::generic::{self, JoinError, Runtime};
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span> Sets up the async-std runtime and runs an async fn as main
 #[cfg(feature = "attributes")]
 pub use pyo3_asyncio_macros::async_std_main as main;
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::async_std_test as test;
+
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::async_std_test_main as test_main;
 
 struct AsyncStdJoinError;
 
@@ -157,7 +162,10 @@ pub mod testing {
     //!
     //! ```no_run
     //! fn main() {
-    //!     pyo3_asyncio::async_std::testing::test_main("Example Test Suite", vec![]);
+    //!     pyo3_asyncio::async_std::testing::test_main(
+    //!         "Example Test Suite",
+    //!         Vec::<pyo3_asyncio::testing::Test>::new()
+    //!     );
     //! }
     //! ```
     //!
@@ -194,7 +202,11 @@ pub mod testing {
     use async_std::task;
     use pyo3::prelude::*;
 
-    use crate::{async_std::AsyncStdRuntime, generic, testing::Test};
+    use crate::{
+        async_std::AsyncStdRuntime,
+        generic,
+        testing::{Test, TestTrait},
+    };
 
     /// Construct a test from a blocking function (like the traditional `#[test]` attribute)
     pub fn new_sync_test<F>(name: String, func: F) -> Test
@@ -208,7 +220,7 @@ pub mod testing {
     ///
     /// This is meant to perform the necessary initialization for most test cases. If you want
     /// additional control over the initialization, you can use this function as a template.
-    pub fn test_main(suite_name: &str, tests: Vec<Test>) {
-        generic::testing::test_main::<AsyncStdRuntime>(suite_name, tests)
+    pub fn test_main(suite_name: &str, tests: Vec<impl TestTrait + 'static>) {
+        generic::testing::test_main::<AsyncStdRuntime, _>(suite_name, tests)
     }
 }

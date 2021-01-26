@@ -244,7 +244,7 @@ pub mod testing {
     use crate::{
         dump_err,
         generic::{run_until_complete, Runtime},
-        testing::{parse_args, test_harness, Test},
+        testing::{parse_args, test_harness, TestTrait},
         with_runtime,
     };
 
@@ -253,9 +253,10 @@ pub mod testing {
     /// This is meant to perform the necessary initialization for most test cases. If you want
     /// additional control over the initialization, you can use this
     /// function as a template.
-    pub fn test_main<R>(suite_name: &str, tests: Vec<Test>)
+    pub fn test_main<R, T>(suite_name: &str, tests: Vec<T>)
     where
         R: Runtime,
+        T: TestTrait + 'static,
     {
         Python::with_gil(|py| {
             with_runtime(py, || {

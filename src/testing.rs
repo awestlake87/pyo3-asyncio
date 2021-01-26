@@ -82,6 +82,20 @@ pub struct Test {
     task: Pin<Box<dyn Future<Output = PyResult<()>> + Send>>,
 }
 
+pub trait TestTrait: Send {
+    fn name(&self) -> &str;
+    fn task(self) -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>>;
+}
+
+impl TestTrait for Test {
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
+    fn task(self) -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>> {
+        self.task
+    }
+}
+
 impl Test {
     /// Construct a test from a future
     pub fn new_async(
@@ -96,21 +110,23 @@ impl Test {
 }
 
 /// Run a sequence of tests while applying any necessary filtering from the `Args`
-pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
+pub async fn test_harness(tests: Vec<impl TestTrait + 'static>, args: Args) -> PyResult<()> {
     stream::iter(tests)
         .for_each_concurrent(Some(4), |test| {
             let mut ignore = false;
 
             if let Some(filter) = args.filter.as_ref() {
-                if !test.name.contains(filter) {
+                if !test.name().contains(filter) {
                     ignore = true;
                 }
             }
 
             async move {
                 if !ignore {
-                    test.task.await.unwrap();
-                    println!("test {} ... ok", test.name);
+                    let name = test.name().to_string();
+                    test.task().await.unwrap();
+
+                    println!("test {} ... ok", name);
                 }
             }
         })
