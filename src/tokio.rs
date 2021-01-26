@@ -95,7 +95,7 @@ pub fn init_multi_thread() {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// # use std::time::Duration;
 /// #
 /// # use pyo3::prelude::*;
@@ -136,7 +136,7 @@ where
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use std::time::Duration;
 ///
 /// use pyo3::prelude::*;

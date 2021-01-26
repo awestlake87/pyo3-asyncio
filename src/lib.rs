@@ -115,6 +115,7 @@ use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, PyNativeType};
 /// Test README
 #[doc(hidden)]
 pub mod doc_test {
+    #[allow(unused)]
     macro_rules! doc_comment {
         ($x:expr, $module:item) => {
             #[doc = $x]
@@ -122,12 +123,14 @@ pub mod doc_test {
         };
     }
 
+    #[allow(unused)]
     macro_rules! doctest {
         ($x:expr, $y:ident) => {
             doc_comment!(include_str!($x), mod $y {});
         };
     }
 
+    #[cfg(feature = "async-std-runtime attributes")]
     doctest!("../README.md", readme_md);
 }
 
@@ -151,7 +154,7 @@ static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use pyo3::prelude::*;
 ///
 /// fn main() {
@@ -225,12 +228,13 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// # use std::time::Duration;
 /// # use pyo3::prelude::*;
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
 /// // Wait 1 second, then stop the event loop
+/// # #[cfg(feature = "async-std-runtime")]
 /// async_std::task::spawn(async move {
 ///     async_std::task::sleep(Duration::from_secs(1)).await;
 ///     Python::with_gil(|py| {
@@ -250,6 +254,7 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// });        
 ///
 /// // block until stop is called
+/// # #[cfg(feature = "async-std-runtime")]
 /// pyo3_asyncio::run_forever(py)?;
 /// # Ok(())
 /// # })
@@ -324,7 +329,7 @@ impl PyTaskCompleter {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use std::time::Duration;
 ///
 /// use pyo3::prelude::*;
@@ -398,10 +403,10 @@ fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
 
 /// Alias crate as pyo3_asyncio for test_structs! macro expansion
 #[cfg(test)]
-#[cfg(feature = "testing")]
+#[cfg(feature = "testing attributes")]
 use crate as pyo3_asyncio;
 
 // Expand test structs in crate root to allow lib tests to be compile-checked (but not ran)
 #[cfg(test)]
-#[cfg(feature = "testing")]
+#[cfg(feature = "testing attributes")]
 testing::test_structs!();

@@ -77,6 +77,7 @@ pub trait Runtime {
 /// #
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
+/// # #[cfg(feature = "tokio-runtime")]
 /// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _>(py, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())

@@ -28,7 +28,7 @@ Here we initialize the runtime, import Python's `asyncio` library and run the gi
 
 More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
 
-```rust no_run
+```rust
 use pyo3::prelude::*;
 
 #[pyo3_asyncio::async_std::main]
