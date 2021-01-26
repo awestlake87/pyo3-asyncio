@@ -6,7 +6,11 @@ mod tokio;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
-use syn::spanned::Spanned;
+use syn::{
+    parse::{Parse, ParseStream, Result},
+    spanned::Spanned,
+    Attribute,
+};
 
 /// Enables an async main function that uses the async-std runtime.
 ///
@@ -235,10 +239,53 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     result.into()
 }
 
+enum Item {
+    Attribute(Vec<Attribute>),
+    String(syn::LitStr),
+}
+
+impl Parse for Item {
+    fn parse(input: ParseStream<'_>) -> Result<Self> {
+        let lookahead = input.lookahead1();
+
+        if lookahead.peek(syn::Token![#]) {
+            Attribute::parse_outer(input).map(Item::Attribute)
+        } else {
+            input.parse().map(Item::String)
+        }
+    }
+}
+
+struct TokioTestMainArgs {
+    attrs: Vec<Attribute>,
+    suite_name: String,
+}
+
+impl Parse for TokioTestMainArgs {
+    fn parse(input: ParseStream<'_>) -> Result<Self> {
+        let mut args: syn::punctuated::Punctuated<Item, syn::Token![,]> =
+            input.parse_terminated(Item::parse)?;
+
+        let suite_name = match args.pop().unwrap() {
+            syn::punctuated::Pair::Punctuated(Item::String(s), _)
+            | syn::punctuated::Pair::End(Item::String(s)) => s.value(),
+            _ => panic!(),
+        };
+
+        let attrs = match args.pop().unwrap() {
+            syn::punctuated::Pair::Punctuated(Item::Attribute(attrs), _) => attrs,
+            _ => panic!(),
+        };
+
+        Ok(Self { attrs, suite_name })
+    }
+}
+
 #[cfg(not(test))]
 #[proc_macro]
 pub fn tokio_test_main(args: TokenStream) -> TokenStream {
-    let suite_name = syn::parse_macro_input!(args as syn::LitStr);
+    let TokioTestMainArgs { attrs, suite_name } =
+        syn::parse_macro_input!(args as TokioTestMainArgs);
 
     let result = quote! {
         #[derive(Clone)]
@@ -259,12 +306,16 @@ pub fn tokio_test_main(args: TokenStream) -> TokenStream {
 
         inventory::collect!(Test);
 
-        fn main() {
-            pyo3_asyncio::tokio::init_multi_thread();
-            pyo3_asyncio::tokio::testing::test_main(
-                #suite_name,
-                inventory::iter::<Test>().map(|test| test.clone()).collect()
-            );
+        #(#attrs)*
+        async fn main() -> pyo3::PyResult<()> {
+            let args = pyo3_asyncio::testing::parse_args(#suite_name);
+
+            pyo3_asyncio::testing::test_harness(
+                inventory::iter::<Test>().map(|test| test.clone()).collect(), args
+            )
+            .await?;
+
+            Ok(())
         }
     };
     result.into()
