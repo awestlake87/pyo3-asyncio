@@ -12,9 +12,16 @@ use pyo3::prelude::*;
 
 use crate::generic;
 
-/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span> Sets up the tokio runtime and runs an async fn as main
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 #[cfg(feature = "attributes")]
 pub use pyo3_asyncio_macros::tokio_main as main;
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span> Sets up the tokio runtime and runs an async fn as main
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::tokio_test as test;
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::tokio_test_main as test_main;
 
 static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
 
@@ -210,7 +217,10 @@ where
 /// fn main() {
 ///     pyo3_asyncio::tokio::init_current_thread();
 ///
-///     pyo3_asyncio::tokio::testing::test_main("Example Test Suite", vec![]);
+///     pyo3_asyncio::tokio::testing::test_main(
+///         "Example Test Suite",
+///         Vec::<pyo3_asyncio::testing::Test>::new()
+///     );
 /// }
 /// ```
 ///
@@ -248,7 +258,7 @@ pub mod testing {
 
     use crate::{
         dump_err,
-        testing::{parse_args, test_harness, Test},
+        testing::{parse_args, test_harness, Test, TestTrait},
         with_runtime,
     };
 
@@ -269,7 +279,7 @@ pub mod testing {
     /// function as a template.
     ///
     /// > _The tokio runtime must be initialized before calling this function!_
-    pub fn test_main(suite_name: &str, tests: Vec<Test>) {
+    pub fn test_main(suite_name: &str, tests: Vec<impl TestTrait + 'static>) {
         Python::with_gil(|py| {
             with_runtime(py, || {
                 let args = parse_args(suite_name);

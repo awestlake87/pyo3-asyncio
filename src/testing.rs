@@ -82,8 +82,14 @@ pub struct Test {
     task: Pin<Box<dyn Future<Output = PyResult<()>> + Send>>,
 }
 
+/// Abstract Test Trait
+///
+/// This trait works in tandem with the pyo3-asyncio-macros to generate test objects that work with
+/// the pyo3-asyncio test harness.
 pub trait TestTrait: Send {
+    /// Get the name of the test
     fn name(&self) -> &str;
+    /// Move into the task that runs the test
     fn task(self) -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>>;
 }
 

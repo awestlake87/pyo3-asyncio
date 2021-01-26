@@ -44,12 +44,6 @@ required-features = ["attributes", "tokio-runtime"]
 
 
 [[test]]
-name = "test_async_std_test_macro"
-path = "pytests/test_async_std_test_macro.rs"
-harness = false
-required-features = ["attributes", "async-std-runtime", "testing"]
-
-[[test]]
 name = "test_async_std_asyncio"
 path = "pytests/test_async_std_asyncio.rs"
 harness = false

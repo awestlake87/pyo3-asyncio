@@ -103,26 +103,14 @@ pub fn tokio_main(args: TokenStream, item: TokenStream) -> TokenStream {
     tokio::main(args, item, true)
 }
 
-/// Enables an async main function that uses the async-std runtime.
-///
-/// # Examples
-///
-/// ```ignore
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     Ok(())
-/// }
-/// ```
 #[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
 #[proc_macro_attribute]
 pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as syn::ItemFn);
 
     let sig = &input.sig;
-    // let inputs = &input.sig.inputs;
     let name = &input.sig.ident;
     let body = &input.block;
-    // let attrs = &input.attrs;
     let vis = &input.vis;
 
     let fn_impl = if input.sig.asyncness.is_none() {
@@ -133,8 +121,7 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
 
                 Box::pin(async_std::task::spawn_blocking(move || {
-                    #name();
-                    Ok(())
+                    #name()
                 }))
             }
         }
@@ -153,7 +140,10 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let result = quote! {
         #fn_impl
 
-        inventory::submit!(crate::Test { name: stringify!(#name), test_fn: &#name });
+        inventory::submit!(crate::Test {
+            name: format!("{}::{}", std::module_path!(), stringify!(#name)),
+            test_fn: &#name
+        });
     };
 
     result.into()
@@ -167,13 +157,13 @@ pub fn async_std_test_main(args: TokenStream) -> TokenStream {
     let result = quote! {
         #[derive(Clone)]
         pub(crate) struct Test {
-            pub name: &'static str,
+            pub name: String,
             pub test_fn: &'static (dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> + Send + Sync),
         }
 
         impl pyo3_asyncio::testing::TestTrait for Test {
             fn name(&self) -> &str {
-                self.name
+                self.name.as_str()
             }
 
             fn task(self) -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
@@ -185,6 +175,93 @@ pub fn async_std_test_main(args: TokenStream) -> TokenStream {
 
         fn main() {
             pyo3_asyncio::async_std::testing::test_main(
+                #suite_name,
+                inventory::iter::<Test>().map(|test| test.clone()).collect()
+            );
+        }
+    };
+    result.into()
+}
+
+#[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
+#[proc_macro_attribute]
+pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(item as syn::ItemFn);
+
+    let sig = &input.sig;
+    let name = &input.sig.ident;
+    let body = &input.block;
+    let vis = &input.vis;
+
+    let fn_impl = if input.sig.asyncness.is_none() {
+        quote! {
+            #vis fn #name() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
+                #sig {
+                    #body
+                }
+
+                Box::pin(async {
+                    match pyo3_asyncio::tokio::get_runtime().spawn_blocking(&#name).await {
+                        Ok(result) => result,
+                        Err(e) => {
+                            assert!(e.is_panic());
+                            Err(pyo3::exceptions::PyException::new_err("rust future panicked"))
+                        }
+                    }
+                })
+            }
+        }
+    } else {
+        quote! {
+            #vis fn #name() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
+                #sig {
+                    #body
+                }
+
+                Box::pin(#name())
+            }
+        }
+    };
+
+    let result = quote! {
+        #fn_impl
+
+        inventory::submit!(crate::Test {
+            name: format!("{}::{}", std::module_path!(), stringify!(#name)),
+            test_fn: &#name
+        });
+    };
+
+    result.into()
+}
+
+#[cfg(not(test))]
+#[proc_macro]
+pub fn tokio_test_main(args: TokenStream) -> TokenStream {
+    let suite_name = syn::parse_macro_input!(args as syn::LitStr);
+
+    let result = quote! {
+        #[derive(Clone)]
+        pub(crate) struct Test {
+            pub name: String,
+            pub test_fn: &'static (dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> + Send + Sync),
+        }
+
+        impl pyo3_asyncio::testing::TestTrait for Test {
+            fn name(&self) -> &str {
+                self.name.as_str()
+            }
+
+            fn task(self) -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
+                (self.test_fn)()
+            }
+        }
+
+        inventory::collect!(Test);
+
+        fn main() {
+            pyo3_asyncio::tokio::init_multi_thread();
+            pyo3_asyncio::tokio::testing::test_main(
                 #suite_name,
                 inventory::iter::<Test>().map(|test| test.clone()).collect()
             );
