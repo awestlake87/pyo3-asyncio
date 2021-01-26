@@ -1,4 +1,4 @@
-use std::{time::Duration, thread};
+use std::{thread, time::Duration};
 
 use pyo3::prelude::*;
 
