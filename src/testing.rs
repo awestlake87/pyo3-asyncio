@@ -17,6 +17,10 @@ use clap::{App, Arg};
 use futures::stream::{self, StreamExt};
 use pyo3::prelude::*;
 
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::test_main;
+
 /// Args that should be provided to the test program
 ///
 /// These args are meant to mirror the default test harness's args.

@@ -12,9 +12,6 @@ pub use pyo3_asyncio_macros::async_std_main as main;
 #[cfg(feature = "attributes")]
 pub use pyo3_asyncio_macros::async_std_test as test;
 
-#[cfg(feature = "attributes")]
-pub use pyo3_asyncio_macros::async_std_test_main as test_main;
-
 struct AsyncStdJoinError;
 
 impl JoinError for AsyncStdJoinError {

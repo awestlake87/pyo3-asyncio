@@ -153,40 +153,6 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     result.into()
 }
 
-#[cfg(not(test))]
-#[proc_macro]
-pub fn async_std_test_main(args: TokenStream) -> TokenStream {
-    let suite_name = syn::parse_macro_input!(args as syn::LitStr);
-
-    let result = quote! {
-        #[derive(Clone)]
-        pub(crate) struct Test {
-            pub name: String,
-            pub test_fn: &'static (dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> + Send + Sync),
-        }
-
-        impl pyo3_asyncio::testing::TestTrait for Test {
-            fn name(&self) -> &str {
-                self.name.as_str()
-            }
-
-            fn task(self) -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
-                (self.test_fn)()
-            }
-        }
-
-        inventory::collect!(Test);
-
-        fn main() {
-            pyo3_asyncio::async_std::testing::test_main(
-                #suite_name,
-                inventory::iter::<Test>().map(|test| test.clone()).collect()
-            );
-        }
-    };
-    result.into()
-}
-
 #[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
 #[proc_macro_attribute]
 pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -256,12 +222,12 @@ impl Parse for Item {
     }
 }
 
-struct TokioTestMainArgs {
+struct TestMainArgs {
     attrs: Vec<Attribute>,
     suite_name: String,
 }
 
-impl Parse for TokioTestMainArgs {
+impl Parse for TestMainArgs {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let mut args: syn::punctuated::Punctuated<Item, syn::Token![,]> =
             input.parse_terminated(Item::parse)?;
@@ -283,9 +249,8 @@ impl Parse for TokioTestMainArgs {
 
 #[cfg(not(test))]
 #[proc_macro]
-pub fn tokio_test_main(args: TokenStream) -> TokenStream {
-    let TokioTestMainArgs { attrs, suite_name } =
-        syn::parse_macro_input!(args as TokioTestMainArgs);
+pub fn test_main(args: TokenStream) -> TokenStream {
+    let TestMainArgs { attrs, suite_name } = syn::parse_macro_input!(args as TestMainArgs);
 
     let result = quote! {
         #[derive(Clone)]
