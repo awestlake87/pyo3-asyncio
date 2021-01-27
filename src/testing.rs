@@ -376,7 +376,11 @@ pub async fn test_harness(tests: Vec<impl Test + 'static>, args: Args) -> PyResu
 }
 
 #[cfg(test)]
-#[cfg(feature = "testing attributes")]
+#[cfg(all(
+    feature = "testing",
+    feature = "attributes",
+    any(feature = "async-std-runtime", feature = "tokio-runtime")
+))]
 mod tests {
     use pyo3::prelude::*;
 
