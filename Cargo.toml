@@ -82,6 +82,7 @@ required-features = ["tokio-runtime", "testing"]
 [dependencies]
 clap = { version = "2.33", optional = true }
 futures = "0.3"
+inventory = "0.1"
 lazy_static = "1.4"
 once_cell = "1.5"
 pyo3 = "0.13"
@@ -96,6 +97,3 @@ optional = true
 version = "1.0" 
 features = ["full"]
 optional = true
-
-[dev-dependencies]
-inventory = "0.1"

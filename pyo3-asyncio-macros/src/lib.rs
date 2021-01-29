@@ -170,7 +170,7 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let result = quote! {
         #fn_impl
 
-        inventory::submit!(crate::Test {
+        inventory::submit!(pyo3_asyncio::testing::Test {
             name: format!("{}::{}", std::module_path!(), stringify!(#name)),
             test_fn: &#name
         });
@@ -248,7 +248,7 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let result = quote! {
         #fn_impl
 
-        inventory::submit!(crate::Test {
+        inventory::submit!(pyo3_asyncio::testing::Test {
             name: format!("{}::{}", std::module_path!(), stringify!(#name)),
             test_fn: &#name
         });
@@ -299,99 +299,9 @@ impl Parse for TestMainArgs {
     }
 }
 
-/// Provides the custom `Test` structure for the `pyo3-asyncio` `#[test]` attributes
-///
-/// This macro _must_ be expanded at the root of the test crate. Its main purpose is to manage the
-/// boilerplate for the `inventory` crate.
-///
-/// The following `test_main!()` macro:
-///
-/// ```ignore
-/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
-/// ```
-///
-/// Is equivalent to this expansion:
-///
-/// ```ignore
-/// use pyo3::prelude::*;
-///
-/// pyo3_asyncio::testing::test_structs!();
-///
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     pyo3_asyncio::testing::test_main_body!("Example Test Suite");
-///     Ok(())
-/// }
-/// ```
-#[cfg(not(test))]
-#[proc_macro]
-pub fn test_structs(_args: TokenStream) -> TokenStream {
-    let result = quote! {
-        #[derive(Clone)]
-        pub(crate) struct Test {
-            pub name: String,
-            pub test_fn: &'static (dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> + Send + Sync),
-        }
-
-        impl pyo3_asyncio::testing::Test for Test {
-            fn name(&self) -> &str {
-                self.name.as_str()
-            }
-
-            fn task(&self) -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
-                (self.test_fn)()
-            }
-        }
-
-        inventory::collect!(Test);
-    };
-    result.into()
-}
-
-/// Expands the `pyo3-asyncio` test harness call within the `main` fn.
-///
-/// This macro collects the test structures from the `inventory` boilerplate and forwards them to
-/// the test harness.
-///
-/// The following `test_main!()` macro:
-///
-/// ```ignore
-/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
-/// ```
-///
-/// Is equivalent to this expansion:
-///
-/// ```ignore
-/// use pyo3::prelude::*;
-///
-/// pyo3_asyncio::testing::test_structs!();
-///
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     pyo3_asyncio::testing::test_main_body!("Example Test Suite");
-///     Ok(())
-/// }
-/// ```
-#[cfg(not(test))]
-#[proc_macro]
-pub fn test_main_body(args: TokenStream) -> TokenStream {
-    let suite_name = syn::parse_macro_input!(args as syn::LitStr);
-
-    let result = quote! {
-        let args = pyo3_asyncio::testing::parse_args(#suite_name);
-
-        pyo3_asyncio::testing::test_harness(
-            inventory::iter::<crate::Test>().map(|test| test.clone()).collect(), args
-        )
-        .await?;
-    };
-    result.into()
-}
-
 /// The standard `pyo3-asyncio` test harness `main` fn boilerplate.
 ///
-/// This macro combines the `test_structs!` and `test_main_body!` macros to provide the full
-/// boilerplate for the `pyo3-asyncio` test harness in one line.
+/// This macro provides the full boilerplate for the `pyo3-asyncio` test harness in one line.
 ///
 /// # Examples
 ///
@@ -412,12 +322,9 @@ pub fn test_main(args: TokenStream) -> TokenStream {
     let TestMainArgs { attrs, suite_name } = syn::parse_macro_input!(args as TestMainArgs);
 
     let result = quote! {
-        pyo3_asyncio::testing::test_structs!();
-
         #(#attrs)*
         async fn main() -> pyo3::PyResult<()> {
-            pyo3_asyncio::testing::test_main_body!(#suite_name);
-            Ok(())
+            pyo3_asyncio::testing::main(#suite_name).await
         }
     };
     result.into()

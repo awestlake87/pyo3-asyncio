@@ -400,13 +400,3 @@ fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
         e.print_and_set_sys_last_vars(py);
     }
 }
-
-/// Alias crate as pyo3_asyncio for test_structs! macro expansion
-#[cfg(test)]
-#[cfg(all(feature = "testing", feature = "attributes"))]
-use crate as pyo3_asyncio;
-
-// Expand test structs in crate root to allow lib tests to be compile-checked (but not ran)
-#[cfg(test)]
-#[cfg(all(feature = "testing", feature = "attributes"))]
-testing::test_structs!();
