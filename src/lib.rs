@@ -112,6 +112,10 @@ use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
 use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, PyNativeType};
 
+/// Re-exported for #[test] attributes
+#[cfg(all(feature = "attributes", feature = "testing"))]
+pub use inventory;
+
 /// Test README
 #[doc(hidden)]
 pub mod doc_test {

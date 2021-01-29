@@ -60,13 +60,6 @@
 //! pyo3-asyncio = { version = "0.13", features = ["testing", "attributes", "async-std-runtime"] }
 //! ```
 //!
-//! In order for the `test_main!` macro to find your tests, you'll also need to add an extra
-//! `dev-dependency` for [`inventory`](https://github.com/dtolnay/inventory):
-//! ```toml
-//! [dev-dependencies]
-//! inventory = "0.1"
-//! ```
-//!
 //! At this point you should be able to run the test via `cargo test`
 //!
 //! ### Adding Tests to the PyO3 Asyncio Test Harness
@@ -346,6 +339,7 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
 /// # Examples
 ///
 /// ```
+/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 /// use pyo3::prelude::*;
 ///
 /// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
@@ -353,6 +347,8 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
 /// async fn main() -> PyResult<()> {
 ///     pyo3_asyncio::testing::main("Example Test Suite").await
 /// }
+/// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
+/// fn main() { }
 /// ```
 pub async fn main(suite_name: &str) -> PyResult<()> {
     let args = parse_args(suite_name);
