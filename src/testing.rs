@@ -38,6 +38,9 @@
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
+//! #
+//! # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
+//! fn main() {}
 //! ```
 //!
 //! `pytests/test_example.rs` for the `async-std` runtime:
@@ -47,6 +50,9 @@
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
+//! #
+//! # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
+//! fn main() {}
 //! ```
 //!
 //! ### Cargo Configuration
