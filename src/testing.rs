@@ -182,6 +182,8 @@
 //! # fn main() {}
 //! ```
 
+use std::{future::Future, pin::Pin};
+
 use clap::{App, Arg};
 use futures::stream::{self, StreamExt};
 use pyo3::prelude::*;
@@ -245,10 +247,7 @@ pub fn parse_args() -> Args {
     }
 }
 
-type TestFn = dyn Fn() -> std::pin::Pin<
-    Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>,
-> + Send
-    + Sync;
+type TestFn = dyn Fn() -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>> + Send + Sync;
 
 /// The structure used by the `#[test]` macros to provide a test to the `pyo3-asyncio` test harness.
 #[derive(Clone)]

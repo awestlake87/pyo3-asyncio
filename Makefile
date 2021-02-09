@@ -14,7 +14,7 @@ lint: fmt clippy
 test: lint
 	cargo test --all-features
 
-test-feature-powerset:
+test-feature-powerset: lint
 	cargo install cargo-hack
 	cargo hack test --feature-powerset	
 
