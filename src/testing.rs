@@ -40,7 +40,7 @@
 //! }
 //! #
 //! # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
-//! fn main() {}
+//! # fn main() {}
 //! ```
 //!
 //! `pytests/test_example.rs` for the `async-std` runtime:
@@ -52,7 +52,7 @@
 //! }
 //! #
 //! # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-//! fn main() {}
+//! # fn main() {}
 //! ```
 //!
 //! ### Cargo Configuration
