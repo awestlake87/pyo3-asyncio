@@ -1,6 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -385,6 +385,28 @@
 <span id="382">382</span>
 <span id="383">383</span>
 <span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
@@ -423,6 +445,19 @@
 <span class="doccomment">//! &gt; _In the future, more runtimes may be supported for Rust._</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Features</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Items marked with</span>
+<span class="doccomment">//! &lt;span</span>
+<span class="doccomment">//!   class=&quot;module-item stab portability&quot;</span>
+<span class="doccomment">//!   style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;</span>
+<span class="doccomment">//! &gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;</span>
+<span class="doccomment">//! are only available when the `attributes` Cargo feature is enabled:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```toml</span>
+<span class="doccomment">//! [dependencies.pyo3-asyncio]</span>
+<span class="doccomment">//! version = &quot;0.13.0&quot;</span>
+<span class="doccomment">//! features = [&quot;attributes&quot;]</span>
+<span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Items marked with</span>
 <span class="doccomment">//! &lt;span</span>
@@ -487,9 +522,14 @@
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">OnceCell</span>;
 <span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">exceptions</span>::<span class="ident">PyKeyboardInterrupt</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">PyNativeType</span>};
 
+<span class="doccomment">/// Re-exported for #[test] attributes</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">inventory</span>;
+
 <span class="doccomment">/// Test README</span>
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">doc_test</span> {
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused</span>)]</span>
     <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">doc_comment</span> {
         (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">module</span>:<span class="ident">item</span>) <span class="op">=</span><span class="op">&gt;</span> {
             <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>]</span>
@@ -497,12 +537,14 @@
         };
     }
 
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused</span>)]</span>
     <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">doctest</span> {
         (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">y</span>:<span class="ident">ident</span>) <span class="op">=</span><span class="op">&gt;</span> {
             <span class="macro">doc_comment</span><span class="macro">!</span>(<span class="macro">include_str</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">x</span>), <span class="kw">mod</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">y</span> {});
         };
     }
 
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;async-std-runtime&quot;</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>))]</span>
     <span class="macro">doctest</span><span class="macro">!</span>(<span class="string">&quot;../README.md&quot;</span>, <span class="ident">readme_md</span>);
 }
 
@@ -526,7 +568,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// ```no_run</span>
+<span class="doccomment">/// ```</span>
 <span class="doccomment">/// use pyo3::prelude::*;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// fn main() {</span>
@@ -600,12 +642,13 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// ```no_run</span>
+<span class="doccomment">/// ```</span>
 <span class="doccomment">/// # use std::time::Duration;</span>
 <span class="doccomment">/// # use pyo3::prelude::*;</span>
 <span class="doccomment">/// # Python::with_gil(|py| {</span>
 <span class="doccomment">/// # pyo3_asyncio::with_runtime(py, || {</span>
 <span class="doccomment">/// // Wait 1 second, then stop the event loop</span>
+<span class="doccomment">/// # #[cfg(feature = &quot;async-std-runtime&quot;)]</span>
 <span class="doccomment">/// async_std::task::spawn(async move {</span>
 <span class="doccomment">///     async_std::task::sleep(Duration::from_secs(1)).await;</span>
 <span class="doccomment">///     Python::with_gil(|py| {</span>
@@ -625,6 +668,7 @@
 <span class="doccomment">/// });        </span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// // block until stop is called</span>
+<span class="doccomment">/// # #[cfg(feature = &quot;async-std-runtime&quot;)]</span>
 <span class="doccomment">/// pyo3_asyncio::run_forever(py)?;</span>
 <span class="doccomment">/// # Ok(())</span>
 <span class="doccomment">/// # })</span>
@@ -699,7 +743,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// ```no_run</span>
+<span class="doccomment">/// ```</span>
 <span class="doccomment">/// use std::time::Duration;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// use pyo3::prelude::*;</span>

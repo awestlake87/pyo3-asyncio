@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["new_sync_test","Construct a test from a blocking function (like the traditional `#[test]` attribute)"],["test_main","Default main function for the async-std test harness."]]});
