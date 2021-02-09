@@ -6,11 +6,7 @@ mod tokio;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
-use syn::{
-    parse::{Parse, ParseStream, Result},
-    spanned::Spanned,
-    Attribute,
-};
+use syn::spanned::Spanned;
 
 /// Enables an async main function that uses the async-std runtime.
 ///
@@ -262,78 +258,5 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    result.into()
-}
-
-enum Item {
-    Attribute(Vec<Attribute>),
-    String(syn::LitStr),
-}
-
-impl Parse for Item {
-    fn parse(input: ParseStream<'_>) -> Result<Self> {
-        let lookahead = input.lookahead1();
-
-        if lookahead.peek(syn::Token![#]) {
-            Attribute::parse_outer(input).map(Item::Attribute)
-        } else {
-            input.parse().map(Item::String)
-        }
-    }
-}
-
-struct TestMainArgs {
-    attrs: Vec<Attribute>,
-    suite_name: String,
-}
-
-impl Parse for TestMainArgs {
-    fn parse(input: ParseStream<'_>) -> Result<Self> {
-        let mut args: syn::punctuated::Punctuated<Item, syn::Token![,]> =
-            input.parse_terminated(Item::parse)?;
-
-        let suite_name = match args.pop().unwrap() {
-            syn::punctuated::Pair::Punctuated(Item::String(s), _)
-            | syn::punctuated::Pair::End(Item::String(s)) => s.value(),
-            _ => panic!(),
-        };
-
-        let attrs = match args.pop().unwrap() {
-            syn::punctuated::Pair::Punctuated(Item::Attribute(attrs), _) => attrs,
-            _ => panic!(),
-        };
-
-        Ok(Self { attrs, suite_name })
-    }
-}
-
-/// The standard `pyo3-asyncio` test harness `main` fn boilerplate.
-///
-/// This macro provides the full boilerplate for the `pyo3-asyncio` test harness in one line.
-///
-/// # Examples
-///
-/// `test_main!` for the `tokio` runtime:
-/// ```ignore
-/// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
-/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::tokio::main], "Example Test Suite");
-/// ```
-///
-/// `test_main!` for the `async-std` runtime:
-/// ```ignore
-/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-/// pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
-/// ```
-#[cfg(not(test))]
-#[proc_macro]
-pub fn test_main(args: TokenStream) -> TokenStream {
-    let TestMainArgs { attrs, suite_name } = syn::parse_macro_input!(args as TestMainArgs);
-
-    let result = quote! {
-        #(#attrs)*
-        async fn main() -> pyo3::PyResult<()> {
-            pyo3_asyncio::testing::main(#suite_name).await
-        }
-    };
     result.into()
 }

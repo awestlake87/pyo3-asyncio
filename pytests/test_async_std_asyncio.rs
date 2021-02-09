@@ -64,7 +64,7 @@ async fn test_into_future() -> PyResult<()> {
     common::test_into_future().await
 }
 
-pyo3_asyncio::testing::test_main!(
-    #[pyo3_asyncio::async_std::main],
-    "PyO3 Asyncio Test Suite for Async-Std Runtime"
-);
+#[pyo3_asyncio::async_std::main]
+async fn main() -> pyo3::PyResult<()> {
+    pyo3_asyncio::testing::main().await
+}

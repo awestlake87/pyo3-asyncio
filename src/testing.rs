@@ -24,21 +24,29 @@
 //! Cargo. Instead, we put our tests in a `pytests` directory, although the name `pytests` is just
 //! a convention.
 //!
-//! We'll also want to provide the test's main function. It's highly recommended that you use the
-//! [`pyo3_asyncio::testing::test_main!`](pyo3_asyncio_macros::test_main) macro as it will take all of the tests marked with
-//! [`#[pyo3_asyncio::tokio::test]`](crate::tokio::test) or
-//! [`#[pyo3_asyncio::async_std::test]`](crate::async_std::test) and run them automatically.
+//! We'll also want to provide the test's main function. Most of the functionality that the test
+//! harness needs is packed in this module's [`main`](crate::testing::main) function. It will parse
+//! the test's CLI arguments, collect and pass the functions marked with
+//! [`#[pyo3_asyncio::async_std::test]`](crate::async_std::test) or
+//! [`#[pyo3_asyncio::tokio::test]`](crate::tokio::test) and pass them into the test harness for
+//! running and filtering.
 //!
 //! `pytests/test_example.rs` for the `tokio` runtime:
-//! ```ignore
+//! ```
 //! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
-//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::tokio::main], "Example Test Suite");
+//! #[pyo3_asyncio::tokio::main]
+//! async fn main() -> pyo3::PyResult<()> {
+//!     pyo3_asyncio::testing::main().await
+//! }
 //! ```
 //!
 //! `pytests/test_example.rs` for the `async-std` runtime:
-//! ```ignore
+//! ```
 //! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
+//! #[pyo3_asyncio::async_std::main]
+//! async fn main() -> pyo3::PyResult<()> {
+//!     pyo3_asyncio::testing::main().await
+//! }
 //! ```
 //!
 //! ### Cargo Configuration
@@ -64,40 +72,34 @@
 //!
 //! ### Adding Tests to the PyO3 Asyncio Test Harness
 //!
+//! We can add tests anywhere in the test crate with the runtime's corresponding `#[test]` attribute:
+//!
 //! For `async-std` use the [`pyo3_asyncio::async_std::test`](crate::async_std::test) attribute:
 //! ```
 //! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-//! # mod tests {
-//! use std::{time::Duration, thread};
+//! mod tests {
+//!     use std::{time::Duration, thread};
 //!
-//! use pyo3::prelude::*;
+//!     use pyo3::prelude::*;
 //!
-//! #[pyo3_asyncio::async_std::test]
-//! async fn test_async_sleep() -> PyResult<()> {
-//!     async_std::task::sleep(Duration::from_secs(1)).await;
-//!     Ok(())
+//!     #[pyo3_asyncio::async_std::test]
+//!     async fn test_async_sleep() -> PyResult<()> {
+//!         async_std::task::sleep(Duration::from_secs(1)).await;
+//!         Ok(())
+//!     }
+//!
+//!     #[pyo3_asyncio::async_std::test]
+//!     fn test_blocking_sleep() -> PyResult<()> {
+//!         thread::sleep(Duration::from_secs(1));
+//!         Ok(())
+//!     }
 //! }
 //!
-//! #[pyo3_asyncio::async_std::test]
-//! fn test_blocking_sleep() -> PyResult<()> {
-//!     thread::sleep(Duration::from_secs(1));
-//!     Ok(())
+//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
+//! #[pyo3_asyncio::async_std::main]
+//! async fn main() -> pyo3::PyResult<()> {
+//!     pyo3_asyncio::testing::main().await
 //! }
-//! # }
-//!
-//! // ...
-//! #
-//! # // Doctests don't detect main fn when using the test_main!() macro, so we expand it into the
-//! # // components of that macro instead.
-//! #
-//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-//! # use pyo3::prelude::*;
-//! #
-//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-//! # #[pyo3_asyncio::async_std::main]
-//! # async fn main() -> pyo3::PyResult<()> {
-//! #     pyo3_asyncio::testing::main("Example Test Suite").await
-//! # }
 //! # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 //! # fn main() {}
 //! ```
@@ -105,36 +107,29 @@
 //! For `tokio` use the [`pyo3_asyncio::tokio::test`](crate::tokio::test) attribute:
 //! ```
 //! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
-//! # mod tests {
-//! use std::{time::Duration, thread};
+//! mod tests {
+//!     use std::{time::Duration, thread};
 //!
-//! use pyo3::prelude::*;
+//!     use pyo3::prelude::*;
 //!
-//! #[pyo3_asyncio::tokio::test]
-//! async fn test_async_sleep() -> PyResult<()> {
-//!     tokio::time::sleep(Duration::from_secs(1)).await;
-//!     Ok(())
+//!     #[pyo3_asyncio::tokio::test]
+//!     async fn test_async_sleep() -> PyResult<()> {
+//!         tokio::time::sleep(Duration::from_secs(1)).await;
+//!         Ok(())
+//!     }
+//!
+//!     #[pyo3_asyncio::tokio::test]
+//!     fn test_blocking_sleep() -> PyResult<()> {
+//!         thread::sleep(Duration::from_secs(1));
+//!         Ok(())
+//!     }
 //! }
 //!
-//! #[pyo3_asyncio::tokio::test]
-//! fn test_blocking_sleep() -> PyResult<()> {
-//!     thread::sleep(Duration::from_secs(1));
-//!     Ok(())
+//! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
+//! #[pyo3_asyncio::tokio::main]
+//! async fn main() -> pyo3::PyResult<()> {
+//!     pyo3_asyncio::testing::main().await
 //! }
-//! # }
-//!
-//! // ...
-//! #
-//! # // Doctests don't detect main fn when using the test_main!() macro, so we expand it into the
-//! # // components of that macro instead.
-//! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
-//! # use pyo3::prelude::*;
-//! #
-//! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
-//! # #[pyo3_asyncio::tokio::main]
-//! # async fn main() -> PyResult<()> {
-//! #     pyo3_asyncio::testing::main("Example Test Suite").await
-//! # }
 //! # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 //! # fn main() {}
 //! ```
@@ -180,47 +175,10 @@
 //!
 //! # fn main() {}
 //! ```
-//!
-//! ### Expanding `test_main!()` for Doc Tests
-//!
-//! This is probably a pretty niche topic, and there's really no reason you would _need_ to do this
-//! since usually you'd probably just want to use the `#[main]` attributes for your doc tests like we
-//! mentioned at the beginning of this page. But since we had to do it for _this particular module_
-//! of the docs, it's probably worth mentioning as a footnote.
-//!
-//! For some reason, doc tests don't interpret the `test_main!()` macro as providing `fn main()` and
-//! will wrap the test body in another `fn main()`. To get around this, we can instead expand
-//! `test_main!()` into its components for the doc test:
-//!
-//! The following `test_main!()` macro:
-//!
-//! ```ignore
-//! pyo3_asyncio::testing::test_main!(#[pyo3_asyncio::async_std::main], "Example Test Suite");
-//! ```
-//!
-//! Is equivalent to this expansion:
-//!
-//! ```
-//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-//! use pyo3::prelude::*;
-//!
-//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-//! #[pyo3_asyncio::async_std::main]
-//! async fn main() -> PyResult<()> {
-//!     pyo3_asyncio::testing::main("Example Test Suite").await
-//! }
-//! # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-//! # fn main() {}
-//! ```
 
 use clap::{App, Arg};
 use futures::stream::{self, StreamExt};
 use pyo3::prelude::*;
-
-/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
-/// Provides the boilerplate for the `pyo3-asyncio` test harness in one line
-#[cfg(feature = "attributes")]
-pub use pyo3_asyncio_macros::test_main;
 
 /// Args that should be provided to the test program
 ///
@@ -251,13 +209,13 @@ impl Default for Args {
 /// Running the following function:
 /// ```
 /// # use pyo3_asyncio::testing::parse_args;
-/// let args = parse_args("PyO3 Asyncio Example Test Suite");
+/// let args = parse_args();
 /// ```
 ///
 /// Produces the following usage string:
 ///
 /// ```bash
-/// Pyo3 Asyncio Example Test Suite
+/// Pyo3 Asyncio Test Suite
 /// USAGE:
 /// test_example [TESTNAME]
 ///
@@ -268,8 +226,8 @@ impl Default for Args {
 /// ARGS:
 /// <TESTNAME>    If specified, only run tests containing this string in their names
 /// ```
-pub fn parse_args(suite_name: &str) -> Args {
-    let matches = App::new(suite_name)
+pub fn parse_args() -> Args {
+    let matches = App::new("PyO3 Asyncio Test Suite")
         .arg(
             Arg::with_name("TESTNAME")
                 .help("If specified, only run tests containing this string in their names"),
@@ -345,13 +303,13 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
 /// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::async_std::main]
 /// async fn main() -> PyResult<()> {
-///     pyo3_asyncio::testing::main("Example Test Suite").await
+///     pyo3_asyncio::testing::main().await
 /// }
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// fn main() { }
 /// ```
-pub async fn main(suite_name: &str) -> PyResult<()> {
-    let args = parse_args(suite_name);
+pub async fn main() -> PyResult<()> {
+    let args = parse_args();
 
     test_harness(
         inventory::iter::<Test>().map(|test| test.clone()).collect(),
