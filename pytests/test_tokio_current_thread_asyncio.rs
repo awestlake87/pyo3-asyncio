@@ -1,8 +1,7 @@
 mod common;
 mod tokio_asyncio;
 
-fn main() {
-    pyo3_asyncio::tokio::init_current_thread();
-
-    tokio_asyncio::test_main("PyO3 Asyncio Tokio Current-Thread Test Suite");
+#[pyo3_asyncio::tokio::main(flavor = "current_thread")]
+async fn main() -> pyo3::PyResult<()> {
+    pyo3_asyncio::testing::main().await
 }

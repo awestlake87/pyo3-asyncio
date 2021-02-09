@@ -40,6 +40,19 @@
 //! <span
 //!   class="module-item stab portability"
 //!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>attributes</code></span>
+//! are only available when the `attributes` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.13.0"
+//! features = ["attributes"]
+//! ```
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
 //! ><code>async-std-runtime</code></span>
 //! are only available when the `async-std-runtime` Cargo feature is enabled:
 //!
@@ -99,9 +112,14 @@ use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
 use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, PyNativeType};
 
+/// Re-exported for #[test] attributes
+#[cfg(all(feature = "attributes", feature = "testing"))]
+pub use inventory;
+
 /// Test README
 #[doc(hidden)]
 pub mod doc_test {
+    #[allow(unused)]
     macro_rules! doc_comment {
         ($x:expr, $module:item) => {
             #[doc = $x]
@@ -109,12 +127,14 @@ pub mod doc_test {
         };
     }
 
+    #[allow(unused)]
     macro_rules! doctest {
         ($x:expr, $y:ident) => {
             doc_comment!(include_str!($x), mod $y {});
         };
     }
 
+    #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
     doctest!("../README.md", readme_md);
 }
 
@@ -138,7 +158,7 @@ static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use pyo3::prelude::*;
 ///
 /// fn main() {
@@ -212,12 +232,13 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// # use std::time::Duration;
 /// # use pyo3::prelude::*;
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
 /// // Wait 1 second, then stop the event loop
+/// # #[cfg(feature = "async-std-runtime")]
 /// async_std::task::spawn(async move {
 ///     async_std::task::sleep(Duration::from_secs(1)).await;
 ///     Python::with_gil(|py| {
@@ -237,6 +258,7 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// });        
 ///
 /// // block until stop is called
+/// # #[cfg(feature = "async-std-runtime")]
 /// pyo3_asyncio::run_forever(py)?;
 /// # Ok(())
 /// # })
@@ -311,7 +333,7 @@ impl PyTaskCompleter {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use std::time::Duration;
 ///
 /// use pyo3::prelude::*;

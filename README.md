@@ -28,39 +28,20 @@ Here we initialize the runtime, import Python's `asyncio` library and run the gi
 
 More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
 
-```rust no_run
+```rust
 use pyo3::prelude::*;
 
-fn main() {
-    Python::with_gil(|py| {
-        // Initialize the runtime
-        pyo3_asyncio::with_runtime(py, || {
-            let asyncio: PyObject = py.import("asyncio")?.into();
-            
-            // Run the event loop until the given future completes
-            pyo3_asyncio::async_std::run_until_complete(py, async move {
-                Python::with_gil(|py| {
-                    // convert asyncio.sleep into a Rust Future
-                    pyo3_asyncio::into_future(
-                        asyncio.call_method1(
-                            py, 
-                            "sleep", 
-                            (1.into_py(py),)
-                        )?
-                        .as_ref(py)
-                    )
-                })?
-                .await?;
+#[pyo3_asyncio::async_std::main]
+async fn main() -> PyResult<()> {
+    let fut = Python::with_gil(|py| {
+        let asyncio = py.import("asyncio")?;
 
-                Ok(())
-            })?;
+        // convert asyncio.sleep into a Rust Future
+        pyo3_asyncio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
+    })?;
 
-            Ok(())
-        })
-        .map_err(|e| {
-            e.print_and_set_sys_last_vars(py);  
-        })
-        .unwrap();
-    })
+    fut.await?;
+
+    Ok(())
 }
 ```

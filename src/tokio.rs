@@ -12,6 +12,16 @@ use pyo3::prelude::*;
 
 use crate::generic;
 
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
+#[cfg(feature = "attributes")]
+pub use pyo3_asyncio_macros::tokio_main as main;
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span>
+/// Registers a `tokio` test with the `pyo3-asyncio` test harness
+#[cfg(all(feature = "attributes", feature = "testing"))]
+pub use pyo3_asyncio_macros::tokio_test as test;
+
 static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
 
 const EXPECT_TOKIO_INIT: &str = "Tokio runtime must be initialized";
@@ -87,7 +97,7 @@ pub fn init_multi_thread() {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// # use std::time::Duration;
 /// #
 /// # use pyo3::prelude::*;
@@ -128,7 +138,7 @@ where
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use std::time::Duration;
 ///
 /// use pyo3::prelude::*;
@@ -149,132 +159,4 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     generic::into_coroutine::<TokioRuntime, _>(py, fut)
-}
-
-/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Testing Utilities for the Tokio runtime.
-///
-// # PyO3 Asyncio Testing Utilities
-///
-/// This module provides some utilities for parsing test arguments as well as running and filtering
-/// a sequence of tests.
-///
-/// As mentioned [here](crate#pythons-event-loop), PyO3 Asyncio tests cannot use the default test
-/// harness since it doesn't allow Python to gain control over the main thread. Instead, we have to
-/// provide our own test harness in order to create integration tests.
-///
-/// ## Creating A PyO3 Asyncio Integration Test
-///
-/// ### Main Test File
-/// First, we need to create the test's main file. Although these tests are considered integration
-/// tests, we cannot put them in the `tests` directory since that is a special directory owned by
-/// Cargo. Instead, we put our tests in a `pytests` directory, although the name `pytests` is just
-/// a convention.
-///
-/// `pytests/test_example.rs`
-/// ```no_run
-/// fn main() {
-///
-/// }
-/// ```
-///
-/// ### Test Manifest Entry
-/// Next, we need to add our test file to the Cargo manifest. Add the following section to your
-/// `Cargo.toml`
-///
-/// ```toml
-/// [[test]]
-/// name = "test_example"
-/// path = "pytests/test_example.rs"
-/// harness = false
-/// ```
-///
-/// At this point you should be able to run the test via `cargo test`
-///
-/// ### Using the PyO3 Asyncio Test Harness
-/// Now that we've got our test registered with `cargo test`, we can start using the PyO3 Asyncio
-/// test harness.
-///
-/// In your `Cargo.toml` add the testing feature to `pyo3-asyncio`:
-/// ```toml
-/// pyo3-asyncio = { version = "0.13", features = ["testing", "tokio-runtime"] }
-/// ```
-///
-/// Now, in your test's main file, initialize the tokio runtime and call
-/// [`crate::tokio::testing::test_main`]:
-///
-/// ```no_run
-/// fn main() {
-///     pyo3_asyncio::tokio::init_current_thread();
-///
-///     pyo3_asyncio::tokio::testing::test_main("Example Test Suite", vec![]);
-/// }
-/// ```
-///
-/// ### Adding Tests to the PyO3 Asyncio Test Harness
-///
-/// ```no_run
-/// use std::{thread, time::Duration};
-///
-/// use pyo3_asyncio::testing::Test;
-///
-/// fn main() {
-///     pyo3_asyncio::tokio::init_current_thread();
-///
-///     pyo3_asyncio::tokio::testing::test_main(
-///         "Example Test Suite",
-///         vec![
-///             Test::new_async(
-///                 "test_async_sleep".into(),
-///                 async move {
-///                     tokio::time::sleep(Duration::from_secs(1)).await;
-///                     Ok(())
-///                 }
-///             ),
-///             pyo3_asyncio::tokio::testing::new_sync_test("test_sync_sleep".into(), || {
-///                 thread::sleep(Duration::from_secs(1));
-///                 Ok(())
-///             })
-///         ]
-///     );
-/// }
-/// ```
-#[cfg(feature = "testing")]
-pub mod testing {
-    use pyo3::prelude::*;
-
-    use crate::{
-        dump_err,
-        testing::{parse_args, test_harness, Test},
-        with_runtime,
-    };
-
-    /// Construct a test from a blocking function (like the traditional `#[test]` attribute)
-    pub fn new_sync_test<F>(name: String, func: F) -> Test
-    where
-        F: FnOnce() -> PyResult<()> + Send + 'static,
-    {
-        Test::new_async(name, async move {
-            ::tokio::task::spawn_blocking(func).await.unwrap()
-        })
-    }
-
-    /// Default main function for the test harness.
-    ///
-    /// This is meant to perform the necessary initialization for most test cases. If you want
-    /// additional control over the initialization (i.e. env_logger initialization), you can use this
-    /// function as a template.
-    ///
-    /// > _The tokio runtime must be initialized before calling this function!_
-    pub fn test_main(suite_name: &str, tests: Vec<Test>) {
-        Python::with_gil(|py| {
-            with_runtime(py, || {
-                let args = parse_args(suite_name);
-                crate::tokio::run_until_complete(py, test_harness(tests, args))?;
-
-                Ok(())
-            })
-            .map_err(dump_err(py))
-            .unwrap();
-        })
-    }
 }

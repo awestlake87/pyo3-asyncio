@@ -77,6 +77,7 @@ pub trait Runtime {
 /// #
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
+/// # #[cfg(feature = "tokio-runtime")]
 /// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _>(py, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
@@ -234,37 +235,4 @@ where
     });
 
     Ok(future_rx)
-}
-
-/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Testing utilities for generic runtimes.
-#[cfg(feature = "testing")]
-pub mod testing {
-    use pyo3::prelude::*;
-
-    use crate::{
-        dump_err,
-        generic::{run_until_complete, Runtime},
-        testing::{parse_args, test_harness, Test},
-        with_runtime,
-    };
-
-    /// Default main function for the generic test harness.
-    ///
-    /// This is meant to perform the necessary initialization for most test cases. If you want
-    /// additional control over the initialization, you can use this
-    /// function as a template.
-    pub fn test_main<R>(suite_name: &str, tests: Vec<Test>)
-    where
-        R: Runtime,
-    {
-        Python::with_gil(|py| {
-            with_runtime(py, || {
-                let args = parse_args(suite_name);
-                run_until_complete::<R, _>(py, test_harness(tests, args))?;
-                Ok(())
-            })
-            .map_err(dump_err(py))
-            .unwrap();
-        })
-    }
 }
