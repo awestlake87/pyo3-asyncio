@@ -18,5 +18,7 @@ test-feature-powerset: lint
 	cargo install cargo-hack
 	cargo hack test --feature-powerset	
 
-publish: test-feature-powerset
+publish: test-feature-powerset	
+	cargo publish --manifest-path pyo3-asyncio-macros/Cargo.toml
+	sleep 10  # wait for crates.io to update
 	cargo publish

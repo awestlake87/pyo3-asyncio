@@ -2,7 +2,7 @@
 name = "pyo3-asyncio"
 version = "0.13.0"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
-readme = "README.md"
+readme = "/README.md"
 keywords = ["pyo3", "pyo3-asyncio", "python", "cpython", "ffi", "async", "asyncio"]
 homepage = "https://github.com/awestlake87/pyo3-asyncio"
 repository = "https://github.com/awestlake87/pyo3-asyncio"
