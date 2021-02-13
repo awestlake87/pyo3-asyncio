@@ -4,15 +4,21 @@ use ::tokio::{
     runtime::{Builder, Runtime},
     task,
 };
+use futures::future::pending;
 use once_cell::sync::OnceCell;
 use pyo3::prelude::*;
 
 use crate::generic;
 
-/// re-export pending to be used in tokio macros without additional dependency
-pub use futures::future::pending;
-/// re-export tokio::runtime to build runtimes in tokio macros without additional dependency
-pub use tokio::runtime;
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
+/// re-exports for macros
+#[cfg(feature = "attributes")]
+pub mod re_exports {
+    /// re-export pending to be used in tokio macros without additional dependency
+    pub use futures::future::pending;
+    /// re-export tokio::runtime to build runtimes in tokio macros without additional dependency
+    pub use tokio::runtime;
+}
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 #[cfg(feature = "attributes")]

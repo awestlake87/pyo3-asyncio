@@ -146,7 +146,7 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     #body
                 }
 
-                Box::pin(pyo3_asyncio::async_std::spawn_blocking(move || {
+                Box::pin(pyo3_asyncio::async_std::re_exports::spawn_blocking(move || {
                     #name()
                 }))
             }
