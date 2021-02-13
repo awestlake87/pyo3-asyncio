@@ -20,5 +20,5 @@ test-feature-powerset: lint
 
 publish: test-feature-powerset	
 	cargo publish --manifest-path pyo3-asyncio-macros/Cargo.toml
-	sleep 10  # wait for crates.io to update
+	sleep 30  # wait for crates.io to update
 	cargo publish
