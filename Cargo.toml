@@ -1,5 +1,6 @@
 [package]
 name = "pyo3-asyncio"
+description = "PyO3 utilities for Python's Asyncio library"
 version = "0.13.0"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
 readme = "/README.md"

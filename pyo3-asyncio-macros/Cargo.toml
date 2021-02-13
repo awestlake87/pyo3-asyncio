@@ -1,15 +1,15 @@
 [package]
 name = "pyo3-asyncio-macros"
+description = "Proc Macro Attributes for PyO3 Asyncio"
 version = "0.13.0"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
-readme = "/README.md"
+readme = "../README.md"
 keywords = ["pyo3", "pyo3-asyncio", "python", "cpython", "ffi", "async", "asyncio"]
 homepage = "https://github.com/awestlake87/pyo3-asyncio"
 repository = "https://github.com/awestlake87/pyo3-asyncio"
 documentation = "https://docs.rs/crate/pyo3-asyncio/"
 categories = ["api-bindings", "development-tools::ffi"]
 license = "Apache-2.0"
-exclude = ["/.gitignore", "/codecov.yml", "/Makefile"]
 edition = "2018"
 
 [lib]
