@@ -1,12 +1,10 @@
-use std::{
-    future::{pending, Future},
-    thread,
-};
+use std::{future::Future, thread};
 
 use ::tokio::{
     runtime::{Builder, Runtime},
     task,
 };
+use futures::future::pending;
 use once_cell::sync::OnceCell;
 use pyo3::prelude::*;
 
