@@ -15,12 +15,7 @@
 
 ## Known Problems
 
-Currently, this library can give spurious failures during finalization. A solution should be released for PyO3 soon, but in the meantime you can add this patch to your `Cargo.toml` to use the master branch for PyO3
-
-```toml
-[patch.crates-io]
-pyo3 = { git = "https://github.com/PyO3/pyo3" }
-```
+This library can give spurious failures during finalization prior to PyO3 release `v0.13.2`. Make sure your PyO3 dependency is up-to-date!
 
 ## Quickstart
 
