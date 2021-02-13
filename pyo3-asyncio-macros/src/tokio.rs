@@ -221,10 +221,10 @@ fn parse_knobs(
 
     let mut rt = match config.flavor {
         RuntimeFlavor::CurrentThread => quote! {
-            tokio::runtime::Builder::new_current_thread()
+            pyo3_asyncio::tokio::runtime::Builder::new_current_thread()
         },
         RuntimeFlavor::Threaded => quote! {
-            tokio::runtime::Builder::new_multi_thread()
+            pyo3_asyncio::tokio::runtime::Builder::new_multi_thread()
         },
     };
     if let Some(v) = config.worker_threads {
@@ -234,7 +234,7 @@ fn parse_knobs(
     let rt_init = match config.flavor {
         RuntimeFlavor::CurrentThread => quote! {
             std::thread::spawn(|| pyo3_asyncio::tokio::get_runtime().block_on(
-                std::future::pending::<()>()
+                pyo3_asyncio::tokio::pending::<()>()
             ));
         },
         _ => quote! {},
