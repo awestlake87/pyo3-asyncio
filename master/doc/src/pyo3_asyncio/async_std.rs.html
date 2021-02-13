@@ -112,6 +112,9 @@
 <span id="109">109</span>
 <span id="110">110</span>
 <span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">future</span>::<span class="ident">Future</span>;
 
@@ -119,6 +122,9 @@
 <span class="kw">use</span> <span class="ident">pyo3</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">generic</span>::{<span class="self">self</span>, <span class="ident">JoinError</span>, <span class="ident">Runtime</span>};
+
+<span class="doccomment">/// re-export spawn_blocking for use in `#[test]` macro without external dependency</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">async_std</span>::<span class="ident">task</span>::<span class="ident">spawn_blocking</span>;
 
 <span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt; Provides the boilerplate for the `async-std` runtime and runs an async fn as main</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>)]</span>
