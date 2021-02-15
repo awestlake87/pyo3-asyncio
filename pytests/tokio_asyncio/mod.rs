@@ -62,3 +62,8 @@ fn test_blocking_sleep() -> PyResult<()> {
 async fn test_into_future() -> PyResult<()> {
     common::test_into_future().await
 }
+
+#[pyo3_asyncio::tokio::test]
+async fn test_other_awaitables() -> PyResult<()> {
+    common::test_other_awaitables().await
+}

@@ -29,3 +29,24 @@ pub(super) fn test_blocking_sleep() -> PyResult<()> {
     thread::sleep(Duration::from_secs(1));
     Ok(())
 }
+
+pub(super) async fn test_other_awaitables() -> PyResult<()> {
+    let fut = Python::with_gil(|py| {
+        let functools = py.import("functools")?;
+        let time = py.import("time")?;
+
+        let task = pyo3_asyncio::get_event_loop(py).call_method1(
+            "run_in_executor",
+            (
+                py.None(),
+                functools.call_method1("partial", (time.getattr("sleep")?, 1))?,
+            ),
+        )?;
+
+        pyo3_asyncio::into_future(task)
+    })?;
+
+    fut.await?;
+
+    Ok(())
+}

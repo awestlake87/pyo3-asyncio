@@ -64,6 +64,11 @@ async fn test_into_future() -> PyResult<()> {
     common::test_into_future().await
 }
 
+#[pyo3_asyncio::async_std::test]
+async fn test_other_awaitables() -> PyResult<()> {
+    common::test_other_awaitables().await
+}
+
 #[pyo3_asyncio::async_std::main]
 async fn main() -> pyo3::PyResult<()> {
     pyo3_asyncio::testing::main().await
