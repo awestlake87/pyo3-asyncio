@@ -35,6 +35,7 @@ pub(super) async fn test_other_awaitables() -> PyResult<()> {
         let functools = py.import("functools")?;
         let time = py.import("time")?;
 
+        // spawn a blocking sleep in the threadpool executor - returns a task, not a coroutine
         let task = pyo3_asyncio::get_event_loop(py).call_method1(
             "run_in_executor",
             (
