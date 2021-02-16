@@ -145,7 +145,6 @@ static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
 static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
 static CALL_SOON: OnceCell<PyObject> = OnceCell::new();
-static CREATE_TASK: OnceCell<PyObject> = OnceCell::new();
 static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 
 fn ensure_future(py: Python) -> &PyAny {
@@ -209,7 +208,6 @@ fn try_init(py: Python) -> PyResult<()> {
     event_loop.call_method1("set_default_executor", (executor,))?;
 
     let call_soon = event_loop.getattr("call_soon_threadsafe")?;
-    let create_task = asyncio.getattr("run_coroutine_threadsafe")?;
     let create_future = event_loop.getattr("create_future")?;
 
     ASYNCIO.get_or_init(|| asyncio.into());
@@ -217,7 +215,6 @@ fn try_init(py: Python) -> PyResult<()> {
     EVENT_LOOP.get_or_init(|| event_loop.into());
     EXECUTOR.get_or_init(|| executor.into());
     CALL_SOON.get_or_init(|| call_soon.into());
-    CREATE_TASK.get_or_init(|| create_task.into());
     CREATE_FUTURE.get_or_init(|| create_future.into());
 
     Ok(())
