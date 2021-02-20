@@ -407,6 +407,32 @@
 <span id="404">404</span>
 <span id="405">405</span>
 <span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
@@ -551,11 +577,15 @@
 <span class="kw">const</span> <span class="ident">EXPECT_INIT</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;PyO3 Asyncio has not been initialized&quot;</span>;
 
 <span class="kw">static</span> <span class="ident">ASYNCIO</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell</span>::<span class="ident">new</span>();
+<span class="kw">static</span> <span class="ident">ENSURE_FUTURE</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell</span>::<span class="ident">new</span>();
 <span class="kw">static</span> <span class="ident">EVENT_LOOP</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell</span>::<span class="ident">new</span>();
 <span class="kw">static</span> <span class="ident">EXECUTOR</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell</span>::<span class="ident">new</span>();
 <span class="kw">static</span> <span class="ident">CALL_SOON</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell</span>::<span class="ident">new</span>();
-<span class="kw">static</span> <span class="ident">CREATE_TASK</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell</span>::<span class="ident">new</span>();
 <span class="kw">static</span> <span class="ident">CREATE_FUTURE</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell</span>::<span class="ident">new</span>();
+
+<span class="kw">fn</span> <span class="ident">ensure_future</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">PyAny</span> {
+    <span class="ident">ENSURE_FUTURE</span>.<span class="ident">get</span>().<span class="ident">expect</span>(<span class="ident">EXPECT_INIT</span>).<span class="ident">as_ref</span>(<span class="ident">py</span>)
+}
 
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">needless_doctest_main</span>)]</span>
 <span class="doccomment">/// Wraps the provided function with the initialization and finalization for PyO3 Asyncio</span>
@@ -602,6 +632,9 @@
 <span class="doccomment">/// Must be called at the start of your program</span>
 <span class="kw">fn</span> <span class="ident">try_init</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">asyncio</span> <span class="op">=</span> <span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;asyncio&quot;</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let</span> <span class="ident">ensure_future</span> <span class="op">=</span> <span class="ident">asyncio</span>.<span class="ident">getattr</span>(<span class="string">&quot;ensure_future&quot;</span>)<span class="question-mark">?</span>;
+
     <span class="kw">let</span> <span class="ident">event_loop</span> <span class="op">=</span> <span class="ident">asyncio</span>.<span class="ident">call_method0</span>(<span class="string">&quot;get_event_loop&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">py</span>
         .<span class="ident">import</span>(<span class="string">&quot;concurrent.futures.thread&quot;</span>)<span class="question-mark">?</span>
@@ -611,14 +644,13 @@
     <span class="ident">event_loop</span>.<span class="ident">call_method1</span>(<span class="string">&quot;set_default_executor&quot;</span>, (<span class="ident">executor</span>,))<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">call_soon</span> <span class="op">=</span> <span class="ident">event_loop</span>.<span class="ident">getattr</span>(<span class="string">&quot;call_soon_threadsafe&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">create_task</span> <span class="op">=</span> <span class="ident">asyncio</span>.<span class="ident">getattr</span>(<span class="string">&quot;run_coroutine_threadsafe&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">create_future</span> <span class="op">=</span> <span class="ident">event_loop</span>.<span class="ident">getattr</span>(<span class="string">&quot;create_future&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="ident">ASYNCIO</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">asyncio</span>.<span class="ident">into</span>());
+    <span class="ident">ENSURE_FUTURE</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">ensure_future</span>.<span class="ident">into</span>());
     <span class="ident">EVENT_LOOP</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">event_loop</span>.<span class="ident">into</span>());
     <span class="ident">EXECUTOR</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">executor</span>.<span class="ident">into</span>());
     <span class="ident">CALL_SOON</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">call_soon</span>.<span class="ident">into</span>());
-    <span class="ident">CREATE_TASK</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">create_task</span>.<span class="ident">into</span>());
     <span class="ident">CREATE_FUTURE</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">create_future</span>.<span class="ident">into</span>());
 
     <span class="prelude-val">Ok</span>(())
@@ -731,6 +763,26 @@
     }
 }
 
+<span class="attribute">#[<span class="ident">pyclass</span>]</span>
+<span class="kw">struct</span> <span class="ident">PyEnsureFuture</span> {
+    <span class="ident">awaitable</span>: <span class="ident">PyObject</span>,
+    <span class="ident">tx</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+}
+
+<span class="attribute">#[<span class="ident">pymethods</span>]</span>
+<span class="kw">impl</span> <span class="ident">PyEnsureFuture</span> {
+    <span class="attribute">#[<span class="ident">call</span>]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">__call__</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="ident">Python</span>::<span class="ident">with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">task</span> <span class="op">=</span> <span class="ident">ensure_future</span>(<span class="ident">py</span>).<span class="ident">call1</span>((<span class="self">self</span>.<span class="ident">awaitable</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>),))<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">on_complete</span> <span class="op">=</span> <span class="ident">PyTaskCompleter</span> { <span class="ident">tx</span>: <span class="self">self</span>.<span class="ident">tx</span>.<span class="ident">take</span>() };
+            <span class="ident">task</span>.<span class="ident">call_method1</span>(<span class="string">&quot;add_done_callback&quot;</span>, (<span class="ident">on_complete</span>,))<span class="question-mark">?</span>;
+
+            <span class="prelude-val">Ok</span>(())
+        })
+    }
+}
+
 <span class="doccomment">/// Convert a Python `awaitable` into a Rust Future</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A</span>
@@ -783,13 +835,13 @@
     <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">awaitable</span>.<span class="ident">py</span>();
     <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
 
-    <span class="kw">let</span> <span class="ident">task</span> <span class="op">=</span> <span class="ident">CREATE_TASK</span>
-        .<span class="ident">get</span>()
-        .<span class="ident">expect</span>(<span class="ident">EXPECT_INIT</span>)
-        .<span class="ident">call1</span>(<span class="ident">py</span>, (<span class="ident">awaitable</span>, <span class="ident">get_event_loop</span>(<span class="ident">py</span>)))<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">on_complete</span> <span class="op">=</span> <span class="ident">PyTaskCompleter</span> { <span class="ident">tx</span>: <span class="prelude-val">Some</span>(<span class="ident">tx</span>) };
-
-    <span class="ident">task</span>.<span class="ident">call_method1</span>(<span class="ident">py</span>, <span class="string">&quot;add_done_callback&quot;</span>, (<span class="ident">on_complete</span>,))<span class="question-mark">?</span>;
+    <span class="ident">CALL_SOON</span>.<span class="ident">get</span>().<span class="ident">expect</span>(<span class="ident">EXPECT_INIT</span>).<span class="ident">call1</span>(
+        <span class="ident">py</span>,
+        (<span class="ident">PyEnsureFuture</span> {
+            <span class="ident">awaitable</span>: <span class="ident">awaitable</span>.<span class="ident">into</span>(),
+            <span class="ident">tx</span>: <span class="prelude-val">Some</span>(<span class="ident">tx</span>),
+        },),
+    )<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(<span class="ident">async</span> <span class="kw">move</span> {
         <span class="kw">match</span> <span class="ident">rx</span>.<span class="ident">await</span> {
