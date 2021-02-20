@@ -88,7 +88,7 @@ pub fn init_multi_thread() {
         Builder::new_multi_thread()
             .enable_all()
             .build()
-            .expect("Couldn't build the current-thread Tokio runtime"),
+            .expect("Couldn't build the multi-thread Tokio runtime"),
     );
 }
 
