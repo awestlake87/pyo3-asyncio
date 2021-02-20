@@ -141,11 +141,15 @@ pub mod doc_test {
 const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
 
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
+static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
 static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
 static CALL_SOON: OnceCell<PyObject> = OnceCell::new();
-static CREATE_TASK: OnceCell<PyObject> = OnceCell::new();
 static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
+
+fn ensure_future(py: Python) -> &PyAny {
+    ENSURE_FUTURE.get().expect(EXPECT_INIT).as_ref(py)
+}
 
 #[allow(clippy::needless_doctest_main)]
 /// Wraps the provided function with the initialization and finalization for PyO3 Asyncio
@@ -192,6 +196,9 @@ where
 /// Must be called at the start of your program
 fn try_init(py: Python) -> PyResult<()> {
     let asyncio = py.import("asyncio")?;
+
+    let ensure_future = asyncio.getattr("ensure_future")?;
+
     let event_loop = asyncio.call_method0("get_event_loop")?;
     let executor = py
         .import("concurrent.futures.thread")?
@@ -201,14 +208,13 @@ fn try_init(py: Python) -> PyResult<()> {
     event_loop.call_method1("set_default_executor", (executor,))?;
 
     let call_soon = event_loop.getattr("call_soon_threadsafe")?;
-    let create_task = asyncio.getattr("run_coroutine_threadsafe")?;
     let create_future = event_loop.getattr("create_future")?;
 
     ASYNCIO.get_or_init(|| asyncio.into());
+    ENSURE_FUTURE.get_or_init(|| ensure_future.into());
     EVENT_LOOP.get_or_init(|| event_loop.into());
     EXECUTOR.get_or_init(|| executor.into());
     CALL_SOON.get_or_init(|| call_soon.into());
-    CREATE_TASK.get_or_init(|| create_task.into());
     CREATE_FUTURE.get_or_init(|| create_future.into());
 
     Ok(())
@@ -321,6 +327,26 @@ impl PyTaskCompleter {
     }
 }
 
+#[pyclass]
+struct PyEnsureFuture {
+    awaitable: PyObject,
+    tx: Option<oneshot::Sender<PyResult<PyObject>>>,
+}
+
+#[pymethods]
+impl PyEnsureFuture {
+    #[call]
+    pub fn __call__(&mut self) -> PyResult<()> {
+        Python::with_gil(|py| {
+            let task = ensure_future(py).call1((self.awaitable.as_ref(py),))?;
+            let on_complete = PyTaskCompleter { tx: self.tx.take() };
+            task.call_method1("add_done_callback", (on_complete,))?;
+
+            Ok(())
+        })
+    }
+}
+
 /// Convert a Python `awaitable` into a Rust Future
 ///
 /// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
@@ -373,13 +399,13 @@ pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<
     let py = awaitable.py();
     let (tx, rx) = oneshot::channel();
 
-    let task = CREATE_TASK
-        .get()
-        .expect(EXPECT_INIT)
-        .call1(py, (awaitable, get_event_loop(py)))?;
-    let on_complete = PyTaskCompleter { tx: Some(tx) };
-
-    task.call_method1(py, "add_done_callback", (on_complete,))?;
+    CALL_SOON.get().expect(EXPECT_INIT).call1(
+        py,
+        (PyEnsureFuture {
+            awaitable: awaitable.into(),
+            tx: Some(tx),
+        },),
+    )?;
 
     Ok(async move {
         match rx.await {
