@@ -77,6 +77,10 @@ fn start_current_thread() {
 }
 
 /// Initialize the Tokio Runtime with current-thread scheduler
+///
+/// # Panics
+/// This function will panic if called a second time. See [`init_current_thread_once`] if you want
+/// to avoid this panic.
 pub fn init_current_thread() {
     init(current_thread());
     start_current_thread();
@@ -95,6 +99,10 @@ fn multi_thread() -> Runtime {
 }
 
 /// Initialize the Tokio Runtime with the multi-thread scheduler
+///
+/// # Panics
+/// This function will panic if called a second time. See [`init_multi_thread_once`] if you want to
+/// avoid this panic.
 pub fn init_multi_thread() {
     init(multi_thread());
 }
@@ -102,7 +110,7 @@ pub fn init_multi_thread() {
 /// Ensure that the Tokio Runtime is initialized
 ///
 /// If the runtime has not been initialized already, the multi-thread scheduler
-/// is used. Otherwise this function is a no-op.
+/// is used. Calling this function a second time is a no-op.
 pub fn init_multi_thread_once() {
     TOKIO_RUNTIME.get_or_init(|| multi_thread());
 }
@@ -110,7 +118,7 @@ pub fn init_multi_thread_once() {
 /// Ensure that the Tokio Runtime is initialized
 ///
 /// If the runtime has not been initialized already, the current-thread
-/// scheduler is used. Otherwise this function is a no-op
+/// scheduler is used. Calling this function a second time is a no-op.
 pub fn init_current_thread_once() {
     let mut initialized = false;
     TOKIO_RUNTIME.get_or_init(|| {

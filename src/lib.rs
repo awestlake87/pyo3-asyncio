@@ -193,9 +193,9 @@ where
 
 /// Attempt to initialize the Python and Rust event loops
 ///
-/// - Must be called before any other pyo3-asyncio functions
-/// - Calling `try_init` twice returns `Ok(())` and does nothing
-///   > In future versions this may return an `Err`
+/// - Must be called before any other pyo3-asyncio functions.
+/// - Calling `try_init` a second time returns `Ok(())` and does nothing.
+///   > In future versions this may return an `Err`.
 pub fn try_init(py: Python) -> PyResult<()> {
     EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
         let asyncio = py.import("asyncio")?;
