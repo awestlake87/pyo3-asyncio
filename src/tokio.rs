@@ -63,18 +63,23 @@ pub fn init(runtime: Runtime) {
         .expect("Tokio Runtime has already been initialized");
 }
 
+fn current_thread() -> Runtime {
+    Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Couldn't build the current-thread Tokio runtime")
+}
+
+fn start_current_thread() {
+    thread::spawn(move || {
+        TOKIO_RUNTIME.get().unwrap().block_on(pending::<()>());
+    });
+}
+
 /// Initialize the Tokio Runtime with current-thread scheduler
 pub fn init_current_thread() {
-    init(
-        Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("Couldn't build the current-thread Tokio runtime"),
-    );
-
-    thread::spawn(|| {
-        get_runtime().block_on(pending::<()>());
-    });
+    init(current_thread());
+    start_current_thread();
 }
 
 /// Get a reference to the current tokio runtime
@@ -82,14 +87,40 @@ pub fn get_runtime<'a>() -> &'a Runtime {
     TOKIO_RUNTIME.get().expect(EXPECT_TOKIO_INIT)
 }
 
+fn multi_thread() -> Runtime {
+    Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("Couldn't build the multi-thread Tokio runtime")
+}
+
 /// Initialize the Tokio Runtime with the multi-thread scheduler
 pub fn init_multi_thread() {
-    init(
-        Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .expect("Couldn't build the multi-thread Tokio runtime"),
-    );
+    init(multi_thread());
+}
+
+/// Ensure that the Tokio Runtime is initialized
+///
+/// If the runtime has not been initialized already, the multi-thread scheduler
+/// is used. Otherwise this function is a no-op.
+pub fn init_multi_thread_once() {
+    TOKIO_RUNTIME.get_or_init(|| multi_thread());
+}
+
+/// Ensure that the Tokio Runtime is initialized
+///
+/// If the runtime has not been initialized already, the current-thread
+/// scheduler is used. Otherwise this function is a no-op
+pub fn init_current_thread_once() {
+    let mut initialized = false;
+    TOKIO_RUNTIME.get_or_init(|| {
+        initialized = true;
+        current_thread()
+    });
+
+    if initialized {
+        start_current_thread();
+    }
 }
 
 /// Run the event loop until the given Future completes

@@ -69,6 +69,11 @@ async fn test_other_awaitables() -> PyResult<()> {
     common::test_other_awaitables().await
 }
 
+#[pyo3_asyncio::async_std::test]
+fn test_init_twice() -> PyResult<()> {
+    common::test_init_twice()
+}
+
 #[pyo3_asyncio::async_std::main]
 async fn main() -> pyo3::PyResult<()> {
     pyo3_asyncio::testing::main().await

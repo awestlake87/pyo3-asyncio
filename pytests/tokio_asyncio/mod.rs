@@ -67,3 +67,18 @@ async fn test_into_future() -> PyResult<()> {
 async fn test_other_awaitables() -> PyResult<()> {
     common::test_other_awaitables().await
 }
+
+#[pyo3_asyncio::tokio::test]
+fn test_init_twice() -> PyResult<()> {
+    common::test_init_twice()
+}
+
+#[pyo3_asyncio::tokio::test]
+fn test_init_tokio_twice() -> PyResult<()> {
+    // tokio has already been initialized in test main. call these functions to
+    // make sure they don't cause problems with the other tests.
+    pyo3_asyncio::tokio::init_multi_thread_once();
+    pyo3_asyncio::tokio::init_current_thread_once();
+
+    Ok(())
+}

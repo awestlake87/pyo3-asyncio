@@ -193,29 +193,29 @@ where
 
 /// Attempt to initialize the Python and Rust event loops
 ///
-/// Must be called at the start of your program
-fn try_init(py: Python) -> PyResult<()> {
-    let asyncio = py.import("asyncio")?;
+/// - Must be called before any other pyo3-asyncio functions
+/// - Calling `try_init` twice returns `Ok(())` and does nothing
+///   > In future versions this may return an `Err`
+pub fn try_init(py: Python) -> PyResult<()> {
+    EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
+        let asyncio = py.import("asyncio")?;
+        let ensure_future = asyncio.getattr("ensure_future")?;
+        let event_loop = asyncio.call_method0("get_event_loop")?;
+        let executor = py
+            .import("concurrent.futures.thread")?
+            .getattr("ThreadPoolExecutor")?
+            .call0()?;
+        event_loop.call_method1("set_default_executor", (executor,))?;
+        let call_soon = event_loop.getattr("call_soon_threadsafe")?;
+        let create_future = event_loop.getattr("create_future")?;
 
-    let ensure_future = asyncio.getattr("ensure_future")?;
-
-    let event_loop = asyncio.call_method0("get_event_loop")?;
-    let executor = py
-        .import("concurrent.futures.thread")?
-        .getattr("ThreadPoolExecutor")?
-        .call0()?;
-
-    event_loop.call_method1("set_default_executor", (executor,))?;
-
-    let call_soon = event_loop.getattr("call_soon_threadsafe")?;
-    let create_future = event_loop.getattr("create_future")?;
-
-    ASYNCIO.get_or_init(|| asyncio.into());
-    ENSURE_FUTURE.get_or_init(|| ensure_future.into());
-    EVENT_LOOP.get_or_init(|| event_loop.into());
-    EXECUTOR.get_or_init(|| executor.into());
-    CALL_SOON.get_or_init(|| call_soon.into());
-    CREATE_FUTURE.get_or_init(|| create_future.into());
+        ASYNCIO.get_or_init(|| asyncio.into());
+        ENSURE_FUTURE.get_or_init(|| ensure_future.into());
+        EXECUTOR.get_or_init(|| executor.into());
+        CALL_SOON.get_or_init(|| call_soon.into());
+        CREATE_FUTURE.get_or_init(|| create_future.into());
+        Ok(event_loop.into())
+    })?;
 
     Ok(())
 }
@@ -284,7 +284,7 @@ pub fn run_forever(py: Python) -> PyResult<()> {
 }
 
 /// Shutdown the event loops and perform any necessary cleanup
-fn try_close(py: Python) -> PyResult<()> {
+pub fn try_close(py: Python) -> PyResult<()> {
     // Shutdown the executor and wait until all threads are cleaned up
     EXECUTOR
         .get()
