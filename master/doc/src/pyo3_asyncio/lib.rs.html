@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -629,29 +629,29 @@
 
 <span class="doccomment">/// Attempt to initialize the Python and Rust event loops</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// Must be called at the start of your program</span>
-<span class="kw">fn</span> <span class="ident">try_init</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">asyncio</span> <span class="op">=</span> <span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;asyncio&quot;</span>)<span class="question-mark">?</span>;
+<span class="doccomment">/// - Must be called before any other pyo3-asyncio functions.</span>
+<span class="doccomment">/// - Calling `try_init` a second time returns `Ok(())` and does nothing.</span>
+<span class="doccomment">///   &gt; In future versions this may return an `Err`.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_init</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="ident">EVENT_LOOP</span>.<span class="ident">get_or_try_init</span>(<span class="op">|</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">asyncio</span> <span class="op">=</span> <span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;asyncio&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">ensure_future</span> <span class="op">=</span> <span class="ident">asyncio</span>.<span class="ident">getattr</span>(<span class="string">&quot;ensure_future&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">event_loop</span> <span class="op">=</span> <span class="ident">asyncio</span>.<span class="ident">call_method0</span>(<span class="string">&quot;get_event_loop&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">py</span>
+            .<span class="ident">import</span>(<span class="string">&quot;concurrent.futures.thread&quot;</span>)<span class="question-mark">?</span>
+            .<span class="ident">getattr</span>(<span class="string">&quot;ThreadPoolExecutor&quot;</span>)<span class="question-mark">?</span>
+            .<span class="ident">call0</span>()<span class="question-mark">?</span>;
+        <span class="ident">event_loop</span>.<span class="ident">call_method1</span>(<span class="string">&quot;set_default_executor&quot;</span>, (<span class="ident">executor</span>,))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">call_soon</span> <span class="op">=</span> <span class="ident">event_loop</span>.<span class="ident">getattr</span>(<span class="string">&quot;call_soon_threadsafe&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">create_future</span> <span class="op">=</span> <span class="ident">event_loop</span>.<span class="ident">getattr</span>(<span class="string">&quot;create_future&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">ensure_future</span> <span class="op">=</span> <span class="ident">asyncio</span>.<span class="ident">getattr</span>(<span class="string">&quot;ensure_future&quot;</span>)<span class="question-mark">?</span>;
-
-    <span class="kw">let</span> <span class="ident">event_loop</span> <span class="op">=</span> <span class="ident">asyncio</span>.<span class="ident">call_method0</span>(<span class="string">&quot;get_event_loop&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">py</span>
-        .<span class="ident">import</span>(<span class="string">&quot;concurrent.futures.thread&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">getattr</span>(<span class="string">&quot;ThreadPoolExecutor&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">call0</span>()<span class="question-mark">?</span>;
-
-    <span class="ident">event_loop</span>.<span class="ident">call_method1</span>(<span class="string">&quot;set_default_executor&quot;</span>, (<span class="ident">executor</span>,))<span class="question-mark">?</span>;
-
-    <span class="kw">let</span> <span class="ident">call_soon</span> <span class="op">=</span> <span class="ident">event_loop</span>.<span class="ident">getattr</span>(<span class="string">&quot;call_soon_threadsafe&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">create_future</span> <span class="op">=</span> <span class="ident">event_loop</span>.<span class="ident">getattr</span>(<span class="string">&quot;create_future&quot;</span>)<span class="question-mark">?</span>;
-
-    <span class="ident">ASYNCIO</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">asyncio</span>.<span class="ident">into</span>());
-    <span class="ident">ENSURE_FUTURE</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">ensure_future</span>.<span class="ident">into</span>());
-    <span class="ident">EVENT_LOOP</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">event_loop</span>.<span class="ident">into</span>());
-    <span class="ident">EXECUTOR</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">executor</span>.<span class="ident">into</span>());
-    <span class="ident">CALL_SOON</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">call_soon</span>.<span class="ident">into</span>());
-    <span class="ident">CREATE_FUTURE</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">create_future</span>.<span class="ident">into</span>());
+        <span class="ident">ASYNCIO</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">asyncio</span>.<span class="ident">into</span>());
+        <span class="ident">ENSURE_FUTURE</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">ensure_future</span>.<span class="ident">into</span>());
+        <span class="ident">EXECUTOR</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">executor</span>.<span class="ident">into</span>());
+        <span class="ident">CALL_SOON</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">call_soon</span>.<span class="ident">into</span>());
+        <span class="ident">CREATE_FUTURE</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">create_future</span>.<span class="ident">into</span>());
+        <span class="prelude-val">Ok</span>(<span class="ident">event_loop</span>.<span class="ident">into</span>())
+    })<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(())
 }
@@ -720,7 +720,7 @@
 }
 
 <span class="doccomment">/// Shutdown the event loops and perform any necessary cleanup</span>
-<span class="kw">fn</span> <span class="ident">try_close</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_close</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="comment">// Shutdown the executor and wait until all threads are cleaned up</span>
     <span class="ident">EXECUTOR</span>
         .<span class="ident">get</span>()
@@ -843,8 +843,8 @@
         },),
     )<span class="question-mark">?</span>;
 
-    <span class="prelude-val">Ok</span>(<span class="ident">async</span> <span class="kw">move</span> {
-        <span class="kw">match</span> <span class="ident">rx</span>.<span class="ident">await</span> {
+    <span class="prelude-val">Ok</span>(<span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">match</span> <span class="ident">rx</span>.<span class="kw">await</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">item</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">item</span>,
             <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Python</span>::<span class="ident">with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                 <span class="prelude-val">Err</span>(<span class="ident">PyErr</span>::<span class="ident">from_instance</span>(
@@ -867,4 +867,5 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pyo3_asyncio";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
