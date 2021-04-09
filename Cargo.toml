@@ -98,6 +98,6 @@ features = ["unstable"]
 optional = true
 
 [dependencies.tokio]
-version = "1.0" 
+version = "1.4" 
 features = ["full"]
 optional = true
