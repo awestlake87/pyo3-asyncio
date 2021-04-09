@@ -1,7 +1,7 @@
 [package]
 name = "pyo3-asyncio"
 description = "PyO3 utilities for Python's Asyncio library"
-version = "0.13.2"
+version = "0.13.3"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
 readme = "README.md"
 keywords = ["pyo3", "python", "ffi", "async", "asyncio"]
@@ -90,7 +90,7 @@ inventory = "0.1"
 lazy_static = "1.4"
 once_cell = "1.5"
 pyo3 = "0.13"
-pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.13.2", optional = true }
+pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.13.3", optional = true }
 
 [dependencies.async-std]
 version = "1.9"
