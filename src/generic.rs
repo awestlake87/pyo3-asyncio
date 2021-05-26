@@ -257,9 +257,11 @@ where
                 Ok(fut) => match fut.await {
                     Ok(item) => Ok(item),
                     Err(e) => {
-                        if Python::with_gil(|py| {
+                        let stop_iter = Python::with_gil(|py| {
                             e.is_instance::<pyo3::exceptions::PyStopAsyncIteration>(py)
-                        }) {
+                        });
+
+                        if stop_iter {
                             // end the iteration
                             break;
                         } else {
@@ -270,7 +272,7 @@ where
                 Err(e) => Err(e),
             };
 
-            if let Err(_) = tx.send(item).await {
+            if tx.send(item).await.is_err() {
                 // receiving side was dropped
                 break;
             }
