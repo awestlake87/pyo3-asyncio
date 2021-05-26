@@ -4,7 +4,7 @@ use ::tokio::{
     runtime::{Builder, Runtime},
     task,
 };
-use futures::future::pending;
+use futures::{future::pending, prelude::*};
 use once_cell::sync::OnceCell;
 use pyo3::prelude::*;
 
@@ -206,4 +206,16 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     generic::into_coroutine::<TokioRuntime, _>(py, fut)
+}
+
+/// Convert async generator into a stream
+pub fn into_stream_v1<'p>(
+    gen: &'p PyAny,
+) -> PyResult<impl Stream<Item = PyResult<PyObject>> + 'static> {
+    generic::into_stream_v1::<TokioRuntime>(gen)
+}
+
+/// Convert async generator into a stream
+pub fn into_stream_v2<'p>(gen: &'p PyAny) -> PyResult<impl Stream<Item = PyObject> + 'static> {
+    generic::into_stream_v2::<TokioRuntime>(gen)
 }

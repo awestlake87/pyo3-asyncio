@@ -1,8 +1,10 @@
-use std::future::Future;
+use std::{future::Future, marker::PhantomData};
 
-use pyo3::{exceptions::PyException, prelude::*};
+use futures::{channel::mpsc, prelude::*};
+use once_cell::sync::OnceCell;
+use pyo3::{exceptions::PyException, prelude::*, PyNativeType};
 
-use crate::{dump_err, get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
+use crate::{dump_err, get_event_loop, into_future, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
 
 /// Generic utilities for a JoinError
 pub trait JoinError {
@@ -11,7 +13,7 @@ pub trait JoinError {
 }
 
 /// Generic Rust async/await runtime
-pub trait Runtime {
+pub trait Runtime: Send + 'static {
     /// The error returned by a JoinHandle after being awaited
     type JoinError: JoinError + Send;
     /// A future that completes with the result of the spawned task
@@ -235,4 +237,179 @@ where
     });
 
     Ok(future_rx)
+}
+
+/// Convert an async generator into a Stream
+pub fn into_stream_v1<'p, R>(
+    gen: &'p PyAny,
+) -> PyResult<impl Stream<Item = PyResult<PyObject>> + 'static>
+where
+    R: Runtime,
+{
+    let (tx, rx) = async_channel::bounded(1);
+    let anext = PyObject::from(gen.getattr("__anext__")?);
+
+    R::spawn(async move {
+        loop {
+            let fut =
+                Python::with_gil(|py| -> PyResult<_> { into_future(anext.as_ref(py).call0()?) });
+            let item = match fut {
+                Ok(fut) => match fut.await {
+                    Ok(item) => Ok(item),
+                    Err(e) => {
+                        if Python::with_gil(|py| {
+                            e.is_instance::<pyo3::exceptions::PyStopAsyncIteration>(py)
+                        }) {
+                            // end the iteration
+                            break;
+                        } else {
+                            Err(e)
+                        }
+                    }
+                },
+                Err(e) => Err(e),
+            };
+
+            if let Err(_) = tx.send(item).await {
+                // receiving side was dropped
+                break;
+            }
+        }
+    });
+
+    Ok(rx)
+}
+
+fn py_true() -> PyObject {
+    static TRUE: OnceCell<PyObject> = OnceCell::new();
+    TRUE.get_or_init(|| Python::with_gil(|py| true.into_py(py)))
+        .clone()
+}
+fn py_false() -> PyObject {
+    static FALSE: OnceCell<PyObject> = OnceCell::new();
+    FALSE
+        .get_or_init(|| Python::with_gil(|py| false.into_py(py)))
+        .clone()
+}
+
+trait Sender: Send + 'static {
+    fn send(&mut self, item: PyObject) -> PyResult<PyObject>;
+    fn close(&mut self) -> PyResult<()>;
+}
+
+struct GenericSender<R>
+where
+    R: Runtime,
+{
+    runtime: PhantomData<R>,
+    tx: mpsc::Sender<PyObject>,
+}
+
+impl<R> Sender for GenericSender<R>
+where
+    R: Runtime,
+{
+    fn send(&mut self, item: PyObject) -> PyResult<PyObject> {
+        match self.tx.try_send(item.clone()) {
+            Ok(_) => Ok(py_true()),
+            Err(e) => {
+                if e.is_full() {
+                    let mut tx = self.tx.clone();
+                    Python::with_gil(move |py| {
+                        into_coroutine::<R, _>(py, async move {
+                            if tx.flush().await.is_err() {
+                                // receiving side disconnected
+                                return Ok(py_false());
+                            }
+                            if tx.send(item).await.is_err() {
+                                // receiving side disconnected
+                                return Ok(py_false());
+                            }
+                            Ok(py_true())
+                        })
+                    })
+                } else {
+                    Ok(py_false())
+                }
+            }
+        }
+    }
+    fn close(&mut self) -> PyResult<()> {
+        self.tx.close_channel();
+        Ok(())
+    }
+}
+
+#[pyclass]
+struct SenderGlue {
+    tx: Box<dyn Sender>,
+}
+#[pymethods]
+impl SenderGlue {
+    pub fn send(&mut self, item: PyObject) -> PyResult<PyObject> {
+        self.tx.send(item)
+    }
+    pub fn close(&mut self) -> PyResult<()> {
+        self.tx.close()
+    }
+}
+
+const STREAM_GLUE: &str = r#"
+import asyncio
+
+async def forward(gen, sender):
+    async for item in gen:
+        should_continue = sender.send(item)
+
+        if asyncio.iscoroutine(should_continue):
+            should_continue = await should_continue
+    
+        if should_continue:
+            continue
+        else:
+            break
+
+    sender.close()
+"#;
+
+/// Convert an async generator into a stream
+pub fn into_stream_v2<'p, R>(gen: &'p PyAny) -> PyResult<impl Stream<Item = PyObject> + 'static>
+where
+    R: Runtime,
+{
+    static GLUE_MOD: OnceCell<PyObject> = OnceCell::new();
+    let py = gen.py();
+    let glue = GLUE_MOD
+        .get_or_try_init(|| -> PyResult<PyObject> {
+            Ok(PyModule::from_code(
+                py,
+                STREAM_GLUE,
+                "pyo3_asyncio/pyo3_asyncio_glue.py",
+                "pyo3_asyncio_glue",
+            )?
+            .into())
+        })?
+        .as_ref(py);
+
+    let (tx, rx) = mpsc::channel(10);
+
+    crate::get_event_loop(py).call_method1(
+        "call_soon_threadsafe",
+        (
+            crate::get_event_loop(py).getattr("create_task")?,
+            glue.call_method1(
+                "forward",
+                (
+                    gen,
+                    SenderGlue {
+                        tx: Box::new(GenericSender {
+                            runtime: PhantomData::<R>,
+                            tx,
+                        }),
+                    },
+                ),
+            )?,
+        ),
+    )?;
+    Ok(rx)
 }

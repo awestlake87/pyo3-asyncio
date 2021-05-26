@@ -1,6 +1,7 @@
 use std::future::Future;
 
 use async_std::task;
+use futures::prelude::*;
 use pyo3::prelude::*;
 
 use crate::generic::{self, JoinError, Runtime};
@@ -116,4 +117,16 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     generic::into_coroutine::<AsyncStdRuntime, _>(py, fut)
+}
+
+/// Convert async generator into a stream
+pub fn into_stream_v1<'p>(
+    gen: &'p PyAny,
+) -> PyResult<impl Stream<Item = PyResult<PyObject>> + 'static> {
+    generic::into_stream_v1::<AsyncStdRuntime>(gen)
+}
+
+/// Convert async generator into a stream
+pub fn into_stream_v2<'p>(gen: &'p PyAny) -> PyResult<impl Stream<Item = PyObject> + 'static> {
+    generic::into_stream_v2::<AsyncStdRuntime>(gen)
 }
