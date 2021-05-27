@@ -11,7 +11,7 @@
 
 * PyO3 Asyncio API Documentation: [stable](https://docs.rs/pyo3-asyncio/) | [master](https://awestlake87.github.io/pyo3-asyncio/master/doc)
 
-* PyO3 Guide for Async / Await [stable](https://pyo3.rs/v0.13.2/ecosystem/async-await.html) | [main](https://pyo3.rs/main/ecosystem/async-await.html)
+* Guide for Async / Await [stable](https://pyo3.rs/v0.13.2/ecosystem/async-await.html) | [main](https://pyo3.rs/main/ecosystem/async-await.html)
 
 * Contributing Notes: [github](https://github.com/awestlake87/pyo3-asyncio/blob/master/Contributing.md)
 
@@ -83,10 +83,6 @@ Make your project depend on `pyo3` with the `extension-module` feature enabled a
 
 For `async-std`:
 ```toml
-[lib]
-name = "my_async_module"
-crate-type = ["cdylib"]
-
 [dependencies]
 pyo3 = { version = "0.13", features = ["extension-module"] }
 pyo3-asyncio = { version = "0.13", features = ["async-std-runtime"] }
@@ -95,10 +91,6 @@ async-std = "1.9"
 
 For `tokio`:
 ```toml
-[lib]
-name = "my_async_module"
-crate-type = ["cdylib"]
-
 [dependencies]
 pyo3 = { version = "0.13", features = ["extension-module"] }
 pyo3-asyncio = { version = "0.13", features = ["tokio-runtime"] }
