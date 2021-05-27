@@ -1,6 +1,7 @@
-use std::future::Future;
+use std::{any::Any, future::Future, panic::AssertUnwindSafe};
 
 use async_std::task;
+use futures::prelude::*;
 use pyo3::prelude::*;
 
 use crate::generic::{self, JoinError, Runtime};
@@ -23,27 +24,29 @@ pub use pyo3_asyncio_macros::async_std_main as main;
 #[cfg(all(feature = "attributes", feature = "testing"))]
 pub use pyo3_asyncio_macros::async_std_test as test;
 
-struct AsyncStdJoinError;
+pub struct AsyncStdJoinErr(Box<dyn Any + Send + 'static>);
 
-impl JoinError for AsyncStdJoinError {
+impl JoinError for AsyncStdJoinErr {
     fn is_panic(&self) -> bool {
-        todo!()
+        true
     }
 }
 
-struct AsyncStdRuntime;
+pub struct AsyncStdRuntime;
 
 impl Runtime for AsyncStdRuntime {
-    type JoinError = AsyncStdJoinError;
-    type JoinHandle = task::JoinHandle<Result<(), AsyncStdJoinError>>;
+    type JoinError = AsyncStdJoinErr;
+    type JoinHandle = task::JoinHandle<Result<(), AsyncStdJoinErr>>;
 
     fn spawn<F>(fut: F) -> Self::JoinHandle
     where
         F: Future<Output = ()> + Send + 'static,
     {
         task::spawn(async move {
-            fut.await;
-            Ok(())
+            AssertUnwindSafe(fut)
+                .catch_unwind()
+                .await
+                .map_err(|e| AsyncStdJoinErr(e))
         })
     }
 }

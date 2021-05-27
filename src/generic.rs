@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use pyo3::{exceptions::PyException, prelude::*};
+use pyo3::{create_exception, exceptions::PyException, prelude::*};
 
 use crate::{dump_err, get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
 
@@ -126,6 +126,8 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
     Ok(())
 }
 
+create_exception!(pyo3_asyncio, RustPanic, PyException);
+
 /// Convert a Rust Future into a Python coroutine with a generic runtime
 ///
 /// # Arguments
@@ -198,8 +200,8 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     let future_rx = CREATE_FUTURE.get().expect(EXPECT_INIT).call0(py)?;
-    let future_tx1 = future_rx.clone();
-    let future_tx2 = future_rx.clone();
+    let future_tx1: PyObject = future_rx.clone();
+    let future_tx2: PyObject = future_rx.clone();
 
     R::spawn(async move {
         if let Err(e) = R::spawn(async move {
@@ -222,7 +224,7 @@ where
                     if set_result(
                         py,
                         future_tx2.as_ref(py),
-                        Err(PyException::new_err("rust future panicked")),
+                        Err(RustPanic::new_err("Rust future panicked")),
                     )
                     .map_err(dump_err(py))
                     .is_err()

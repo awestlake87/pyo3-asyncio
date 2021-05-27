@@ -74,6 +74,29 @@ fn test_init_twice() -> PyResult<()> {
     common::test_init_twice()
 }
 
+#[pyo3_asyncio::async_std::test]
+async fn test_panic() -> PyResult<()> {
+    let fut = Python::with_gil(|py| -> PyResult<_> {
+        pyo3_asyncio::into_future(
+            pyo3_asyncio::async_std::into_coroutine(py, async {
+                panic!("this panic was intentional!")
+            })?
+            .as_ref(py),
+        )
+    })?;
+
+    match fut.await {
+        Ok(_) => panic!("coroutine should panic"),
+        Err(e) => Python::with_gil(|py| {
+            if e.is_instance::<pyo3_asyncio::generic::RustPanic>(py) {
+                Ok(())
+            } else {
+                panic!("expected RustPanic err")
+            }
+        }),
+    }
+}
+
 #[pyo3_asyncio::async_std::main]
 async fn main() -> pyo3::PyResult<()> {
     pyo3_asyncio::testing::main().await

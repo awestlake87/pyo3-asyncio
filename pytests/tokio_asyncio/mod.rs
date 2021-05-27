@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use futures::prelude::*;
 use pyo3::{prelude::*, wrap_pyfunction};
 
 use crate::common;
@@ -81,4 +82,27 @@ fn test_init_tokio_twice() -> PyResult<()> {
     pyo3_asyncio::tokio::init_current_thread_once();
 
     Ok(())
+}
+
+#[pyo3_asyncio::tokio::test]
+async fn test_panic() -> PyResult<()> {
+    let fut = Python::with_gil(|py| -> PyResult<_> {
+        pyo3_asyncio::into_future(
+            pyo3_asyncio::tokio::into_coroutine(py, async {
+                panic!("this panic was intentional!")
+            })?
+            .as_ref(py),
+        )
+    })?;
+
+    match fut.await {
+        Ok(_) => panic!("coroutine should panic"),
+        Err(e) => Python::with_gil(|py| {
+            if e.is_instance::<pyo3_asyncio::generic::RustPanic>(py) {
+                Ok(())
+            } else {
+                panic!("expected RustPanic err")
+            }
+        }),
+    }
 }
