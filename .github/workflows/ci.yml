@@ -95,7 +95,7 @@ jobs:
       - name: Set variables
         id: setvars
         run: |
-          if [[ "${{matrix.rust}} == "1.45.0" ]]; then
+          if [[ "${{matrix.rust}}" == "1.45.0" ]]; then
             echo "::set-env name=features::testing,attributes,tokio-runtime"
           else
             echo "::set-env name=features::testing,attributes,tokio-runtime,async-std-runtime"
