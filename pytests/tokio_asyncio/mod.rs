@@ -10,6 +10,7 @@ async fn test_into_coroutine() -> PyResult<()> {
     fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
         let secs = secs.extract()?;
 
+        #[allow(deprecated)]
         pyo3_asyncio::tokio::into_coroutine(py, async move {
             tokio::time::sleep(Duration::from_secs(secs)).await;
             Python::with_gil(|py| Ok(py.None()))

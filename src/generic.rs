@@ -95,7 +95,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let coro = into_coroutine::<R, _>(py, async move {
+    let coro = future_into_py::<R, _>(py, async move {
         fut.await?;
         Ok(Python::with_gil(|py| py.None()))
     })?;
@@ -192,6 +192,10 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
 ///    })
 /// }
 /// ```
+#[deprecated(
+    since = "0.13.3",
+    note = "Use pyo3_asyncio::generic::future_into_py instead"
+)]
 pub fn into_coroutine<R, F>(py: Python, fut: F) -> PyResult<PyObject>
 where
     R: Runtime,
