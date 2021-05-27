@@ -57,8 +57,13 @@ jobs:
           - python-version: pypy-3.6
             platform: { os: "windows-latest", python-architecture: "x64" }
         include:
-          # Test minimal supported Rust version
+          # Test minimal supported Rust version (no async-std)
           - rust: 1.45.0
+            python-version: 3.9
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+            msrv: "MSRV"
+          # Test minimal supported Rust version (with async-std)
+          - rust: 1.46.0
             python-version: 3.9
             platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
             msrv: "MSRV"
@@ -87,13 +92,22 @@ jobs:
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
 
+      - name: Set variables
+        id: setvars
+        run: |
+          if [[ "${{matrix.rust}} == "1.45.0" ]]; then
+            echo "::set-env name=features::testing,attributes,tokio-runtime"
+          else
+            echo "::set-env name=features::testing,attributes,tokio-runtime,async-std-runtime"
+          fi
+
       - name: Build (all additive features)
-        run: cargo build --all-features --verbose --target ${{ matrix.platform.rust-target }}
+        run: cargo build --features=$features --verbose --target ${{ matrix.platform.rust-target }}
 
       # Run tests (except on PyPy, because no embedding API).
       - if: matrix.python-version != 'pypy-3.6'
         name: Test
-        run: cargo test --all-features --target ${{ matrix.platform.rust-target }}
+        run: cargo test --features=$features --target ${{ matrix.platform.rust-target }}
 
       - name: Install python test dependencies
         run: |

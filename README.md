@@ -3,7 +3,7 @@
 [![Actions Status](https://github.com/awestlake87/pyo3-asyncio/workflows/CI/badge.svg)](https://github.com/awestlake87/pyo3-asyncio/actions)
 [![codecov](https://codecov.io/gh/awestlake87/pyo3-asyncio/branch/master/graph/badge.svg)](https://codecov.io/gh/awestlake87/pyo3-asyncio)
 [![crates.io](http://meritbadge.herokuapp.com/pyo3-asyncio)](https://crates.io/crates/pyo3-asyncio)
-[![minimum rustc 1.45](https://img.shields.io/badge/rustc-1.45+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![minimum rustc 1.46](https://img.shields.io/badge/rustc-1.46+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
 [Rust](http://www.rust-lang.org/) bindings for [Python](https://www.python.org/)'s [Asyncio Library](https://docs.python.org/3/library/asyncio.html). This crate facilitates interactions between Rust Futures and Python Coroutines and manages the lifecycle of their corresponding event loops.
 
@@ -184,3 +184,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 > Note that we are using `EventLoop.run_until_complete` here instead of the newer `asyncio.run`. That is because `asyncio.run` will set up its own internal event loop that `pyo3_asyncio` will not be aware of. For this reason, running `pyo3_asyncio` conversions through `asyncio.run` is not currently supported.
 > 
 > This restriction may be lifted in a future release.
+
+## MSRV
+Currently the MSRV for this library is 1.46.0, _but_ if you don't need to use the `async-std-runtime`
+feature, you can use rust 1.45.0. 
+> `async-std` depends on `socket2` which fails to compile under 1.45.0.
