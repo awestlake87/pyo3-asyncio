@@ -92,22 +92,23 @@ jobs:
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
 
-      - name: Set variables
-        id: setvars
-        run: |
-          if [[ "${{matrix.rust}}" == "1.45.0" ]]; then
-            echo "::set-env name=features::testing,attributes,tokio-runtime"
-          else
-            echo "::set-env name=features::testing,attributes,tokio-runtime,async-std-runtime"
-          fi
+      # Omit async-std-runtime feature for MSRV 1.45.0
+      - if: matrix.rust == '1.45.0'
+        name: Prepare 1.45.0 features
+        run: echo features=testing,attributes,tokio-runtime >> $GITHUB_ENV
 
-      - name: Build (all additive features)
-        run: cargo build --features=$features --verbose --target ${{ matrix.platform.rust-target }}
+      # Use all features for MSRV 1.46.0 and above
+      - if: matrix.rust != '1.45.0'
+        name: Prepare all features
+        run: echo features=testing,attributes,tokio-runtime,async-std-runtime >> $GITHUB_ENV
+
+      - name: Build
+        run: cargo build --features=${{env.features}} --verbose --target ${{ matrix.platform.rust-target }}
 
       # Run tests (except on PyPy, because no embedding API).
       - if: matrix.python-version != 'pypy-3.6'
         name: Test
-        run: cargo test --features=$features --target ${{ matrix.platform.rust-target }}
+        run: cargo test --features=${{env.features}} --target ${{ matrix.platform.rust-target }}
 
       - name: Install python test dependencies
         run: |
