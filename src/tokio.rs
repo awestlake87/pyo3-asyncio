@@ -207,3 +207,34 @@ where
 {
     generic::into_coroutine::<TokioRuntime, _>(py, fut)
 }
+
+/// Convert a Rust Future into a Python Future
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///
+///     pyo3_asyncio::tokio::future_into_py(py, async move {
+///         tokio::time::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+/// ```
+pub fn future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    generic::future_into_py::<TokioRuntime, _>(py, fut)
+}
