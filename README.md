@@ -9,11 +9,11 @@
 
 * PyO3 Project: [Homepage](https://pyo3.rs/) | [GitHub](https://github.com/PyO3/pyo3)
 
-* API Documentation: [stable](https://docs.rs/pyo3-asyncio/) | [master](https://awestlake87.github.io/pyo3-asyncio/master/doc)
+* PyO3 Asyncio API Documentation: [stable](https://docs.rs/pyo3-asyncio/) | [master](https://awestlake87.github.io/pyo3-asyncio/master/doc)
+
+* PyO3 Guide for Async / Await [stable](https://pyo3.rs/v0.13.2/ecosystem/async-await.html) | [main](https://pyo3.rs/main/ecosystem/async-await.html)
 
 * Contributing Notes: [github](https://github.com/awestlake87/pyo3-asyncio/blob/master/Contributing.md)
-
-* PyO3 Guide for Async / Await [stable](https://pyo3.rs/v0.13.2/ecosystem/async-await.html)
 
 > PyO3 Asyncio is a _brand new_ part of the broader PyO3 ecosystem. Feel free to open any issues for feature requests or bugfixes for this crate.
 
