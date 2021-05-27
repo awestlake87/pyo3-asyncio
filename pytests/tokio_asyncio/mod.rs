@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use futures::prelude::*;
 use pyo3::{prelude::*, wrap_pyfunction};
 
 use crate::common;
@@ -79,6 +80,61 @@ fn test_init_tokio_twice() -> PyResult<()> {
     // make sure they don't cause problems with the other tests.
     pyo3_asyncio::tokio::init_multi_thread_once();
     pyo3_asyncio::tokio::init_current_thread_once();
+
+    Ok(())
+}
+
+const TOKIO_TEST_MOD: &str = r#"
+import asyncio 
+
+async def gen():
+    for i in range(10):
+        await asyncio.sleep(0.1)
+        yield i        
+"#;
+
+#[pyo3_asyncio::tokio::test]
+async fn test_async_gen_v1() -> PyResult<()> {
+    let stream = Python::with_gil(|py| {
+        let test_mod = PyModule::from_code(
+            py,
+            TOKIO_TEST_MOD,
+            "test_rust_coroutine/tokio_test_mod.py",
+            "tokio_test_mod",
+        )?;
+
+        pyo3_asyncio::tokio::into_stream_v1(test_mod.call_method0("gen")?)
+    })?;
+
+    let vals = stream
+        .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+        .try_collect::<Vec<i32>>()
+        .await?;
+
+    assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+
+    Ok(())
+}
+
+#[pyo3_asyncio::tokio::test]
+async fn test_async_gen_v2() -> PyResult<()> {
+    let stream = Python::with_gil(|py| {
+        let test_mod = PyModule::from_code(
+            py,
+            TOKIO_TEST_MOD,
+            "test_rust_coroutine/tokio_test_mod.py",
+            "tokio_test_mod",
+        )?;
+
+        pyo3_asyncio::tokio::into_stream_v2(test_mod.call_method0("gen")?)
+    })?;
+
+    let vals = stream
+        .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+        .try_collect::<Vec<i32>>()
+        .await?;
+
+    assert_eq!((0..10).collect::<Vec<i32>>(), vals);
 
     Ok(())
 }

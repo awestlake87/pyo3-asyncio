@@ -3,6 +3,7 @@ mod common;
 use std::time::Duration;
 
 use async_std::task;
+use futures::prelude::*;
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
@@ -72,6 +73,61 @@ async fn test_other_awaitables() -> PyResult<()> {
 #[pyo3_asyncio::async_std::test]
 fn test_init_twice() -> PyResult<()> {
     common::test_init_twice()
+}
+
+const ASYNC_STD_TEST_MOD: &str = r#"
+import asyncio 
+
+async def gen():
+    for i in range(10):
+        await asyncio.sleep(0.1)
+        yield i        
+"#;
+
+#[pyo3_asyncio::async_std::test]
+async fn test_async_gen_v1() -> PyResult<()> {
+    let stream = Python::with_gil(|py| {
+        let test_mod = PyModule::from_code(
+            py,
+            ASYNC_STD_TEST_MOD,
+            "test_rust_coroutine/async_std_test_mod.py",
+            "async_std_test_mod",
+        )?;
+
+        pyo3_asyncio::async_std::into_stream_v1(test_mod.call_method0("gen")?)
+    })?;
+
+    let vals = stream
+        .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+        .try_collect::<Vec<i32>>()
+        .await?;
+
+    assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+
+    Ok(())
+}
+
+#[pyo3_asyncio::tokio::test]
+async fn test_async_gen_v2() -> PyResult<()> {
+    let stream = Python::with_gil(|py| {
+        let test_mod = PyModule::from_code(
+            py,
+            ASYNC_STD_TEST_MOD,
+            "test_rust_coroutine/async_std_test_mod.py",
+            "async_std_test_mod",
+        )?;
+
+        pyo3_asyncio::async_std::into_stream_v2(test_mod.call_method0("gen")?)
+    })?;
+
+    let vals = stream
+        .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+        .try_collect::<Vec<i32>>()
+        .await?;
+
+    assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+
+    Ok(())
 }
 
 #[pyo3_asyncio::async_std::main]
