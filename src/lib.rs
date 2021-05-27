@@ -134,7 +134,11 @@ pub mod doc_test {
         };
     }
 
-    #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
+    #[cfg(all(
+        feature = "async-std-runtime",
+        feature = "tokio-runtime",
+        feature = "attributes"
+    ))]
     doctest!("../README.md", readme_md);
 }
 

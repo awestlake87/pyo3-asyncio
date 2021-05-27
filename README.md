@@ -19,6 +19,7 @@ This library can give spurious failures during finalization prior to PyO3 releas
 
 ## Quickstart
 
+### Rust Applications
 Here we initialize the runtime, import Python's `asyncio` library and run the given future to completion using Python's default `EventLoop` and `async-std`. Inside the future, we convert `asyncio` sleep into a Rust future and await it.
 
 More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
@@ -40,3 +41,142 @@ async fn main() -> PyResult<()> {
     Ok(())
 }
 ```
+
+The same application can be written to use `tokio` instead using the `#[pyo3_asyncio::tokio::main]`
+attribute.
+
+```rust
+use pyo3::prelude::*;
+
+#[pyo3_asyncio::tokio::main]
+async fn main() -> PyResult<()> {
+    let fut = Python::with_gil(|py| {
+        let asyncio = py.import("asyncio")?;
+
+        // convert asyncio.sleep into a Rust Future
+        pyo3_asyncio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
+    })?;
+
+    fut.await?;
+
+    Ok(())
+}
+```
+
+### PyO3 Native Rust Modules
+
+PyO3 Asyncio can also be used to write native modules with async functions.
+
+Add the `[lib]` section to `Cargo.toml` to make your library a `cdylib` that Python can import.
+```toml
+[lib]
+name = "my_async_module"
+crate-type = ["cdylib"]
+```
+
+Make your project depend on `pyo3` with the `extension-module` feature enabled and select your
+`pyo3-asyncio` runtime:
+
+For `async-std`:
+```toml
+[lib]
+name = "my_async_module"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.13", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.13", features = ["async-std-runtime"] }
+async-std = "1.9"
+```
+
+For `tokio`:
+```toml
+[lib]
+name = "my_async_module"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.13", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.13", features = ["tokio-runtime"] }
+tokio = "1.4"
+```
+
+Export an async function that makes use of `async-std`:
+
+```rust
+//! lib.rs
+
+use pyo3::{prelude::*, wrap_pyfunction};
+
+#[pyfunction]
+fn rust_sleep(py: Python) -> PyResult<PyObject> {
+    pyo3_asyncio::async_std::into_coroutine(py, async {
+        async_std::task::sleep(std::time::Duration::from_secs(1)).await;
+        Ok(Python::with_gil(|py| py.None()))
+    })
+}
+
+#[pymodule]
+fn my_async_module(py: Python, m: &PyModule) -> PyResult<()> {
+    pyo3_asyncio::try_init(py)?;
+
+    m.add_function(wrap_pyfunction!(rust_sleep, m)?)?;
+
+    Ok(())
+}
+
+```
+
+If you want to use `tokio` instead, here's what your module should look like:
+
+```rust
+//! lib.rs
+
+use pyo3::{prelude::*, wrap_pyfunction};
+
+#[pyfunction]
+fn rust_sleep(py: Python) -> PyResult<PyObject> {
+    pyo3_asyncio::tokio::into_coroutine(py, async {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        Ok(Python::with_gil(|py| py.None()))
+    })
+}
+
+#[pymodule]
+fn my_async_module(py: Python, m: &PyModule) -> PyResult<()> {
+    pyo3_asyncio::try_init(py)?;
+    // Tokio needs explicit initialization before any pyo3-asyncio conversions.
+    // The module import is a prime place to do this.
+    pyo3_asyncio::tokio::init_multi_thread_once();
+
+    m.add_function(wrap_pyfunction!(rust_sleep, m)?)?;
+
+    Ok(())
+}
+
+```
+
+Build your module and rename `libmy_async_module.so` to `my_async_module.so`
+```bash
+cargo build --release && mv target/release/libmy_async_module.so target/release/my_async_module.so
+```
+
+Now, point your `PYTHONPATH` to the directory containing `my_async_module.so`, then you'll be able 
+to import and use it:
+
+```bash
+$ PYTHONPATH=target/release python3
+Python 3.8.5 (default, Jan 27 2021, 15:41:15) 
+[GCC 9.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import asyncio
+>>> from my_async_module import rust_sleep
+>>> 
+>>> # should sleep for 1s
+>>> asyncio.get_event_loop().run_until_complete(rust_sleep())
+>>>
+```
+
+> Note that we are using `EventLoop.run_until_complete` here instead of the newer `asyncio.run`. That is because `asyncio.run` will set up its own internal event loop that `pyo3_asyncio` will not be aware of. For this reason, running `pyo3_asyncio` conversions through `asyncio.run` is not currently supported.
+> 
+> This restriction may be lifted in a future release.
