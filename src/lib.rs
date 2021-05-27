@@ -40,6 +40,19 @@
 //! <span
 //!   class="module-item stab portability"
 //!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>attributes</code></span>
+//! are only available when the `attributes` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.13.0"
+//! features = ["attributes"]
+//! ```
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
 //! ><code>async-std-runtime</code></span>
 //! are only available when the `async-std-runtime` Cargo feature is enabled:
 //!
@@ -104,9 +117,14 @@ use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
 use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, PyNativeType};
 
+/// Re-exported for #[test] attributes
+#[cfg(all(feature = "attributes", feature = "testing"))]
+pub use inventory;
+
 /// Test README
 #[doc(hidden)]
 pub mod doc_test {
+    #[allow(unused)]
     macro_rules! doc_comment {
         ($x:expr, $module:item) => {
             #[doc = $x]
@@ -114,23 +132,33 @@ pub mod doc_test {
         };
     }
 
+    #[allow(unused)]
     macro_rules! doctest {
         ($x:expr, $y:ident) => {
             doc_comment!(include_str!($x), mod $y {});
         };
     }
 
+    #[cfg(all(
+        feature = "async-std-runtime",
+        feature = "tokio-runtime",
+        feature = "attributes"
+    ))]
     doctest!("../README.md", readme_md);
 }
 
 const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
 
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
+static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
 static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
 static CALL_SOON: OnceCell<PyObject> = OnceCell::new();
-static CREATE_TASK: OnceCell<PyObject> = OnceCell::new();
 static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
+
+fn ensure_future(py: Python) -> &PyAny {
+    ENSURE_FUTURE.get().expect(EXPECT_INIT).as_ref(py)
+}
 
 #[allow(clippy::needless_doctest_main)]
 /// Wraps the provided function with the initialization and finalization for PyO3 Asyncio
@@ -143,7 +171,7 @@ static CREATE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use pyo3::prelude::*;
 ///
 /// fn main() {
@@ -174,27 +202,29 @@ where
 
 /// Attempt to initialize the Python and Rust event loops
 ///
-/// Must be called at the start of your program
-fn try_init(py: Python) -> PyResult<()> {
-    let asyncio = py.import("asyncio")?;
-    let event_loop = asyncio.call_method0("get_event_loop")?;
-    let executor = py
-        .import("concurrent.futures.thread")?
-        .getattr("ThreadPoolExecutor")?
-        .call0()?;
+/// - Must be called before any other pyo3-asyncio functions.
+/// - Calling `try_init` a second time returns `Ok(())` and does nothing.
+///   > In future versions this may return an `Err`.
+pub fn try_init(py: Python) -> PyResult<()> {
+    EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
+        let asyncio = py.import("asyncio")?;
+        let ensure_future = asyncio.getattr("ensure_future")?;
+        let event_loop = asyncio.call_method0("get_event_loop")?;
+        let executor = py
+            .import("concurrent.futures.thread")?
+            .getattr("ThreadPoolExecutor")?
+            .call0()?;
+        event_loop.call_method1("set_default_executor", (executor,))?;
+        let call_soon = event_loop.getattr("call_soon_threadsafe")?;
+        let create_future = event_loop.getattr("create_future")?;
 
-    event_loop.call_method1("set_default_executor", (executor,))?;
-
-    let call_soon = event_loop.getattr("call_soon_threadsafe")?;
-    let create_task = asyncio.getattr("run_coroutine_threadsafe")?;
-    let create_future = event_loop.getattr("create_future")?;
-
-    ASYNCIO.get_or_init(|| asyncio.into());
-    EVENT_LOOP.get_or_init(|| event_loop.into());
-    EXECUTOR.get_or_init(|| executor.into());
-    CALL_SOON.get_or_init(|| call_soon.into());
-    CREATE_TASK.get_or_init(|| create_task.into());
-    CREATE_FUTURE.get_or_init(|| create_future.into());
+        ASYNCIO.get_or_init(|| asyncio.into());
+        ENSURE_FUTURE.get_or_init(|| ensure_future.into());
+        EXECUTOR.get_or_init(|| executor.into());
+        CALL_SOON.get_or_init(|| call_soon.into());
+        CREATE_FUTURE.get_or_init(|| create_future.into());
+        Ok(event_loop.into())
+    })?;
 
     Ok(())
 }
@@ -217,12 +247,13 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// # use std::time::Duration;
 /// # use pyo3::prelude::*;
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
 /// // Wait 1 second, then stop the event loop
+/// # #[cfg(feature = "async-std-runtime")]
 /// async_std::task::spawn(async move {
 ///     async_std::task::sleep(Duration::from_secs(1)).await;
 ///     Python::with_gil(|py| {
@@ -242,6 +273,7 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// });        
 ///
 /// // block until stop is called
+/// # #[cfg(feature = "async-std-runtime")]
 /// pyo3_asyncio::run_forever(py)?;
 /// # Ok(())
 /// # })
@@ -261,7 +293,7 @@ pub fn run_forever(py: Python) -> PyResult<()> {
 }
 
 /// Shutdown the event loops and perform any necessary cleanup
-fn try_close(py: Python) -> PyResult<()> {
+pub fn try_close(py: Python) -> PyResult<()> {
     // Shutdown the executor and wait until all threads are cleaned up
     EXECUTOR
         .get()
@@ -304,20 +336,83 @@ impl PyTaskCompleter {
     }
 }
 
-/// Future for a Python `Awaitable`
+#[pyclass]
+struct PyEnsureFuture {
+    awaitable: PyObject,
+    tx: Option<oneshot::Sender<PyResult<PyObject>>>,
+}
+
+#[pymethods]
+impl PyEnsureFuture {
+    #[call]
+    pub fn __call__(&mut self) -> PyResult<()> {
+        Python::with_gil(|py| {
+            let task = ensure_future(py).call1((self.awaitable.as_ref(py),))?;
+            let on_complete = PyTaskCompleter { tx: self.tx.take() };
+            task.call_method1("add_done_callback", (on_complete,))?;
+
+            Ok(())
+        })
+    }
+}
+
+pub struct PyFuture {
+    rx: oneshot::Receiver<PyResult<PyObject>>,
+}
+
+impl Future for PyFuture {
+    type Output = PyResult<PyObject>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        match Pin::new(&mut self.as_mut().rx).poll(cx) {
+            Poll::Ready(Ok(item)) => Poll::Ready(item),
+            Poll::Ready(Err(_)) => Python::with_gil(|py| {
+                Poll::Ready(Err(PyErr::from_instance(
+                    ASYNCIO
+                        .get()
+                        .expect(EXPECT_INIT)
+                        .call_method0(py, "CancelledError")?
+                        .as_ref(py),
+                )))
+            }),
+            Poll::Pending => Poll::Pending,
+        }
+    }
+}
+
+impl<'p> TryFrom<&'p PyAny> for PyFuture {
+    type Error = PyErr;
+
+    fn try_from(awaitable: &'p PyAny) -> PyResult<Self> {
+        let py = awaitable.py();
+        let (tx, rx) = oneshot::channel();
+        CALL_SOON.get().expect(EXPECT_INIT).call1(
+            py,
+            (PyEnsureFuture {
+                awaitable: awaitable.into(),
+                tx: Some(tx),
+            },),
+        )?;
+        Ok(Self { rx })
+    }
+}
+
+/// Convert a Python `awaitable` into a Rust Future
 ///
-/// This struct converts an `Awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
 /// completion handler sends the result of this Task through a
-/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future
+/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
 /// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
+///
+/// # Arguments
+/// * `awaitable` - The Python `awaitable` to be converted
 ///
 /// # Examples
 ///
-/// ```no_run
-/// use std::{convert::TryFrom, time::Duration};
+/// ```
+/// use std::time::Duration;
 ///
 /// use pyo3::prelude::*;
-/// use pyo3_asyncio::PyFuture;
 ///
 /// const PYTHON_CODE: &'static str = r#"
 /// import asyncio
@@ -340,7 +435,7 @@ impl PyTaskCompleter {
 ///     })?;
 ///
 ///     Python::with_gil(|py| {
-///         PyFuture::try_from(
+///         pyo3_asyncio::into_future(
 ///             test_mod
 ///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
 ///                 .as_ref(py),
@@ -350,47 +445,8 @@ impl PyTaskCompleter {
 ///     Ok(())    
 /// }
 /// ```
-pub struct PyFuture {
-    rx: oneshot::Receiver<PyResult<PyObject>>,
-}
-
-impl<'p> TryFrom<&'p PyAny> for PyFuture {
-    type Error = PyErr;
-
-    fn try_from(coro: &'p PyAny) -> PyResult<Self> {
-        let py = coro.py();
-        let (tx, rx) = oneshot::channel();
-
-        let task = CREATE_TASK
-            .get()
-            .expect(EXPECT_INIT)
-            .call1(py, (coro, get_event_loop(py)))?;
-        let on_complete = PyTaskCompleter { tx: Some(tx) };
-
-        task.call_method1(py, "add_done_callback", (on_complete,))?;
-
-        Ok(Self { rx })
-    }
-}
-
-impl Future for PyFuture {
-    type Output = PyResult<PyObject>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
-        match Pin::new(&mut self.as_mut().rx).poll(cx) {
-            Poll::Ready(Ok(item)) => Poll::Ready(item),
-            Poll::Ready(Err(_)) => Python::with_gil(|py| {
-                Poll::Ready(Err(PyErr::from_instance(
-                    ASYNCIO
-                        .get()
-                        .expect(EXPECT_INIT)
-                        .call_method0(py, "CancelledError")?
-                        .as_ref(py),
-                )))
-            }),
-            Poll::Pending => Poll::Pending,
-        }
-    }
+pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
+    PyFuture::try_from(awaitable)
 }
 
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
