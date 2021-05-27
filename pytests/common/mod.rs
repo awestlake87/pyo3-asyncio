@@ -1,4 +1,4 @@
-use std::{thread, time::Duration};
+use std::{convert::TryFrom, thread, time::Duration};
 
 use pyo3::prelude::*;
 
@@ -12,17 +12,46 @@ async def sleep_for_1s(sleep_for):
     await sleep_for(1)
 "#;
 
+pub(super) async fn test_py_future() -> PyResult<()> {
+    Python::with_gil(|py| -> PyResult<_> {
+        let test_mod: PyObject =
+            PyModule::from_code(py, TEST_MOD, "test_py_future/test_mod.py", "test_mod")?.into();
+
+        Ok(async move {
+            Python::with_gil(|py| {
+                pyo3_asyncio::PyFuture::try_from(
+                    test_mod
+                        .call_method1(py, "py_sleep", (1.into_py(py),))?
+                        .as_ref(py),
+                )
+            })?
+            .await?;
+
+            Ok(())
+        })
+    })?
+    .await
+}
+
 pub(super) async fn test_into_future() -> PyResult<()> {
-    let fut = Python::with_gil(|py| {
-        let test_mod =
-            PyModule::from_code(py, TEST_MOD, "test_rust_coroutine/test_mod.py", "test_mod")?;
+    Python::with_gil(|py| -> PyResult<_> {
+        let test_mod: PyObject =
+            PyModule::from_code(py, TEST_MOD, "test_into_future/test_mod.py", "test_mod")?.into();
 
-        pyo3_asyncio::into_future(test_mod.call_method1("py_sleep", (1.into_py(py),))?)
-    })?;
+        Ok(async move {
+            Python::with_gil(|py| {
+                pyo3_asyncio::into_future(
+                    test_mod
+                        .call_method1(py, "py_sleep", (1.into_py(py),))?
+                        .as_ref(py),
+                )
+            })?
+            .await?;
 
-    fut.await?;
-
-    Ok(())
+            Ok(())
+        })
+    })?
+    .await
 }
 
 pub(super) fn test_blocking_sleep() -> PyResult<()> {
@@ -44,7 +73,7 @@ pub(super) async fn test_other_awaitables() -> PyResult<()> {
             ),
         )?;
 
-        pyo3_asyncio::into_future(task)
+        pyo3_asyncio::PyFuture::try_from(task)
     })?;
 
     fut.await?;

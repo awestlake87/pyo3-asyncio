@@ -1,21 +1,22 @@
-use std::time::Duration;
+use std::{convert::TryFrom, time::Duration};
 
 use pyo3::{prelude::*, wrap_pyfunction};
 
 use crate::common;
 
-#[pyfunction]
-fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
-    let secs = secs.extract()?;
-
-    pyo3_asyncio::tokio::into_coroutine(py, async move {
-        tokio::time::sleep(Duration::from_secs(secs)).await;
-        Python::with_gil(|py| Ok(py.None()))
-    })
-}
-
 #[pyo3_asyncio::tokio::test]
 async fn test_into_coroutine() -> PyResult<()> {
+    #[pyfunction]
+    fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
+        let secs = secs.extract()?;
+
+        #[allow(deprecated)]
+        pyo3_asyncio::tokio::into_coroutine(py, async move {
+            tokio::time::sleep(Duration::from_secs(secs)).await;
+            Python::with_gil(|py| Ok(py.None()))
+        })
+    }
+
     let fut = Python::with_gil(|py| {
         let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
 
@@ -24,11 +25,44 @@ async fn test_into_coroutine() -> PyResult<()> {
         let test_mod = PyModule::from_code(
             py,
             common::TEST_MOD,
-            "test_rust_coroutine/test_mod.py",
+            "test_into_coroutine/test_mod.py",
             "test_mod",
         )?;
 
-        pyo3_asyncio::into_future(
+        pyo3_asyncio::PyFuture::try_from(
+            test_mod.call_method1("sleep_for_1s", (sleeper_mod.getattr("sleep_for")?,))?,
+        )
+    })?;
+
+    fut.await?;
+
+    Ok(())
+}
+
+#[pyo3_asyncio::tokio::test]
+async fn test_future_into_py() -> PyResult<()> {
+    #[pyfunction]
+    fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+        let secs = secs.extract()?;
+        pyo3_asyncio::tokio::future_into_py(py, async move {
+            tokio::time::sleep(Duration::from_secs(secs)).await;
+            Python::with_gil(|py| Ok(py.None()))
+        })
+    }
+
+    let fut = Python::with_gil(|py| {
+        let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
+
+        sleeper_mod.add_wrapped(wrap_pyfunction!(sleep_for))?;
+
+        let test_mod = PyModule::from_code(
+            py,
+            common::TEST_MOD,
+            "test_future_into_py/test_mod.py",
+            "test_mod",
+        )?;
+
+        pyo3_asyncio::PyFuture::try_from(
             test_mod.call_method1("sleep_for_1s", (sleeper_mod.getattr("sleep_for")?,))?,
         )
     })?;
@@ -46,7 +80,7 @@ async fn test_async_sleep() -> PyResult<()> {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     Python::with_gil(|py| {
-        pyo3_asyncio::into_future(asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
+        pyo3_asyncio::PyFuture::try_from(asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
     })?
     .await?;
 
@@ -56,6 +90,11 @@ async fn test_async_sleep() -> PyResult<()> {
 #[pyo3_asyncio::tokio::test]
 fn test_blocking_sleep() -> PyResult<()> {
     common::test_blocking_sleep()
+}
+
+#[pyo3_asyncio::tokio::test]
+async fn test_py_future() -> PyResult<()> {
+    common::test_py_future().await
 }
 
 #[pyo3_asyncio::tokio::test]

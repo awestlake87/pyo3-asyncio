@@ -29,6 +29,8 @@ Here we initialize the runtime, import Python's `asyncio` library and run the gi
 More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
 
 ```rust
+use std::convert::TryFrom;
+
 use pyo3::prelude::*;
 
 #[pyo3_asyncio::async_std::main]
@@ -37,7 +39,7 @@ async fn main() -> PyResult<()> {
         let asyncio = py.import("asyncio")?;
 
         // convert asyncio.sleep into a Rust Future
-        pyo3_asyncio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
+        pyo3_asyncio::PyFuture::try_from(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
 
     fut.await?;
@@ -50,6 +52,8 @@ The same application can be written to use `tokio` instead using the `#[pyo3_asy
 attribute.
 
 ```rust
+use std::convert::TryFrom;
+
 use pyo3::prelude::*;
 
 #[pyo3_asyncio::tokio::main]
@@ -58,7 +62,7 @@ async fn main() -> PyResult<()> {
         let asyncio = py.import("asyncio")?;
 
         // convert asyncio.sleep into a Rust Future
-        pyo3_asyncio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
+        pyo3_asyncio::PyFuture::try_from(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
 
     fut.await?;
