@@ -24,7 +24,7 @@ pub use pyo3_asyncio_macros::async_std_main as main;
 #[cfg(all(feature = "attributes", feature = "testing"))]
 pub use pyo3_asyncio_macros::async_std_test as test;
 
-pub struct AsyncStdJoinErr(Box<dyn Any + Send + 'static>);
+struct AsyncStdJoinErr(Box<dyn Any + Send + 'static>);
 
 impl JoinError for AsyncStdJoinErr {
     fn is_panic(&self) -> bool {
@@ -32,7 +32,7 @@ impl JoinError for AsyncStdJoinErr {
     }
 }
 
-pub struct AsyncStdRuntime;
+struct AsyncStdRuntime;
 
 impl Runtime for AsyncStdRuntime {
     type JoinError = AsyncStdJoinErr;

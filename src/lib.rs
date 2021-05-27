@@ -103,6 +103,9 @@ pub mod async_std;
 #[doc(inline)]
 pub mod tokio;
 
+/// Errors and exceptions related to PyO3 Asyncio
+pub mod err;
+
 /// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
 pub mod generic;
 

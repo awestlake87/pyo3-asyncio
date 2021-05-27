@@ -1,8 +1,8 @@
 use std::future::Future;
 
-use pyo3::{create_exception, exceptions::PyException, prelude::*};
+use pyo3::prelude::*;
 
-use crate::{dump_err, get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
+use crate::{dump_err, err::RustPanic, get_event_loop, CALL_SOON, CREATE_FUTURE, EXPECT_INIT};
 
 /// Generic utilities for a JoinError
 pub trait JoinError {
@@ -125,8 +125,6 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
 
     Ok(())
 }
-
-create_exception!(pyo3_asyncio, RustPanic, PyException);
 
 /// Convert a Rust Future into a Python coroutine with a generic runtime
 ///

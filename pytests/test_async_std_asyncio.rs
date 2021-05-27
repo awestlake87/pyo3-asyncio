@@ -88,7 +88,7 @@ async fn test_panic() -> PyResult<()> {
     match fut.await {
         Ok(_) => panic!("coroutine should panic"),
         Err(e) => Python::with_gil(|py| {
-            if e.is_instance::<pyo3_asyncio::generic::RustPanic>(py) {
+            if e.is_instance::<pyo3_asyncio::err::RustPanic>(py) {
                 Ok(())
             } else {
                 panic!("expected RustPanic err")

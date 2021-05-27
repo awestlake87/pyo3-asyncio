@@ -40,7 +40,7 @@ impl generic::JoinError for task::JoinError {
     }
 }
 
-pub struct TokioRuntime;
+struct TokioRuntime;
 
 impl generic::Runtime for TokioRuntime {
     type JoinError = task::JoinError;
