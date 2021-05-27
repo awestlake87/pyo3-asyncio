@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use pyo3::prelude::*;
 
 #[pyo3_asyncio::tokio::main(flavor = "multi_thread", worker_threads = 10)]
@@ -6,7 +8,7 @@ async fn main() -> PyResult<()> {
         let asyncio = py.import("asyncio")?;
 
         // convert asyncio.sleep into a Rust Future
-        pyo3_asyncio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
+        pyo3_asyncio::PyFuture::try_from(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
 
     println!("sleeping for 1s");

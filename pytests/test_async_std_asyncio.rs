@@ -29,7 +29,7 @@ async fn test_into_coroutine() -> PyResult<()> {
             "test_mod",
         )?;
 
-        pyo3_asyncio::into_future(
+        pyo3_asyncio::PyFuture::try_from(
             test_mod.call_method1("sleep_for_1s", (sleeper_mod.getattr("sleep_for")?,))?,
         )
     })?;
@@ -62,6 +62,11 @@ fn test_blocking_sleep() -> PyResult<()> {
 #[pyo3_asyncio::async_std::test]
 async fn test_py_future() -> PyResult<()> {
     common::test_py_future().await
+}
+
+#[pyo3_asyncio::async_std::test]
+async fn test_into_future() -> PyResult<()> {
+    common::test_into_future().await
 }
 
 #[pyo3_asyncio::async_std::test]

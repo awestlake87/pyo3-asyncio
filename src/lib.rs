@@ -356,6 +356,49 @@ impl PyEnsureFuture {
     }
 }
 
+/// Convert a Python `awaitable` into a Rust Future
+///
+/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// completion handler sends the result of this Task through a
+/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
+/// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
+///
+/// # Arguments
+/// * `awaitable` - The Python `awaitable` to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::{convert::TryFrom, time::Duration};
+///
+/// use pyo3::prelude::*;
+///
+/// const PYTHON_CODE: &'static str = r#"
+/// import asyncio
+///
+/// async def py_sleep(duration):
+///     await asyncio.sleep(duration)
+/// "#;
+///
+/// async fn py_sleep(seconds: f32) -> PyResult<()> {
+///     Python::with_gil(|py| -> PyResult<_> {
+///         let test_mod = PyModule::from_code(
+///             py,
+///             PYTHON_CODE,
+///             "test_py_future/test_mod.py",
+///             "test_mod"
+///         )?;
+///         
+///         pyo3_asyncio::PyFuture::try_from(
+///             test_mod
+///                 .call_method1("py_sleep", (seconds.into_py(py),))?
+///         )
+///     })?
+///     .await?;
+///
+///     Ok(())    
+/// }
+/// ```
 pub struct PyFuture {
     rx: oneshot::Receiver<PyResult<PyObject>>,
 }
@@ -422,26 +465,21 @@ impl<'p> TryFrom<&'p PyAny> for PyFuture {
 /// "#;
 ///
 /// async fn py_sleep(seconds: f32) -> PyResult<()> {
-///     let test_mod = Python::with_gil(|py| -> PyResult<PyObject> {
-///         Ok(
-///             PyModule::from_code(
-///                 py,
-///                 PYTHON_CODE,
-///                 "test_into_future/test_mod.py",
-///                 "test_mod"
-///             )?
-///             .into()
-///         )
-///     })?;
-///
-///     Python::with_gil(|py| {
+///     Python::with_gil(|py| -> PyResult<_> {
+///         let test_mod = PyModule::from_code(
+///             py,
+///             PYTHON_CODE,
+///             "test_into_future/test_mod.py",
+///             "test_mod"
+///         )?;
+///         
 ///         pyo3_asyncio::into_future(
 ///             test_mod
-///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
-///                 .as_ref(py),
+///                 .call_method1("py_sleep", (seconds.into_py(py),))?
 ///         )
 ///     })?
 ///     .await?;
+///
 ///     Ok(())    
 /// }
 /// ```
