@@ -5,18 +5,18 @@ use std::{convert::TryFrom, time::Duration};
 use async_std::task;
 use pyo3::{prelude::*, wrap_pyfunction};
 
-#[pyfunction]
-fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
-    let secs = secs.extract()?;
-
-    pyo3_asyncio::async_std::into_coroutine(py, async move {
-        task::sleep(Duration::from_secs(secs)).await;
-        Python::with_gil(|py| Ok(py.None()))
-    })
-}
-
 #[pyo3_asyncio::async_std::test]
 async fn test_into_coroutine() -> PyResult<()> {
+    #[pyfunction]
+    fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
+        let secs = secs.extract()?;
+
+        pyo3_asyncio::async_std::into_coroutine(py, async move {
+            task::sleep(Duration::from_secs(secs)).await;
+            Python::with_gil(|py| Ok(py.None()))
+        })
+    }
+
     let fut = Python::with_gil(|py| {
         let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
 
@@ -25,7 +25,41 @@ async fn test_into_coroutine() -> PyResult<()> {
         let test_mod = PyModule::from_code(
             py,
             common::TEST_MOD,
-            "test_rust_coroutine/test_mod.py",
+            "test_into_coroutine/test_mod.py",
+            "test_mod",
+        )?;
+
+        pyo3_asyncio::PyFuture::try_from(
+            test_mod.call_method1("sleep_for_1s", (sleeper_mod.getattr("sleep_for")?,))?,
+        )
+    })?;
+
+    fut.await?;
+
+    Ok(())
+}
+
+#[pyo3_asyncio::async_std::test]
+async fn test_future_into_py() -> PyResult<()> {
+    #[pyfunction]
+    fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+        let secs = secs.extract()?;
+
+        pyo3_asyncio::async_std::future_into_py(py, async move {
+            task::sleep(Duration::from_secs(secs)).await;
+            Python::with_gil(|py| Ok(py.None()))
+        })
+    }
+
+    let fut = Python::with_gil(|py| {
+        let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
+
+        sleeper_mod.add_wrapped(wrap_pyfunction!(sleep_for))?;
+
+        let test_mod = PyModule::from_code(
+            py,
+            common::TEST_MOD,
+            "test_future_into_py/test_mod.py",
             "test_mod",
         )?;
 
