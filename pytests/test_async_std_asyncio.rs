@@ -1,6 +1,6 @@
 mod common;
 
-use std::time::Duration;
+use std::{rc::Rc, time::Duration};
 
 use async_std::task;
 use pyo3::{prelude::*, wrap_pyfunction};
@@ -77,4 +77,21 @@ fn test_init_twice() -> PyResult<()> {
 #[pyo3_asyncio::async_std::main]
 async fn main() -> pyo3::PyResult<()> {
     pyo3_asyncio::testing::main().await
+}
+
+#[pyo3_asyncio::async_std::test]
+async fn test_local_coroutine() -> PyResult<()> {
+    Python::with_gil(|py| {
+        let non_send_secs = Rc::new(1);
+
+        let py_future = pyo3_asyncio::async_std::into_local_py_future(py, async move {
+            async_std::task::sleep(Duration::from_secs(*non_send_secs)).await;
+            Ok(Python::with_gil(|py| py.None()))
+        })?;
+
+        pyo3_asyncio::into_future(py_future.as_ref(py))
+    })?
+    .await?;
+
+    Ok(())
 }

@@ -3,7 +3,7 @@ use std::future::Future;
 use async_std::task;
 use pyo3::prelude::*;
 
-use crate::generic::{self, JoinError, Runtime};
+use crate::generic::{self, JoinError, Runtime, SpawnLocalExt};
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 /// re-exports for macros
@@ -42,6 +42,18 @@ impl Runtime for AsyncStdRuntime {
         F: Future<Output = ()> + Send + 'static,
     {
         task::spawn(async move {
+            fut.await;
+            Ok(())
+        })
+    }
+}
+
+impl SpawnLocalExt for AsyncStdRuntime {
+    fn spawn_local<F>(fut: F) -> Self::JoinHandle
+    where
+        F: Future<Output = ()> + 'static,
+    {
+        task::spawn_local(async move {
             fut.await;
             Ok(())
         })
@@ -116,4 +128,50 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     generic::into_coroutine::<AsyncStdRuntime, _>(py, fut)
+}
+
+/// Convert a `!Send` Rust Future into a Python coroutine
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::{rc::Rc, time::Duration};
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable non-send sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<PyObject> {
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine
+///     let secs = Rc::new(secs);
+///
+///     pyo3_asyncio::async_std::into_local_py_future(py, async move {
+///         async_std::task::sleep(Duration::from_secs(*secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+///
+/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
+/// #[pyo3_asyncio::async_std::main]
+/// async fn main() -> PyResult<()> {
+///             Python::with_gil(|py| {
+///                let py_future = sleep_for(py, 1)?;
+///                pyo3_asyncio::into_future(py_future.as_ref(py))
+///             })?
+///             .await?;
+///
+///             Ok(())
+/// }
+/// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+pub fn into_local_py_future<F>(py: Python, fut: F) -> PyResult<PyObject>
+where
+    F: Future<Output = PyResult<PyObject>> + 'static,
+{
+    generic::into_local_py_future::<AsyncStdRuntime, _>(py, fut)
 }
