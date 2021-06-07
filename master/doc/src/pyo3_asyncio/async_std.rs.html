@@ -120,13 +120,71 @@
 <span id="117">117</span>
 <span id="118">118</span>
 <span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">future</span>::<span class="ident">Future</span>;
 
 <span class="kw">use</span> <span class="ident">async_std</span>::<span class="ident">task</span>;
 <span class="kw">use</span> <span class="ident">pyo3</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">generic</span>::{<span class="self">self</span>, <span class="ident">JoinError</span>, <span class="ident">Runtime</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">generic</span>::{<span class="self">self</span>, <span class="ident">JoinError</span>, <span class="ident">Runtime</span>, <span class="ident">SpawnLocalExt</span>};
 
 <span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;</span>
 <span class="doccomment">/// re-exports for macros</span>
@@ -165,6 +223,18 @@
         <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     {
         <span class="ident">task</span>::<span class="ident">spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
+            <span class="ident">fut</span>.<span class="kw">await</span>;
+            <span class="prelude-val">Ok</span>(())
+        })
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">SpawnLocalExt</span> <span class="kw">for</span> <span class="ident">AsyncStdRuntime</span> {
+    <span class="kw">fn</span> <span class="ident">spawn_local</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">JoinHandle</span>
+    <span class="kw">where</span>
+        <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    {
+        <span class="ident">task</span>::<span class="ident">spawn_local</span>(<span class="kw">async</span> <span class="kw">move</span> {
             <span class="ident">fut</span>.<span class="kw">await</span>;
             <span class="prelude-val">Ok</span>(())
         })
@@ -239,6 +309,52 @@
     <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
     <span class="ident">generic</span>::<span class="ident">into_coroutine</span>::<span class="op">&lt;</span><span class="ident">AsyncStdRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
+}
+
+<span class="doccomment">/// Convert a `!Send` Rust Future into a Python coroutine</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Arguments</span>
+<span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
+<span class="doccomment">/// * `fut` - The Rust future to be converted</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Examples</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```</span>
+<span class="doccomment">/// use std::{rc::Rc, time::Duration};</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// use pyo3::prelude::*;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// /// Awaitable non-send sleep function</span>
+<span class="doccomment">/// #[pyfunction]</span>
+<span class="doccomment">/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;PyObject&gt; {</span>
+<span class="doccomment">///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine</span>
+<span class="doccomment">///     let secs = Rc::new(secs);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     pyo3_asyncio::async_std::into_local_py_future(py, async move {</span>
+<span class="doccomment">///         async_std::task::sleep(Duration::from_secs(*secs)).await;</span>
+<span class="doccomment">///         Python::with_gil(|py| Ok(py.None()))</span>
+<span class="doccomment">///     })</span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # #[cfg(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;))]</span>
+<span class="doccomment">/// #[pyo3_asyncio::async_std::main]</span>
+<span class="doccomment">/// async fn main() -&gt; PyResult&lt;()&gt; {</span>
+<span class="doccomment">///     Python::with_gil(|py| {</span>
+<span class="doccomment">///        let py_future = sleep_for(py, 1)?;</span>
+<span class="doccomment">///        pyo3_asyncio::into_future(py_future.as_ref(py))</span>
+<span class="doccomment">///     })?</span>
+<span class="doccomment">///     .await?;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     Ok(())</span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">/// # #[cfg(not(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
+<span class="doccomment">/// # fn main() {}</span>
+<span class="doccomment">/// ```</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_local_py_future</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+{
+    <span class="ident">generic</span>::<span class="ident">into_local_py_future</span>::<span class="op">&lt;</span><span class="ident">AsyncStdRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-search-js="../../search-index.js"></div>

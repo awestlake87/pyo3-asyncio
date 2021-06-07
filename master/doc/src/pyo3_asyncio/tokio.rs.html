@@ -210,6 +210,69 @@
 <span id="207">207</span>
 <span id="208">208</span>
 <span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">future</span>::<span class="ident">Future</span>, <span class="ident">thread</span>};
 
@@ -266,6 +329,15 @@
         <span class="ident">get_runtime</span>().<span class="ident">spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
             <span class="ident">fut</span>.<span class="kw">await</span>;
         })
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">generic</span>::<span class="ident">SpawnLocalExt</span> <span class="kw">for</span> <span class="ident">TokioRuntime</span> {
+    <span class="kw">fn</span> <span class="ident">spawn_local</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">JoinHandle</span>
+    <span class="kw">where</span>
+        <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    {
+        <span class="ident">tokio</span>::<span class="ident">task</span>::<span class="ident">spawn_local</span>(<span class="ident">fut</span>)
     }
 }
 
@@ -419,6 +491,60 @@
     <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
     <span class="ident">generic</span>::<span class="ident">into_coroutine</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
+}
+
+<span class="doccomment">/// Convert a `!Send` Rust Future into a Python coroutine</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Arguments</span>
+<span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
+<span class="doccomment">/// * `fut` - The Rust future to be converted</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Examples</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```</span>
+<span class="doccomment">/// use std::{rc::Rc, time::Duration};</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// use pyo3::prelude::*;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// /// Awaitable non-send sleep function</span>
+<span class="doccomment">/// #[pyfunction]</span>
+<span class="doccomment">/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;PyObject&gt; {</span>
+<span class="doccomment">///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine</span>
+<span class="doccomment">///     let secs = Rc::new(secs);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     pyo3_asyncio::tokio::into_local_py_future(py, async move {</span>
+<span class="doccomment">///         tokio::time::sleep(Duration::from_secs(*secs)).await;</span>
+<span class="doccomment">///         Python::with_gil(|py| Ok(py.None()))</span>
+<span class="doccomment">///     })</span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]</span>
+<span class="doccomment">/// #[pyo3_asyncio::tokio::main]</span>
+<span class="doccomment">/// async fn main() -&gt; PyResult&lt;()&gt; {</span>
+<span class="doccomment">///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead</span>
+<span class="doccomment">///     // we use spawn_blocking in order to use LocalSet::block_on</span>
+<span class="doccomment">///     tokio::task::spawn_blocking(|| {</span>
+<span class="doccomment">///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to</span>
+<span class="doccomment">///         // pyo3_asyncio::tokio::into_local_py_future will panic.</span>
+<span class="doccomment">///         tokio::task::LocalSet::new().block_on(pyo3_asyncio::tokio::get_runtime(), async {</span>
+<span class="doccomment">///             Python::with_gil(|py| {</span>
+<span class="doccomment">///                let py_future = sleep_for(py, 1)?;</span>
+<span class="doccomment">///                pyo3_asyncio::into_future(py_future.as_ref(py))</span>
+<span class="doccomment">///             })?</span>
+<span class="doccomment">///             .await?;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///             Ok(())</span>
+<span class="doccomment">///         })</span>
+<span class="doccomment">///     }).await.unwrap()</span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">/// # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
+<span class="doccomment">/// # fn main() {}</span>
+<span class="doccomment">/// ```</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_local_py_future</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+{
+    <span class="ident">generic</span>::<span class="ident">into_local_py_future</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-search-js="../../search-index.js"></div>
