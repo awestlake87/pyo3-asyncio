@@ -158,13 +158,13 @@ where
 /// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::async_std::main]
 /// async fn main() -> PyResult<()> {
-///             Python::with_gil(|py| {
-///                let py_future = sleep_for(py, 1)?;
-///                pyo3_asyncio::into_future(py_future.as_ref(py))
-///             })?
-///             .await?;
+///     Python::with_gil(|py| {
+///        let py_future = sleep_for(py, 1)?;
+///        pyo3_asyncio::into_future(py_future.as_ref(py))
+///     })?
+///     .await?;
 ///
-///             Ok(())
+///     Ok(())
 /// }
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
