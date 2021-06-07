@@ -99,7 +99,7 @@ where
     generic::run_until_complete::<AsyncStdRuntime, _>(py, fut)
 }
 
-/// Convert a Rust Future into a Python coroutine
+/// Convert a Rust Future into a Python awaitable
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -130,7 +130,7 @@ where
     generic::into_coroutine::<AsyncStdRuntime, _>(py, fut)
 }
 
-/// Convert a `!Send` Rust Future into a Python coroutine
+/// Convert a `!Send` Rust Future into a Python awaitable
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -145,11 +145,11 @@ where
 ///
 /// /// Awaitable non-send sleep function
 /// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<PyObject> {
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
 ///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine
 ///     let secs = Rc::new(secs);
 ///
-///     pyo3_asyncio::async_std::into_local_py_future(py, async move {
+///     pyo3_asyncio::async_std::local_future_into_py(py, async move {
 ///         async_std::task::sleep(Duration::from_secs(*secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
 ///     })
@@ -160,7 +160,7 @@ where
 /// async fn main() -> PyResult<()> {
 ///     Python::with_gil(|py| {
 ///        let py_future = sleep_for(py, 1)?;
-///        pyo3_asyncio::into_future(py_future.as_ref(py))
+///        pyo3_asyncio::into_future(py_future)
 ///     })?
 ///     .await?;
 ///
@@ -169,9 +169,9 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn into_local_py_future<F>(py: Python, fut: F) -> PyResult<PyObject>
+pub fn local_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    generic::into_local_py_future::<AsyncStdRuntime, _>(py, fut)
+    generic::local_future_into_py::<AsyncStdRuntime, _>(py, fut)
 }

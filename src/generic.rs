@@ -134,7 +134,7 @@ fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResul
     Ok(())
 }
 
-/// Convert a Rust Future into a Python coroutine with a generic runtime
+/// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -245,7 +245,7 @@ where
     Ok(future_rx)
 }
 
-/// Convert a `!Send` Rust Future into a Python coroutine with a generic runtime
+/// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -311,23 +311,21 @@ where
 ///
 /// /// Awaitable sleep function
 /// #[pyfunction]
-/// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
-///     let secs = secs.extract()?;
-///
-///     pyo3_asyncio::generic::into_local_py_future::<MyCustomRuntime, _>(py, async move {
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
+///     pyo3_asyncio::generic::local_future_into_py::<MyCustomRuntime, _>(py, async move {
 ///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
 ///    })
 /// }
 /// ```
-pub fn into_local_py_future<R, F>(py: Python, fut: F) -> PyResult<PyObject>
+pub fn local_future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     R: SpawnLocalExt,
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    let future_rx = CREATE_FUTURE.get().expect(EXPECT_INIT).call0(py)?;
-    let future_tx1 = future_rx.clone();
-    let future_tx2 = future_rx.clone();
+    let future_rx = CREATE_FUTURE.get().expect(EXPECT_INIT).as_ref(py).call0()?;
+    let future_tx1 = PyObject::from(future_rx);
+    let future_tx2 = future_tx1.clone();
 
     R::spawn_local(async move {
         if let Err(e) = R::spawn_local(async move {
