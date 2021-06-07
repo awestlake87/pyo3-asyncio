@@ -23,6 +23,14 @@ pub trait Runtime {
         F: Future<Output = ()> + Send + 'static;
 }
 
+/// Extension trait for async/await runtimes that support spawning local tasks
+pub trait SpawnLocalExt: Runtime {
+    /// Spawn a !Send future onto this runtime's event loop
+    fn spawn_local<F>(fut: F) -> Self::JoinHandle
+    where
+        F: Future<Output = ()> + 'static;
+}
+
 /// Run the event loop until the given Future completes
 ///
 /// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
@@ -203,6 +211,126 @@ where
 
     R::spawn(async move {
         if let Err(e) = R::spawn(async move {
+            let result = fut.await;
+
+            Python::with_gil(move |py| {
+                if set_result(py, future_tx1.as_ref(py), result)
+                    .map_err(dump_err(py))
+                    .is_err()
+                {
+
+                    // Cancelled
+                }
+            });
+        })
+        .await
+        {
+            if e.is_panic() {
+                Python::with_gil(move |py| {
+                    if set_result(
+                        py,
+                        future_tx2.as_ref(py),
+                        Err(PyException::new_err("rust future panicked")),
+                    )
+                    .map_err(dump_err(py))
+                    .is_err()
+                    {
+                        // Cancelled
+                    }
+                });
+            }
+        }
+    });
+
+    Ok(future_rx)
+}
+
+/// Convert a `!Send` Rust Future into a Python coroutine with a generic runtime
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::generic::{JoinError, SpawnLocalExt, Runtime};
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl MyCustomRuntime {
+/// #     async fn sleep(_: Duration) {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl SpawnLocalExt for MyCustomRuntime {
+/// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
+///     let secs = secs.extract()?;
+///
+///     pyo3_asyncio::generic::into_local_py_future::<MyCustomRuntime, _>(py, async move {
+///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///    })
+/// }
+/// ```
+pub fn into_local_py_future<R, F>(py: Python, fut: F) -> PyResult<PyObject>
+where
+    R: SpawnLocalExt,
+    F: Future<Output = PyResult<PyObject>> + 'static,
+{
+    let future_rx = CREATE_FUTURE.get().expect(EXPECT_INIT).call0(py)?;
+    let future_tx1 = future_rx.clone();
+    let future_tx2 = future_rx.clone();
+
+    R::spawn_local(async move {
+        if let Err(e) = R::spawn_local(async move {
             let result = fut.await;
 
             Python::with_gil(move |py| {

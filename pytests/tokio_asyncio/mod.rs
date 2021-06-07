@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{rc::Rc, time::Duration};
 
 use pyo3::{prelude::*, wrap_pyfunction};
 
@@ -81,4 +81,23 @@ fn test_init_tokio_twice() -> PyResult<()> {
     pyo3_asyncio::tokio::init_current_thread_once();
 
     Ok(())
+}
+
+#[pyo3_asyncio::tokio::test]
+fn test_local_set_coroutine() -> PyResult<()> {
+    tokio::task::LocalSet::new().block_on(pyo3_asyncio::tokio::get_runtime(), async {
+        Python::with_gil(|py| {
+            let non_send_secs = Rc::new(1);
+
+            let py_future = pyo3_asyncio::tokio::into_local_py_future(py, async move {
+                tokio::time::sleep(Duration::from_secs(*non_send_secs)).await;
+                Ok(Python::with_gil(|py| py.None()))
+            })?;
+
+            pyo3_asyncio::into_future(py_future.as_ref(py))
+        })?
+        .await?;
+
+        Ok(())
+    })
 }

@@ -56,6 +56,15 @@ impl generic::Runtime for TokioRuntime {
     }
 }
 
+impl generic::SpawnLocalExt for TokioRuntime {
+    fn spawn_local<F>(fut: F) -> Self::JoinHandle
+    where
+        F: Future<Output = ()> + 'static,
+    {
+        tokio::task::spawn_local(fut)
+    }
+}
+
 /// Initialize the Tokio Runtime with a custom build
 pub fn init(runtime: Runtime) {
     TOKIO_RUNTIME
@@ -206,4 +215,58 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     generic::into_coroutine::<TokioRuntime, _>(py, fut)
+}
+
+/// Convert a `!Send` Rust Future into a Python coroutine
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::{rc::Rc, time::Duration};
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable non-send sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<PyObject> {
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine
+///     let secs = Rc::new(secs);
+///
+///     pyo3_asyncio::tokio::into_local_py_future(py, async move {
+///         tokio::time::sleep(Duration::from_secs(*secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+///
+/// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
+/// #[pyo3_asyncio::tokio::main]
+/// async fn main() -> PyResult<()> {
+///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
+///     // we use spawn_blocking in order to use LocalSet::block_on
+///     tokio::task::spawn_blocking(|| {
+///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to
+///         // pyo3_asyncio::tokio::into_local_py_future will panic.
+///         tokio::task::LocalSet::new().block_on(pyo3_asyncio::tokio::get_runtime(), async {
+///             Python::with_gil(|py| {
+///                let py_future = sleep_for(py, 1)?;
+///                pyo3_asyncio::into_future(py_future.as_ref(py))
+///             })?
+///             .await?;
+///
+///             Ok(())
+///         })
+///     }).await.unwrap()
+/// }
+/// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+pub fn into_local_py_future<F>(py: Python, fut: F) -> PyResult<PyObject>
+where
+    F: Future<Output = PyResult<PyObject>> + 'static,
+{
+    generic::into_local_py_future::<TokioRuntime, _>(py, fut)
 }
