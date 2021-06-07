@@ -462,7 +462,7 @@
     <span class="ident">generic</span>::<span class="ident">run_until_complete</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
 }
 
-<span class="doccomment">/// Convert a Rust Future into a Python coroutine</span>
+<span class="doccomment">/// Convert a Rust Future into a Python awaitable</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
@@ -493,7 +493,7 @@
     <span class="ident">generic</span>::<span class="ident">into_coroutine</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
 }
 
-<span class="doccomment">/// Convert a `!Send` Rust Future into a Python coroutine</span>
+<span class="doccomment">/// Convert a `!Send` Rust Future into a Python awaitable</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
@@ -508,11 +508,11 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// /// Awaitable non-send sleep function</span>
 <span class="doccomment">/// #[pyfunction]</span>
-<span class="doccomment">/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;PyObject&gt; {</span>
+<span class="doccomment">/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine</span>
 <span class="doccomment">///     let secs = Rc::new(secs);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::into_local_py_future(py, async move {</span>
+<span class="doccomment">///     pyo3_asyncio::tokio::local_future_into_py(py, async move {</span>
 <span class="doccomment">///         tokio::time::sleep(Duration::from_secs(*secs)).await;</span>
 <span class="doccomment">///         Python::with_gil(|py| Ok(py.None()))</span>
 <span class="doccomment">///     })</span>
@@ -525,11 +525,11 @@
 <span class="doccomment">///     // we use spawn_blocking in order to use LocalSet::block_on</span>
 <span class="doccomment">///     tokio::task::spawn_blocking(|| {</span>
 <span class="doccomment">///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to</span>
-<span class="doccomment">///         // pyo3_asyncio::tokio::into_local_py_future will panic.</span>
+<span class="doccomment">///         // pyo3_asyncio::tokio::local_future_into_py will panic.</span>
 <span class="doccomment">///         tokio::task::LocalSet::new().block_on(pyo3_asyncio::tokio::get_runtime(), async {</span>
 <span class="doccomment">///             Python::with_gil(|py| {</span>
 <span class="doccomment">///                let py_future = sleep_for(py, 1)?;</span>
-<span class="doccomment">///                pyo3_asyncio::into_future(py_future.as_ref(py))</span>
+<span class="doccomment">///                pyo3_asyncio::into_future(py_future)</span>
 <span class="doccomment">///             })?</span>
 <span class="doccomment">///             .await?;</span>
 <span class="doccomment">///</span>
@@ -540,11 +540,11 @@
 <span class="doccomment">/// # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
 <span class="doccomment">/// # fn main() {}</span>
 <span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_local_py_future</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">local_future_into_py</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span>, <span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>, <span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-    <span class="ident">generic</span>::<span class="ident">into_local_py_future</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
+    <span class="ident">generic</span>::<span class="ident">local_future_into_py</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-search-js="../../search-index.js"></div>
