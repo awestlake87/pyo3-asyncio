@@ -28,9 +28,7 @@ Here we initialize the runtime, import Python's `asyncio` library and run the gi
 
 
 ```toml
-# Cargo.toml
-...
-
+# Cargo.toml dependencies
 [dependencies]
 pyo3 = { version = "0.13" }
 pyo3-asyncio = { version = "0.13", features = ["attributes", "async-std-runtime"] }
@@ -61,9 +59,7 @@ The same application can be written to use `tokio` instead using the `#[pyo3_asy
 attribute.
 
 ```toml
-# Cargo.toml
-...
-
+# Cargo.toml dependencies
 [dependencies]
 pyo3 = { version = "0.13" }
 pyo3-asyncio = { version = "0.13", features = ["attributes", "tokio-runtime"] }
