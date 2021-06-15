@@ -26,9 +26,20 @@ This library can give spurious failures during finalization prior to PyO3 releas
 ### Rust Applications
 Here we initialize the runtime, import Python's `asyncio` library and run the given future to completion using Python's default `EventLoop` and `async-std`. Inside the future, we convert `asyncio` sleep into a Rust future and await it.
 
-More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
+
+```toml
+# Cargo.toml
+...
+
+[dependencies]
+pyo3 = { version = "0.13" }
+pyo3-asyncio = { version = "0.13", features = ["attributes", "async-std-runtime"] }
+async-std = "1.9"
+```
 
 ```rust
+//! main.rs
+
 use pyo3::prelude::*;
 
 #[pyo3_asyncio::async_std::main]
@@ -49,7 +60,19 @@ async fn main() -> PyResult<()> {
 The same application can be written to use `tokio` instead using the `#[pyo3_asyncio::tokio::main]`
 attribute.
 
+```toml
+# Cargo.toml
+...
+
+[dependencies]
+pyo3 = { version = "0.13" }
+pyo3-asyncio = { version = "0.13", features = ["attributes", "tokio-runtime"] }
+tokio = "1.4"
+```
+
 ```rust
+//! main.rs
+
 use pyo3::prelude::*;
 
 #[pyo3_asyncio::tokio::main]
@@ -66,6 +89,8 @@ async fn main() -> PyResult<()> {
     Ok(())
 }
 ```
+
+More details on the usage of this library can be found in the [API docs](https://awestlake87.github.io/pyo3-asyncio/master/doc).
 
 ### PyO3 Native Rust Modules
 
