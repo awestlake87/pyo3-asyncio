@@ -1,14 +1,14 @@
-use std::{future::Future, thread};
+use std::{future::Future, pin::Pin, thread};
 
 use ::tokio::{
     runtime::{Builder, Runtime},
     task,
 };
 use futures::future::pending;
-use once_cell::sync::OnceCell;
+use once_cell::{sync::OnceCell, unsync::OnceCell as UnsyncOnceCell};
 use pyo3::prelude::*;
 
-use crate::generic;
+use crate::generic::{self, Runtime as GenericRuntime, SpawnLocalExt};
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 /// re-exports for macros
@@ -42,9 +42,27 @@ impl generic::JoinError for task::JoinError {
 
 struct TokioRuntime;
 
-impl generic::Runtime for TokioRuntime {
+tokio::task_local! {
+    static EVENT_LOOP: UnsyncOnceCell<PyObject>;
+}
+
+impl GenericRuntime for TokioRuntime {
     type JoinError = task::JoinError;
     type JoinHandle = task::JoinHandle<()>;
+
+    fn scope<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+    where
+        F: Future<Output = R> + Send + 'static,
+    {
+        let cell = UnsyncOnceCell::new();
+        cell.set(event_loop).unwrap();
+
+        Box::pin(EVENT_LOOP.scope(cell, fut))
+    }
+
+    fn get_task_event_loop() -> Option<PyObject> {
+        EVENT_LOOP.with(|c| c.get().map(|event_loop| event_loop.clone()))
+    }
 
     fn spawn<F>(fut: F) -> Self::JoinHandle
     where
@@ -56,13 +74,42 @@ impl generic::Runtime for TokioRuntime {
     }
 }
 
-impl generic::SpawnLocalExt for TokioRuntime {
+impl SpawnLocalExt for TokioRuntime {
+    fn scope_local<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+    where
+        F: Future<Output = R> + 'static,
+    {
+        let cell = UnsyncOnceCell::new();
+        cell.set(event_loop).unwrap();
+
+        Box::pin(EVENT_LOOP.scope(cell, fut))
+    }
+
     fn spawn_local<F>(fut: F) -> Self::JoinHandle
     where
         F: Future<Output = ()> + 'static,
     {
         tokio::task::spawn_local(fut)
     }
+}
+
+pub async fn scope<F, R>(event_loop: PyObject, fut: F) -> R
+where
+    F: Future<Output = R> + Send + 'static,
+{
+    TokioRuntime::scope(event_loop, fut).await
+}
+
+pub async fn scope_local<F, R>(event_loop: PyObject, fut: F) -> R
+where
+    F: Future<Output = R> + 'static,
+{
+    TokioRuntime::scope_local(event_loop, fut).await
+}
+
+/// Get the task local event loop for the current tokio task
+pub fn task_event_loop() -> Option<PyObject> {
+    TokioRuntime::get_task_event_loop()
 }
 
 /// Initialize the Tokio Runtime with a custom build
@@ -204,17 +251,17 @@ where
 /// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
 ///     let secs = secs.extract()?;
 ///
-///     pyo3_asyncio::tokio::into_coroutine(py, async move {
+///     pyo3_asyncio::tokio::into_coroutine(pyo3_asyncio::tokio::task_event_loop().unwrap().as_ref(py), async move {
 ///         tokio::time::sleep(Duration::from_secs(secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
 ///     })
 /// }
 /// ```
-pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
+pub fn into_coroutine<F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    generic::into_coroutine::<TokioRuntime, _>(py, fut)
+    generic::into_coroutine::<TokioRuntime, _>(event_loop, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable
@@ -232,11 +279,12 @@ where
 ///
 /// /// Awaitable non-send sleep function
 /// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<PyObject> {
 ///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine
 ///     let secs = Rc::new(secs);
+///     let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
 ///
-///     pyo3_asyncio::tokio::local_future_into_py(py, async move {
+///     pyo3_asyncio::tokio::local_future_into_py(event_loop.as_ref(py), async move {
 ///         tokio::time::sleep(Duration::from_secs(*secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
 ///     })
@@ -245,28 +293,36 @@ where
 /// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::tokio::main]
 /// async fn main() -> PyResult<()> {
+///     let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
+///
 ///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
 ///     // we use spawn_blocking in order to use LocalSet::block_on
-///     tokio::task::spawn_blocking(|| {
+///     tokio::task::spawn_blocking(move || {
 ///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to
 ///         // pyo3_asyncio::tokio::local_future_into_py will panic.
-///         tokio::task::LocalSet::new().block_on(pyo3_asyncio::tokio::get_runtime(), async {
-///             Python::with_gil(|py| {
-///                let py_future = sleep_for(py, 1)?;
-///                pyo3_asyncio::into_future(py_future)
-///             })?
-///             .await?;
+///         tokio::task::LocalSet::new().block_on(
+///             pyo3_asyncio::tokio::get_runtime(),  
+///             pyo3_asyncio::tokio::scope_local(event_loop, async {
+///                 Python::with_gil(|py| {
+///                     let py_future = sleep_for(py, 1)?;
+///                     pyo3_asyncio::into_future(
+///                         pyo3_asyncio::tokio::task_event_loop().unwrap().as_ref(py),
+///                         py_future.as_ref(py)
+///                     )
+///                 })?
+///                 .await?;
 ///
-///             Ok(())
-///         })
+///                 Ok(())
+///             })
+///         )
 ///     }).await.unwrap()
 /// }
 /// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<'p, F>(py: Python<'p>, fut: F) -> PyResult<&'p PyAny>
+pub fn local_future_into_py<'p, F>(event_loop: &'p PyAny, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    generic::local_future_into_py::<TokioRuntime, _>(py, fut)
+    generic::local_future_into_py::<TokioRuntime, _>(event_loop, fut)
 }

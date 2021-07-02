@@ -6,7 +6,12 @@ async fn main() -> PyResult<()> {
         let asyncio = py.import("asyncio")?;
 
         // convert asyncio.sleep into a Rust Future
-        pyo3_asyncio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
+        pyo3_asyncio::into_future(
+            pyo3_asyncio::async_std::task_event_loop()
+                .unwrap()
+                .as_ref(py),
+            asyncio.call_method1("sleep", (1.into_py(py),))?,
+        )
     })?;
 
     println!("sleeping for 1s");

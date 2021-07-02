@@ -1,6 +1,7 @@
-use std::future::Future;
+use std::{future::Future, pin::Pin};
 
 use async_std::task;
+use once_cell::unsync::OnceCell;
 use pyo3::prelude::*;
 
 use crate::generic::{self, JoinError, Runtime, SpawnLocalExt};
@@ -31,11 +32,26 @@ impl JoinError for AsyncStdJoinError {
     }
 }
 
+async_std::task_local! {
+    static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new()
+}
+
 struct AsyncStdRuntime;
 
 impl Runtime for AsyncStdRuntime {
     type JoinError = AsyncStdJoinError;
     type JoinHandle = task::JoinHandle<Result<(), AsyncStdJoinError>>;
+
+    fn scope<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+    where
+        F: Future<Output = R> + Send + 'static,
+    {
+        EVENT_LOOP.with(|c| c.set(event_loop).unwrap());
+        Box::pin(fut)
+    }
+    fn get_task_event_loop() -> Option<PyObject> {
+        EVENT_LOOP.with(|c| c.get().map(|event_loop| event_loop.clone()))
+    }
 
     fn spawn<F>(fut: F) -> Self::JoinHandle
     where
@@ -49,6 +65,14 @@ impl Runtime for AsyncStdRuntime {
 }
 
 impl SpawnLocalExt for AsyncStdRuntime {
+    fn scope_local<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+    where
+        F: Future<Output = R> + 'static,
+    {
+        EVENT_LOOP.with(|c| c.set(event_loop).unwrap());
+        Box::pin(fut)
+    }
+
     fn spawn_local<F>(fut: F) -> Self::JoinHandle
     where
         F: Future<Output = ()> + 'static,
@@ -58,6 +82,25 @@ impl SpawnLocalExt for AsyncStdRuntime {
             Ok(())
         })
     }
+}
+
+pub async fn scope<F, R>(event_loop: PyObject, fut: F) -> R
+where
+    F: Future<Output = R> + Send + 'static,
+{
+    AsyncStdRuntime::scope(event_loop, fut).await
+}
+
+pub async fn scope_local<F, R>(event_loop: PyObject, fut: F) -> R
+where
+    F: Future<Output = R> + 'static,
+{
+    AsyncStdRuntime::scope_local(event_loop, fut).await
+}
+
+/// Get the task local event loop for the current async_std task
+pub fn task_event_loop() -> Option<PyObject> {
+    AsyncStdRuntime::get_task_event_loop()
 }
 
 /// Run the event loop until the given Future completes
@@ -117,17 +160,20 @@ where
 /// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
 ///     let secs = secs.extract()?;
 ///
-///     pyo3_asyncio::async_std::into_coroutine(py, async move {
-///         async_std::task::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
-///     })
+///     pyo3_asyncio::async_std::into_coroutine(
+///         pyo3_asyncio::get_event_loop(py)?,
+///         async move {
+///             async_std::task::sleep(Duration::from_secs(secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
 /// }
 /// ```
-pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
+pub fn into_coroutine<F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    generic::into_coroutine::<AsyncStdRuntime, _>(py, fut)
+    generic::into_coroutine::<AsyncStdRuntime, _>(event_loop, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable
@@ -145,22 +191,28 @@ where
 ///
 /// /// Awaitable non-send sleep function
 /// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<PyObject> {
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::into_coroutine
 ///     let secs = Rc::new(secs);
 ///
-///     pyo3_asyncio::async_std::local_future_into_py(py, async move {
-///         async_std::task::sleep(Duration::from_secs(*secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
-///     })
+///     pyo3_asyncio::async_std::local_future_into_py(
+///         pyo3_asyncio::async_std::task_event_loop().unwrap().as_ref(py),
+///         async move {
+///             async_std::task::sleep(Duration::from_secs(*secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
 /// }
 ///
 /// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::async_std::main]
 /// async fn main() -> PyResult<()> {
 ///     Python::with_gil(|py| {
-///        let py_future = sleep_for(py, 1)?;
-///        pyo3_asyncio::into_future(py_future)
+///         let py_future = sleep_for(py, 1)?;
+///         pyo3_asyncio::into_future(
+///             pyo3_asyncio::async_std::task_event_loop().unwrap().as_ref(py),
+///             py_future.as_ref(py)
+///         )
 ///     })?
 ///     .await?;
 ///
@@ -169,9 +221,9 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py<F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    generic::local_future_into_py::<AsyncStdRuntime, _>(py, fut)
+    generic::local_future_into_py::<AsyncStdRuntime, _>(event_loop, fut)
 }

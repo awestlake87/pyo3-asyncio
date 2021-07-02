@@ -13,16 +13,21 @@ fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {
 fn main() {
     Python::with_gil(|py| {
         pyo3_asyncio::with_runtime(py, || {
+            let event_loop = PyObject::from(pyo3_asyncio::get_event_loop(py).unwrap());
+
             async_std::task::spawn(async move {
                 async_std::task::sleep(Duration::from_secs(1)).await;
 
                 Python::with_gil(|py| {
-                    let event_loop = pyo3_asyncio::get_event_loop(py);
-
                     event_loop
+                        .as_ref(py)
                         .call_method1(
                             "call_soon_threadsafe",
-                            (event_loop.getattr("stop").map_err(dump_err(py)).unwrap(),),
+                            (event_loop
+                                .as_ref(py)
+                                .getattr("stop")
+                                .map_err(dump_err(py))
+                                .unwrap(),),
                         )
                         .map_err(dump_err(py))
                         .unwrap();

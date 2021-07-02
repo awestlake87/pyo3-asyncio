@@ -146,8 +146,10 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     #body
                 }
 
+                let event_loop = pyo3_asyncio::async_std::task_event_loop().unwrap();
+
                 Box::pin(pyo3_asyncio::async_std::re_exports::spawn_blocking(move || {
-                    #name()
+                    #name(event_loop)
                 }))
             }
         }
@@ -222,8 +224,10 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     #body
                 }
 
-                Box::pin(async {
-                    match pyo3_asyncio::tokio::get_runtime().spawn_blocking(&#name).await {
+                let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
+
+                Box::pin(async move {
+                    match pyo3_asyncio::tokio::get_runtime().spawn_blocking(move || #name(event_loop)).await {
                         Ok(result) => result,
                         Err(e) => {
                             assert!(e.is_panic());
