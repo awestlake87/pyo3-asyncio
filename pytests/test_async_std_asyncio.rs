@@ -9,7 +9,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
     let secs = secs.extract()?;
 
-    pyo3_asyncio::async_std::into_coroutine(pyo3_asyncio::get_event_loop(py)?, async move {
+    pyo3_asyncio::async_std::into_coroutine(py, async move {
         task::sleep(Duration::from_secs(secs)).await;
         Python::with_gil(|py| Ok(py.None()))
     })
@@ -83,9 +83,8 @@ fn test_init_twice(_event_loop: PyObject) -> PyResult<()> {
 #[pyo3_asyncio::async_std::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        let event_loop = pyo3_asyncio::async_std::task_event_loop(py).unwrap();
         pyo3_asyncio::async_std::into_future(
-            pyo3_asyncio::async_std::into_coroutine(event_loop, async {
+            pyo3_asyncio::async_std::into_coroutine(py, async {
                 panic!("this panic was intentional!")
             })?
             .as_ref(py),

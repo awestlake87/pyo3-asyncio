@@ -64,7 +64,10 @@ impl GenericRuntime for TokioRuntime {
     }
 
     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-        EVENT_LOOP.with(|c| c.get().map(|event_loop| event_loop.clone().into_ref(py)))
+        match EVENT_LOOP.try_with(|c| c.get().map(|event_loop| event_loop.clone().into_ref(py))) {
+            Ok(event_loop) => event_loop,
+            Err(_) => None,
+        }
     }
 
     fn spawn<F>(fut: F) -> Self::JoinHandle
@@ -260,21 +263,17 @@ where
 /// #[pyfunction]
 /// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
 ///     let secs = secs.extract()?;
-///
-///     pyo3_asyncio::tokio::into_coroutine(
-///         pyo3_asyncio::tokio::current_event_loop(py)?,
-///         async move {
-///             tokio::time::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )
+///     pyo3_asyncio::tokio::into_coroutine(py, async move {
+///         tokio::time::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
 /// }
 /// ```
-pub fn into_coroutine<F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
+pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    generic::into_coroutine::<TokioRuntime, _>(event_loop, fut)
+    generic::into_coroutine::<TokioRuntime, _>(py, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable

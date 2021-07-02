@@ -125,7 +125,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
 fn rust_sleep(py: Python) -> PyResult<PyObject> {
-    pyo3_asyncio::async_std::into_coroutine(pyo3_asyncio::async_std::current_event_loop(py)?, async {
+    pyo3_asyncio::async_std::into_coroutine(py, async {
         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
         Ok(Python::with_gil(|py| py.None()))
     })
@@ -149,7 +149,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
 fn rust_sleep(py: Python) -> PyResult<PyObject> {
-    pyo3_asyncio::tokio::into_coroutine(pyo3_asyncio::tokio::current_event_loop(py)?, async {
+    pyo3_asyncio::tokio::into_coroutine(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Ok(Python::with_gil(|py| py.None()))
     })

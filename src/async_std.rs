@@ -54,7 +54,10 @@ impl Runtime for AsyncStdRuntime {
         Box::pin(fut)
     }
     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-        EVENT_LOOP.with(|c| c.get().map(|event_loop| event_loop.clone().into_ref(py)))
+        match EVENT_LOOP.try_with(|c| c.get().map(|event_loop| event_loop.clone().into_ref(py))) {
+            Ok(event_loop) => event_loop,
+            Err(_) => None,
+        }
     }
 
     fn spawn<F>(fut: F) -> Self::JoinHandle
@@ -173,20 +176,47 @@ where
 /// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
 ///     let secs = secs.extract()?;
 ///
-///     pyo3_asyncio::async_std::into_coroutine(
-///         pyo3_asyncio::get_event_loop(py)?,
-///         async move {
-///             async_std::task::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )
+///     pyo3_asyncio::async_std::into_coroutine(py, async move {
+///         async_std::task::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
 /// }
 /// ```
-pub fn into_coroutine<F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
+pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    generic::into_coroutine::<AsyncStdRuntime, _>(event_loop, fut)
+    generic::into_coroutine::<AsyncStdRuntime, _>(py, fut)
+}
+
+/// Convert a Rust Future into a Python awaitable
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::async_std::future_into_py(py, async move {
+///         async_std::task::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+/// ```
+pub fn future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    generic::future_into_py::<AsyncStdRuntime, _>(py, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable

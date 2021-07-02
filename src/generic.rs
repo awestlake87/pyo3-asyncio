@@ -139,7 +139,7 @@ where
 {
     let event_loop = get_event_loop(py)?;
 
-    let coro = into_coroutine::<R, _>(event_loop, async move {
+    let coro = future_into_py_with_loop::<R, _>(event_loop, async move {
         fut.await?;
         Ok(Python::with_gil(|py| py.None()))
     })?;
@@ -231,11 +231,10 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 ///
 /// /// Awaitable sleep function
 /// #[pyfunction]
-/// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 ///     let secs = secs.extract()?;
-///
-///     pyo3_asyncio::generic::into_coroutine::<MyCustomRuntime, _>(
-///         pyo3_asyncio::get_event_loop(py)?,
+///     pyo3_asyncio::generic::future_into_py_with_loop::<MyCustomRuntime, _>(
+///         pyo3_asyncio::generic::current_event_loop::<MyCustomRuntime>(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -243,14 +242,14 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 ///     )
 /// }
 /// ```
-pub fn into_coroutine<R, F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
+pub fn future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    let future_rx: PyObject = create_future(event_loop)?.into();
-    let future_tx1 = future_rx.clone();
-    let future_tx2 = future_rx.clone();
+    let future_rx = create_future(event_loop)?;
+    let future_tx1 = PyObject::from(future_rx);
+    let future_tx2 = future_tx1.clone();
 
     let event_loop = PyObject::from(event_loop);
 
@@ -290,6 +289,172 @@ where
     });
 
     Ok(future_rx)
+}
+
+/// Convert a Rust Future into a Python awaitable with a generic runtime
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl MyCustomRuntime {
+/// #     async fn sleep(_: Duration) {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #     
+/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
+/// #         unreachable!()
+/// #     }
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::generic::future_into_py::<MyCustomRuntime, _>(py, async move {
+///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+/// ```
+pub fn future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
+where
+    R: Runtime,
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    future_into_py_with_loop::<R, F>(current_event_loop::<R>(py)?, fut)
+}
+
+/// Convert a Rust Future into a Python awaitable with a generic runtime
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl MyCustomRuntime {
+/// #     async fn sleep(_: Duration) {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #     
+/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
+/// #         unreachable!()
+/// #     }
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::generic::into_coroutine::<MyCustomRuntime, _>(py, async move {
+///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+/// ```
+pub fn into_coroutine<R, F>(py: Python, fut: F) -> PyResult<PyObject>
+where
+    R: Runtime,
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    Ok(future_into_py::<R, F>(py, fut)?.into())
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime

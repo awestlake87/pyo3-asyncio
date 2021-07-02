@@ -8,7 +8,7 @@ use crate::common;
 fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
     let secs = secs.extract()?;
 
-    pyo3_asyncio::tokio::into_coroutine(pyo3_asyncio::get_event_loop(py)?, async move {
+    pyo3_asyncio::tokio::into_coroutine(py, async move {
         tokio::time::sleep(Duration::from_secs(secs)).await;
         Python::with_gil(|py| Ok(py.None()))
     })
@@ -114,9 +114,8 @@ fn test_local_set_coroutine(event_loop: PyObject) -> PyResult<()> {
 #[pyo3_asyncio::tokio::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        let event_loop = pyo3_asyncio::tokio::task_event_loop(py).unwrap();
         pyo3_asyncio::tokio::into_future(
-            pyo3_asyncio::tokio::into_coroutine(event_loop, async {
+            pyo3_asyncio::tokio::into_coroutine(py, async {
                 panic!("this panic was intentional!")
             })?
             .as_ref(py),
