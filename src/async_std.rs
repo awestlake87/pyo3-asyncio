@@ -195,13 +195,13 @@ where
 ///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::into_coroutine
 ///     let secs = Rc::new(secs);
 ///
-///     pyo3_asyncio::async_std::local_future_into_py(
+///     Ok(pyo3_asyncio::async_std::local_future_into_py(
 ///         pyo3_asyncio::async_std::task_event_loop().unwrap().as_ref(py),
 ///         async move {
 ///             async_std::task::sleep(Duration::from_secs(*secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
 ///         }
-///     )
+///     )?.into())
 /// }
 ///
 /// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
@@ -221,7 +221,7 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
+pub fn local_future_into_py<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {

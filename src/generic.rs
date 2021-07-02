@@ -363,7 +363,7 @@ where
 ///
 /// /// Awaitable sleep function
 /// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<PyObject> {
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
 ///     pyo3_asyncio::generic::local_future_into_py::<MyCustomRuntime, _>(
 ///         pyo3_asyncio::get_event_loop(py)?,
 ///         async move {
@@ -373,13 +373,13 @@ where
 ///     )
 /// }
 /// ```
-pub fn local_future_into_py<R, F>(event_loop: &PyAny, fut: F) -> PyResult<PyObject>
+pub fn local_future_into_py<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     R: SpawnLocalExt,
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    let future_rx = PyObject::from(create_future(event_loop)?);
-    let future_tx1 = future_rx.clone();
+    let future_rx = create_future(event_loop)?;
+    let future_tx1 = PyObject::from(future_rx);
     let future_tx2 = future_tx1.clone();
 
     let event_loop = PyObject::from(event_loop);

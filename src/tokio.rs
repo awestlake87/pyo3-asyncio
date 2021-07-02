@@ -284,10 +284,10 @@ where
 ///     let secs = Rc::new(secs);
 ///     let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
 ///
-///     pyo3_asyncio::tokio::local_future_into_py(event_loop.as_ref(py), async move {
+///     Ok(pyo3_asyncio::tokio::local_future_into_py(event_loop.as_ref(py), async move {
 ///         tokio::time::sleep(Duration::from_secs(*secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
-///     })
+///     })?.into())
 /// }
 ///
 /// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
@@ -320,7 +320,7 @@ where
 /// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<'p, F>(event_loop: &'p PyAny, fut: F) -> PyResult<PyObject>
+pub fn local_future_into_py<'p, F>(event_loop: &'p PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {

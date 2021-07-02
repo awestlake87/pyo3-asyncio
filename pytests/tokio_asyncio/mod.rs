@@ -103,7 +103,7 @@ fn test_local_set_coroutine(event_loop: PyObject) -> PyResult<()> {
                     Ok(Python::with_gil(|py| py.None()))
                 })?;
 
-            pyo3_asyncio::into_future(event_loop.as_ref(py), py_future.as_ref(py))
+            pyo3_asyncio::into_future(event_loop.as_ref(py), py_future)
         })?
         .await?;
 
