@@ -44,12 +44,8 @@ use pyo3::prelude::*;
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
         let asyncio = py.import("asyncio")?;
-
         // convert asyncio.sleep into a Rust Future
-        pyo3_asyncio::into_future_with_loop(
-            pyo3_asyncio::async_std::task_event_loop().unwrap().as_ref(py), 
-            asyncio.call_method1("sleep", (1.into_py(py),))?
-        )
+        pyo3_asyncio::async_std::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
 
     fut.await?;
@@ -78,12 +74,8 @@ use pyo3::prelude::*;
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
         let asyncio = py.import("asyncio")?;
-
         // convert asyncio.sleep into a Rust Future
-        pyo3_asyncio::into_future_with_loop(
-            pyo3_asyncio::tokio::task_event_loop().unwrap().as_ref(py), 
-            asyncio.call_method1("sleep", (1.into_py(py),))?
-        )
+        pyo3_asyncio::tokio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
 
     fut.await?;
@@ -133,7 +125,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
 fn rust_sleep(py: Python) -> PyResult<PyObject> {
-    pyo3_asyncio::async_std::into_coroutine(pyo3_asyncio::get_event_loop(py)?, async {
+    pyo3_asyncio::async_std::into_coroutine(pyo3_asyncio::async_std::current_event_loop(py)?, async {
         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
         Ok(Python::with_gil(|py| py.None()))
     })
@@ -141,8 +133,6 @@ fn rust_sleep(py: Python) -> PyResult<PyObject> {
 
 #[pymodule]
 fn my_async_module(py: Python, m: &PyModule) -> PyResult<()> {
-    pyo3_asyncio::try_init(py)?;
-
     m.add_function(wrap_pyfunction!(rust_sleep, m)?)?;
 
     Ok(())
@@ -159,7 +149,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
 fn rust_sleep(py: Python) -> PyResult<PyObject> {
-    pyo3_asyncio::tokio::into_coroutine(pyo3_asyncio::get_event_loop(py)?, async {
+    pyo3_asyncio::tokio::into_coroutine(pyo3_asyncio::tokio::current_event_loop(py)?, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Ok(Python::with_gil(|py| py.None()))
     })
@@ -167,7 +157,6 @@ fn rust_sleep(py: Python) -> PyResult<PyObject> {
 
 #[pymodule]
 fn my_async_module(py: Python, m: &PyModule) -> PyResult<()> {
-    pyo3_asyncio::try_init(py)?;
     // Tokio needs explicit initialization before any pyo3-asyncio conversions.
     // The module import is a prime place to do this.
     pyo3_asyncio::tokio::init_multi_thread_once();

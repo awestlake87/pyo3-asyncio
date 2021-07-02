@@ -16,8 +16,6 @@ fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
 
 #[pyo3_asyncio::tokio::test]
 async fn test_into_coroutine() -> PyResult<()> {
-    let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
-
     let fut = Python::with_gil(|py| {
         let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
 
@@ -30,8 +28,7 @@ async fn test_into_coroutine() -> PyResult<()> {
             "test_mod",
         )?;
 
-        pyo3_asyncio::into_future_with_loop(
-            event_loop.as_ref(py),
+        pyo3_asyncio::tokio::into_future(
             test_mod.call_method1("sleep_for_1s", (sleeper_mod.getattr("sleep_for")?,))?,
         )
     })?;
@@ -43,18 +40,13 @@ async fn test_into_coroutine() -> PyResult<()> {
 
 #[pyo3_asyncio::tokio::test]
 async fn test_async_sleep() -> PyResult<()> {
-    let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
-
     let asyncio =
         Python::with_gil(|py| py.import("asyncio").map(|asyncio| PyObject::from(asyncio)))?;
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     Python::with_gil(|py| {
-        pyo3_asyncio::into_future_with_loop(
-            event_loop.as_ref(py),
-            asyncio.as_ref(py).call_method1("sleep", (1.0,))?,
-        )
+        pyo3_asyncio::tokio::into_future(asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
     })?
     .await?;
 
@@ -68,12 +60,18 @@ fn test_blocking_sleep(_event_loop: PyObject) -> PyResult<()> {
 
 #[pyo3_asyncio::tokio::test]
 async fn test_into_future() -> PyResult<()> {
-    common::test_into_future(pyo3_asyncio::tokio::task_event_loop().unwrap()).await
+    common::test_into_future(Python::with_gil(|py| {
+        pyo3_asyncio::tokio::task_event_loop(py).unwrap().into()
+    }))
+    .await
 }
 
 #[pyo3_asyncio::tokio::test]
 async fn test_other_awaitables() -> PyResult<()> {
-    common::test_other_awaitables(pyo3_asyncio::tokio::task_event_loop().unwrap()).await
+    common::test_other_awaitables(Python::with_gil(|py| {
+        pyo3_asyncio::tokio::task_event_loop(py).unwrap().into()
+    }))
+    .await
 }
 
 #[pyo3_asyncio::tokio::test]
@@ -116,10 +114,9 @@ fn test_local_set_coroutine(event_loop: PyObject) -> PyResult<()> {
 #[pyo3_asyncio::tokio::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
-        pyo3_asyncio::into_future_with_loop(
-            event_loop.as_ref(py),
-            pyo3_asyncio::tokio::into_coroutine(event_loop.as_ref(py), async {
+        let event_loop = pyo3_asyncio::tokio::task_event_loop(py).unwrap();
+        pyo3_asyncio::tokio::into_future(
+            pyo3_asyncio::tokio::into_coroutine(event_loop, async {
                 panic!("this panic was intentional!")
             })?
             .as_ref(py),
