@@ -157,7 +157,7 @@ fn ensure_future<'p>(py: Python<'p>, awaitable: &'p PyAny) -> PyResult<&'p PyAny
         .call1((awaitable,))
 }
 
-fn create_future<'p>(event_loop: &'p PyAny) -> PyResult<&'p PyAny> {
+fn create_future(event_loop: &PyAny) -> PyResult<&PyAny> {
     event_loop.call_method0("create_future")
 }
 
