@@ -87,6 +87,7 @@ impl SpawnLocalExt for AsyncStdRuntime {
     }
 }
 
+/// Set the task local event loop for the given future
 pub async fn scope<F, R>(event_loop: PyObject, fut: F) -> R
 where
     F: Future<Output = R> + Send + 'static,
@@ -94,6 +95,7 @@ where
     AsyncStdRuntime::scope(event_loop, fut).await
 }
 
+/// Set the task local event loop for the given !Send future
 pub async fn scope_local<F, R>(event_loop: PyObject, fut: F) -> R
 where
     F: Future<Output = R> + 'static,
@@ -198,7 +200,7 @@ where
 ///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::into_coroutine
 ///     let secs = Rc::new(secs);
 ///
-///     Ok(pyo3_asyncio::async_std::local_future_into_py(
+///     Ok(pyo3_asyncio::async_std::local_future_into_py_with_loop(
 ///         pyo3_asyncio::async_std::task_event_loop().unwrap().as_ref(py),
 ///         async move {
 ///             async_std::task::sleep(Duration::from_secs(*secs)).await;
@@ -212,7 +214,7 @@ where
 /// async fn main() -> PyResult<()> {
 ///     Python::with_gil(|py| {
 ///         let py_future = sleep_for(py, 1)?;
-///         pyo3_asyncio::into_future(
+///         pyo3_asyncio::into_future_with_loop(
 ///             pyo3_asyncio::async_std::task_event_loop().unwrap().as_ref(py),
 ///             py_future.as_ref(py)
 ///         )
@@ -224,9 +226,9 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    generic::local_future_into_py::<AsyncStdRuntime, _>(event_loop, fut)
+    generic::local_future_into_py_with_loop::<AsyncStdRuntime, _>(event_loop, fut)
 }

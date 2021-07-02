@@ -407,7 +407,7 @@ fn call_soon_threadsafe(event_loop: &PyAny, args: impl IntoPy<Py<PyTuple>>) -> P
 ///     })?;
 ///
 ///     Python::with_gil(|py| {
-///         pyo3_asyncio::into_future(
+///         pyo3_asyncio::into_future_with_loop(
 ///             pyo3_asyncio::get_event_loop(py)?,
 ///             test_mod
 ///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
@@ -418,7 +418,7 @@ fn call_soon_threadsafe(event_loop: &PyAny, args: impl IntoPy<Py<PyTuple>>) -> P
 ///     Ok(())    
 /// }
 /// ```
-pub fn into_future(
+pub fn into_future_with_loop(
     event_loop: &PyAny,
     awaitable: &PyAny,
 ) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {

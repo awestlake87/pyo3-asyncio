@@ -29,7 +29,7 @@ async fn test_into_coroutine() -> PyResult<()> {
             "test_mod",
         )?;
 
-        pyo3_asyncio::into_future(
+        pyo3_asyncio::into_future_with_loop(
             pyo3_asyncio::async_std::task_event_loop()
                 .unwrap()
                 .as_ref(py),
@@ -50,7 +50,7 @@ async fn test_async_sleep() -> PyResult<()> {
     task::sleep(Duration::from_secs(1)).await;
 
     Python::with_gil(|py| {
-        pyo3_asyncio::into_future(
+        pyo3_asyncio::into_future_with_loop(
             pyo3_asyncio::async_std::task_event_loop()
                 .unwrap()
                 .as_ref(py),
@@ -86,7 +86,7 @@ fn test_init_twice(_event_loop: PyObject) -> PyResult<()> {
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
         let event_loop = pyo3_asyncio::async_std::task_event_loop().unwrap();
-        pyo3_asyncio::into_future(
+        pyo3_asyncio::into_future_with_loop(
             event_loop.as_ref(py),
             pyo3_asyncio::async_std::into_coroutine(event_loop.as_ref(py), async {
                 panic!("this panic was intentional!")
@@ -119,13 +119,15 @@ async fn test_local_coroutine() -> PyResult<()> {
 
         let event_loop = pyo3_asyncio::async_std::task_event_loop().unwrap();
 
-        let py_future =
-            pyo3_asyncio::async_std::local_future_into_py(event_loop.as_ref(py), async move {
+        let py_future = pyo3_asyncio::async_std::local_future_into_py_with_loop(
+            event_loop.as_ref(py),
+            async move {
                 async_std::task::sleep(Duration::from_secs(*non_send_secs)).await;
                 Ok(Python::with_gil(|py| py.None()))
-            })?;
+            },
+        )?;
 
-        pyo3_asyncio::into_future(event_loop.as_ref(py), py_future)
+        pyo3_asyncio::into_future_with_loop(event_loop.as_ref(py), py_future)
     })?
     .await?;
 

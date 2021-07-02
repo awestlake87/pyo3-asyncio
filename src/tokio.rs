@@ -93,6 +93,7 @@ impl SpawnLocalExt for TokioRuntime {
     }
 }
 
+/// Set the task local event loop for the given future
 pub async fn scope<F, R>(event_loop: PyObject, fut: F) -> R
 where
     F: Future<Output = R> + Send + 'static,
@@ -100,6 +101,7 @@ where
     TokioRuntime::scope(event_loop, fut).await
 }
 
+/// Set the task local event loop for the given !Send future
 pub async fn scope_local<F, R>(event_loop: PyObject, fut: F) -> R
 where
     F: Future<Output = R> + 'static,
@@ -284,7 +286,7 @@ where
 ///     let secs = Rc::new(secs);
 ///     let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
 ///
-///     Ok(pyo3_asyncio::tokio::local_future_into_py(event_loop.as_ref(py), async move {
+///     Ok(pyo3_asyncio::tokio::local_future_into_py_with_loop(event_loop.as_ref(py), async move {
 ///         tokio::time::sleep(Duration::from_secs(*secs)).await;
 ///         Python::with_gil(|py| Ok(py.None()))
 ///     })?.into())
@@ -305,7 +307,7 @@ where
 ///             pyo3_asyncio::tokio::scope_local(event_loop, async {
 ///                 Python::with_gil(|py| {
 ///                     let py_future = sleep_for(py, 1)?;
-///                     pyo3_asyncio::into_future(
+///                     pyo3_asyncio::into_future_with_loop(
 ///                         pyo3_asyncio::tokio::task_event_loop().unwrap().as_ref(py),
 ///                         py_future.as_ref(py)
 ///                     )
@@ -320,9 +322,9 @@ where
 /// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<'p, F>(event_loop: &'p PyAny, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py_with_loop<'p, F>(event_loop: &'p PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    generic::local_future_into_py::<TokioRuntime, _>(event_loop, fut)
+    generic::local_future_into_py_with_loop::<TokioRuntime, _>(event_loop, fut)
 }

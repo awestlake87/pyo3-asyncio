@@ -17,7 +17,7 @@ pub(super) async fn test_into_future(event_loop: PyObject) -> PyResult<()> {
         let test_mod =
             PyModule::from_code(py, TEST_MOD, "test_rust_coroutine/test_mod.py", "test_mod")?;
 
-        pyo3_asyncio::into_future(
+        pyo3_asyncio::into_future_with_loop(
             event_loop.as_ref(py),
             test_mod.call_method1("py_sleep", (1.into_py(py),))?,
         )
@@ -47,7 +47,7 @@ pub(super) async fn test_other_awaitables(event_loop: PyObject) -> PyResult<()> 
             ),
         )?;
 
-        pyo3_asyncio::into_future(event_loop.as_ref(py), task)
+        pyo3_asyncio::into_future_with_loop(event_loop.as_ref(py), task)
     })?;
 
     fut.await?;
