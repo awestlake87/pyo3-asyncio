@@ -1,6 +1,7 @@
-use std::{future::Future, pin::Pin};
+use std::{any::Any, future::Future, panic::AssertUnwindSafe, pin::Pin};
 
 use async_std::task;
+use futures::prelude::*;
 use once_cell::unsync::OnceCell;
 use pyo3::prelude::*;
 
@@ -24,11 +25,11 @@ pub use pyo3_asyncio_macros::async_std_main as main;
 #[cfg(all(feature = "attributes", feature = "testing"))]
 pub use pyo3_asyncio_macros::async_std_test as test;
 
-struct AsyncStdJoinError;
+struct AsyncStdJoinErr(Box<dyn Any + Send + 'static>);
 
-impl JoinError for AsyncStdJoinError {
+impl JoinError for AsyncStdJoinErr {
     fn is_panic(&self) -> bool {
-        todo!()
+        true
     }
 }
 
@@ -39,8 +40,8 @@ async_std::task_local! {
 struct AsyncStdRuntime;
 
 impl Runtime for AsyncStdRuntime {
-    type JoinError = AsyncStdJoinError;
-    type JoinHandle = task::JoinHandle<Result<(), AsyncStdJoinError>>;
+    type JoinError = AsyncStdJoinErr;
+    type JoinHandle = task::JoinHandle<Result<(), AsyncStdJoinErr>>;
 
     fn scope<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
     where
@@ -58,8 +59,10 @@ impl Runtime for AsyncStdRuntime {
         F: Future<Output = ()> + Send + 'static,
     {
         task::spawn(async move {
-            fut.await;
-            Ok(())
+            AssertUnwindSafe(fut)
+                .catch_unwind()
+                .await
+                .map_err(|e| AsyncStdJoinErr(e))
         })
     }
 }

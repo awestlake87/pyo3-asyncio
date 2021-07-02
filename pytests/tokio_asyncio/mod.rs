@@ -110,3 +110,28 @@ fn test_local_set_coroutine(event_loop: PyObject) -> PyResult<()> {
         Ok(())
     })
 }
+
+#[pyo3_asyncio::tokio::test]
+async fn test_panic() -> PyResult<()> {
+    let fut = Python::with_gil(|py| -> PyResult<_> {
+        let event_loop = pyo3_asyncio::tokio::task_event_loop().unwrap();
+        pyo3_asyncio::into_future(
+            event_loop.as_ref(py),
+            pyo3_asyncio::tokio::into_coroutine(event_loop.as_ref(py), async {
+                panic!("this panic was intentional!")
+            })?
+            .as_ref(py),
+        )
+    })?;
+
+    match fut.await {
+        Ok(_) => panic!("coroutine should panic"),
+        Err(e) => Python::with_gil(|py| {
+            if e.is_instance::<pyo3_asyncio::err::RustPanic>(py) {
+                Ok(())
+            } else {
+                panic!("expected RustPanic err")
+            }
+        }),
+    }
+}

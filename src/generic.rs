@@ -1,8 +1,8 @@
 use std::{future::Future, pin::Pin};
 
-use pyo3::{exceptions::PyException, prelude::*};
+use pyo3::prelude::*;
 
-use crate::{call_soon_threadsafe, create_future, dump_err, get_event_loop};
+use crate::{call_soon_threadsafe, create_future, dump_err, err::RustPanic, get_event_loop};
 
 /// Generic utilities for a JoinError
 pub trait JoinError {
@@ -265,7 +265,7 @@ where
                     if set_result(
                         event_loop.as_ref(py),
                         future_tx2.as_ref(py),
-                        Err(PyException::new_err("rust future panicked")),
+                        Err(RustPanic::new_err("rust future panicked")),
                     )
                     .map_err(dump_err(py))
                     .is_err()
@@ -406,7 +406,7 @@ where
                     if set_result(
                         event_loop.as_ref(py),
                         future_tx2.as_ref(py),
-                        Err(PyException::new_err("rust future panicked")),
+                        Err(RustPanic::new_err("Rust future panicked")),
                     )
                     .map_err(dump_err(py))
                     .is_err()
