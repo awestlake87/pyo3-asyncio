@@ -78,12 +78,9 @@ async fn test_other_awaitables() -> PyResult<()> {
 #[pyo3_asyncio::async_std::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        pyo3_asyncio::async_std::into_future(
-            pyo3_asyncio::async_std::into_coroutine(py, async {
-                panic!("this panic was intentional!")
-            })?
-            .as_ref(py),
-        )
+        pyo3_asyncio::async_std::into_future(pyo3_asyncio::async_std::future_into_py(py, async {
+            panic!("this panic was intentional!")
+        })?)
     })?;
 
     match fut.await {
@@ -98,9 +95,12 @@ async fn test_panic() -> PyResult<()> {
     }
 }
 
-#[pyo3_asyncio::async_std::main]
-async fn main() -> pyo3::PyResult<()> {
-    pyo3_asyncio::testing::main().await
+fn main() -> pyo3::PyResult<()> {
+    Python::with_gil(|py| {
+        // into_coroutine requires the 0.13 API
+        pyo3_asyncio::try_init(py)?;
+        pyo3_asyncio::async_std::run(py, pyo3_asyncio::testing::main())
+    })
 }
 
 #[pyo3_asyncio::async_std::test]

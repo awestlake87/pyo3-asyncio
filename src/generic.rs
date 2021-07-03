@@ -2,7 +2,10 @@ use std::{future::Future, pin::Pin};
 
 use pyo3::prelude::*;
 
-use crate::{call_soon_threadsafe, create_future, dump_err, err::RustPanic, get_event_loop};
+use crate::{
+    call_soon_threadsafe, create_future, dump_err, err::RustPanic, get_cached_event_loop,
+    get_event_loop,
+};
 
 /// Generic utilities for a JoinError
 pub trait JoinError {
@@ -552,7 +555,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    Ok(future_into_py::<R, F>(py, fut)?.into())
+    Ok(future_into_py_with_loop::<R, F>(get_cached_event_loop(py), fut)?.into())
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime

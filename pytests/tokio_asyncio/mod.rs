@@ -17,6 +17,9 @@ fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
 #[pyo3_asyncio::tokio::test]
 async fn test_into_coroutine() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
+        // into_coroutine requires the 0.13 API
+        pyo3_asyncio::try_init(py)?;
+
         let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
 
         sleeper_mod.add_wrapped(wrap_pyfunction!(sleep_for))?;
@@ -109,12 +112,9 @@ fn test_local_set_coroutine(event_loop: PyObject) -> PyResult<()> {
 #[pyo3_asyncio::tokio::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        pyo3_asyncio::tokio::into_future(
-            pyo3_asyncio::tokio::into_coroutine(py, async {
-                panic!("this panic was intentional!")
-            })?
-            .as_ref(py),
-        )
+        pyo3_asyncio::tokio::into_future(pyo3_asyncio::tokio::future_into_py(py, async {
+            panic!("this panic was intentional!")
+        })?)
     })?;
 
     match fut.await {
