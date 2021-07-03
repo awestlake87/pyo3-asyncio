@@ -145,10 +145,11 @@ pub mod doc_test {
     doctest!("../README.md", readme_md);
 }
 
-const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
-
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
+
+const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
+static CACHED_EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
 static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
 
 fn ensure_future<'p>(py: Python<'p>, awaitable: &'p PyAny) -> PyResult<&'p PyAny> {
@@ -210,17 +211,15 @@ where
 /// - Calling `try_init` a second time returns `Ok(())` and does nothing.
 ///   > In future versions this may return an `Err`.
 pub fn try_init(py: Python) -> PyResult<()> {
-    ASYNCIO.get_or_try_init(|| -> PyResult<PyObject> {
-        let asyncio = py.import("asyncio")?;
-        let event_loop = asyncio.call_method0("get_event_loop")?;
+    CACHED_EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
+        let event_loop = get_event_loop(py)?;
         let executor = py
             .import("concurrent.futures.thread")?
-            .getattr("ThreadPoolExecutor")?
-            .call0()?;
+            .call_method0("ThreadPoolExecutor")?;
         event_loop.call_method1("set_default_executor", (executor,))?;
 
-        EXECUTOR.get_or_init(|| executor.into());
-        Ok(asyncio.into())
+        EXECUTOR.set(executor.into()).unwrap();
+        Ok(event_loop.into())
     })?;
 
     Ok(())
@@ -235,6 +234,11 @@ fn asyncio(py: Python) -> PyResult<&PyAny> {
 /// Get a reference to the Python Event Loop from Rust
 pub fn get_event_loop(py: Python) -> PyResult<&PyAny> {
     asyncio(py)?.call_method0("get_event_loop")
+}
+
+/// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
+pub fn get_cached_event_loop(py: Python) -> &PyAny {
+    CACHED_EVENT_LOOP.get().expect(EXPECT_INIT).as_ref(py)
 }
 
 /// Run the event loop forever
@@ -301,15 +305,26 @@ pub fn run_forever(py: Python) -> PyResult<()> {
 
 /// Shutdown the event loops and perform any necessary cleanup
 pub fn try_close(py: Python) -> PyResult<()> {
-    // Shutdown the executor and wait until all threads are cleaned up
-    EXECUTOR
-        .get()
-        .expect(EXPECT_INIT)
-        .call_method0(py, "shutdown")?;
+    if let Some(exec) = EXECUTOR.get() {
+        // Shutdown the executor and wait until all threads are cleaned up
+        exec.call_method0(py, "shutdown")?;
+    }
 
-    let event_loop = get_event_loop(py)?;
-    event_loop.call_method0("stop")?;
-    event_loop.call_method0("close")?;
+    if let Some(event_loop) = CACHED_EVENT_LOOP.get() {
+        let event_loop = event_loop.as_ref(py);
+
+        event_loop.call_method1(
+            "run_until_complete",
+            (event_loop.call_method0("shutdown_asyncgens")?,),
+        )?;
+        // how to do this prior to 3.9?
+        // event_loop.call_method1(
+        //     "run_until_complete",
+        //     (event_loop.call_method0("shutdown_default_executor")?,),
+        // )?;
+        event_loop.call_method0("close")?;
+    }
+
     Ok(())
 }
 

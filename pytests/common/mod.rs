@@ -54,11 +54,3 @@ pub(super) async fn test_other_awaitables(event_loop: PyObject) -> PyResult<()> 
 
     Ok(())
 }
-
-pub(super) fn test_init_twice() -> PyResult<()> {
-    // try_init has already been called in test main - ensure a second call doesn't mess the other
-    // tests up
-    Python::with_gil(|py| pyo3_asyncio::try_init(py))?;
-
-    Ok(())
-}

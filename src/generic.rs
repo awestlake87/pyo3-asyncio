@@ -149,6 +149,104 @@ where
     Ok(())
 }
 
+/// Run the event loop until the given Future completes
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The future to drive to completion
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #     
+/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
+/// #         unreachable!()
+/// #     }
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # use std::time::Duration;
+/// # async fn custom_sleep(_duration: Duration) { }
+/// #
+/// # use pyo3::prelude::*;
+/// #
+/// fn main() {
+///     Python::with_gil(|py| {
+///         pyo3_asyncio::generic::run::<MyCustomRuntime, _>(py, async move {
+///             custom_sleep(Duration::from_secs(1)).await;
+///             Ok(())
+///         })
+///         .map_err(|e| {
+///             e.print_and_set_sys_last_vars(py);  
+///         })
+///         .unwrap();
+///     })
+/// }
+/// ```
+pub fn run<R, F>(py: Python, fut: F) -> PyResult<()>
+where
+    R: Runtime,
+    F: Future<Output = PyResult<()>> + Send + 'static,
+{
+    let event_loop = get_event_loop(py)?;
+
+    let result = run_until_complete::<R, F>(py, fut);
+
+    event_loop.call_method1(
+        "run_until_complete",
+        (event_loop.call_method0("shutdown_asyncgens")?,),
+    )?;
+    // how to do this prior to 3.9?
+    // event_loop.call_method1(
+    //     "run_until_complete",
+    //     (event_loop.call_method0("shutdown_default_executor")?,),
+    // )?;
+    event_loop.call_method0("close")?;
+
+    result?;
+
+    Ok(())
+}
+
 fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
     match result {
         Ok(val) => {

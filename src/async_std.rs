@@ -158,6 +158,39 @@ where
     generic::run_until_complete::<AsyncStdRuntime, _>(py, fut)
 }
 
+/// Run the event loop until the given Future completes
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The future to drive to completion
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::time::Duration;
+/// #
+/// # use pyo3::prelude::*;
+/// #
+/// fn main() {
+///     Python::with_gil(|py| {
+///         pyo3_asyncio::async_std::run(py, async move {
+///             async_std::task::sleep(Duration::from_secs(1)).await;
+///             Ok(())
+///         })
+///         .map_err(|e| {
+///             e.print_and_set_sys_last_vars(py);  
+///         })
+///         .unwrap();
+///     })
+/// }
+/// ```
+pub fn run<F>(py: Python, fut: F) -> PyResult<()>
+where
+    F: Future<Output = PyResult<()>> + Send + 'static,
+{
+    generic::run::<AsyncStdRuntime, F>(py, fut)
+}
+
 /// Convert a Rust Future into a Python awaitable
 ///
 /// # Arguments

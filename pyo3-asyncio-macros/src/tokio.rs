@@ -257,15 +257,11 @@ fn parse_knobs(
             #rt_init
 
             pyo3::Python::with_gil(|py| {
-                pyo3_asyncio::with_runtime(py, || {
-                    pyo3_asyncio::tokio::run_until_complete(py, main())?;
-
-                    Ok(())
-                })
-                .map_err(|e| {
-                    e.print_and_set_sys_last_vars(py);
-                })
-                .unwrap();
+                pyo3_asyncio::tokio::run(py, main())
+                    .map_err(|e| {
+                        e.print_and_set_sys_last_vars(py);
+                    })
+                    .unwrap();
             });
         }
     };

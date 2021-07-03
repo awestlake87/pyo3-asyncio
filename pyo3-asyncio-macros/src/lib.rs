@@ -50,15 +50,11 @@ pub fn async_std_main(_attr: TokenStream, item: TokenStream) -> TokenStream {
             }
 
             pyo3::Python::with_gil(|py| {
-                pyo3_asyncio::with_runtime(py, || {
-                    pyo3_asyncio::async_std::run_until_complete(py, main())?;
-
-                    Ok(())
-                })
-                .map_err(|e| {
-                    e.print_and_set_sys_last_vars(py);
-                })
-                .unwrap();
+                pyo3_asyncio::async_std::run(py, main())
+                    .map_err(|e| {
+                        e.print_and_set_sys_last_vars(py);
+                    })
+                    .unwrap();
             });
         }
     };

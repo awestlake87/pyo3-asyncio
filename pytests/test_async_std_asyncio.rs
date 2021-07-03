@@ -76,11 +76,6 @@ async fn test_other_awaitables() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::async_std::test]
-fn test_init_twice(_event_loop: PyObject) -> PyResult<()> {
-    common::test_init_twice()
-}
-
-#[pyo3_asyncio::async_std::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
         pyo3_asyncio::async_std::into_future(

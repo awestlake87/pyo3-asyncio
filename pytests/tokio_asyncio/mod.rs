@@ -75,11 +75,6 @@ async fn test_other_awaitables() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::tokio::test]
-fn test_init_twice(_event_loop: PyObject) -> PyResult<()> {
-    common::test_init_twice()
-}
-
-#[pyo3_asyncio::tokio::test]
 fn test_init_tokio_twice(_event_loop: PyObject) -> PyResult<()> {
     // tokio has already been initialized in test main. call these functions to
     // make sure they don't cause problems with the other tests.
