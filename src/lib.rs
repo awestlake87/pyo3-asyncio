@@ -113,7 +113,7 @@ use std::future::Future;
 
 use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
-use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, types::PyTuple};
+use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, types::PyTuple, PyNativeType};
 
 /// Re-exported for #[test] attributes
 #[cfg(all(feature = "attributes", feature = "testing"))]
@@ -457,6 +457,59 @@ pub fn into_future_with_loop(
             }),
         }
     })
+}
+
+/// Convert a Python `awaitable` into a Rust Future
+///
+/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// completion handler sends the result of this Task through a
+/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
+/// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
+///
+/// # Arguments
+/// * `awaitable` - The Python `awaitable` to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// const PYTHON_CODE: &'static str = r#"
+/// import asyncio
+///
+/// async def py_sleep(duration):
+///     await asyncio.sleep(duration)
+/// "#;
+///
+/// async fn py_sleep(seconds: f32) -> PyResult<()> {
+///     let test_mod = Python::with_gil(|py| -> PyResult<PyObject> {
+///         Ok(
+///             PyModule::from_code(
+///                 py,
+///                 PYTHON_CODE,
+///                 "test_into_future/test_mod.py",
+///                 "test_mod"
+///             )?
+///             .into()
+///         )
+///     })?;
+///
+///     Python::with_gil(|py| {
+///         // Only works with cached event loop
+///         pyo3_asyncio::into_future(
+///             test_mod
+///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
+///                 .as_ref(py),
+///         )
+///     })?
+///     .await?;
+///     Ok(())    
+/// }
+/// ```
+pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
+    into_future_with_loop(get_cached_event_loop(awaitable.py()), awaitable)
 }
 
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {

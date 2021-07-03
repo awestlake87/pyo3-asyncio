@@ -28,6 +28,19 @@ pub(super) async fn test_into_future(event_loop: PyObject) -> PyResult<()> {
     Ok(())
 }
 
+pub(super) async fn test_into_future_0_13() -> PyResult<()> {
+    let fut = Python::with_gil(|py| {
+        let test_mod =
+            PyModule::from_code(py, TEST_MOD, "test_rust_coroutine/test_mod.py", "test_mod")?;
+
+        pyo3_asyncio::into_future(test_mod.call_method1("py_sleep", (1.into_py(py),))?)
+    })?;
+
+    fut.await?;
+
+    Ok(())
+}
+
 pub(super) fn test_blocking_sleep() -> PyResult<()> {
     thread::sleep(Duration::from_secs(1));
     Ok(())

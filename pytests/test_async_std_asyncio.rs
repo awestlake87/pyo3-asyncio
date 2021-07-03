@@ -68,6 +68,11 @@ async fn test_into_future() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::async_std::test]
+async fn test_into_future_0_13() -> PyResult<()> {
+    common::test_into_future_0_13().await
+}
+
+#[pyo3_asyncio::async_std::test]
 async fn test_other_awaitables() -> PyResult<()> {
     common::test_other_awaitables(Python::with_gil(|py| {
         pyo3_asyncio::async_std::task_event_loop(py).unwrap().into()
