@@ -89,7 +89,7 @@ futures = "0.3"
 inventory = "0.1"
 lazy_static = "1.4"
 once_cell = "1.5"
-pyo3 = "0.13"
+pyo3 = "0.14"
 pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.13.4", optional = true }
 
 [dependencies.async-std]
