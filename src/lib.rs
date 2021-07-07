@@ -237,7 +237,7 @@ fn close(event_loop: &PyAny) -> PyResult<()> {
 #[deprecated(since = "0.14.0")]
 pub fn try_init(py: Python) -> PyResult<()> {
     CACHED_EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
-        let event_loop = get_running_loop(py)?;
+        let event_loop = asyncio_get_event_loop(py)?;
         let executor = py
             .import("concurrent.futures.thread")?
             .call_method0("ThreadPoolExecutor")?;
@@ -256,11 +256,15 @@ fn asyncio(py: Python) -> PyResult<&PyAny> {
         .map(|asyncio| asyncio.as_ref(py))
 }
 
+fn asyncio_get_event_loop(py: Python) -> PyResult<&PyAny> {
+    asyncio(py)?.call_method0("get_event_loop")
+}
+
 /// Get a reference to the Python Event Loop from Rust
 pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
     // Ideally should call get_running_loop, but calls get_event_loop for compatibility between
     // versions.
-    asyncio(py)?.call_method0("get_event_loop")
+    asyncio(py)?.call_method0("get_running_loop")
 }
 
 /// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
@@ -289,35 +293,38 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 ///     use pyo3::prelude::*;
 ///
 ///     Python::with_gil(|py| {
-///         let event_loop = PyObject::from(pyo3_asyncio::get_running_loop(py)?);
-///         // Wait 1 second, then stop the event loop
-///         async_std::task::spawn(async move {
-///             async_std::task::sleep(Duration::from_secs(1)).await;
-///             Python::with_gil(|py| {
-///                 event_loop
-///                     .as_ref(py)
-///                     .call_method1(
-///                         "call_soon_threadsafe",
-///                         (event_loop
-///                             .as_ref(py)
-///                             .getattr("stop")
-///                             .map_err(|e| e.print_and_set_sys_last_vars(py))
-///                             .unwrap(),),
-///                         )
-///                         .unwrap();
-///             })
-///         });
+///         pyo3_asyncio::with_runtime(py, || {
+///             let event_loop_hdl = PyObject::from(pyo3_asyncio::get_event_loop(py));
+///             // Wait 1 second, then stop the event loop
+///             async_std::task::spawn(async move {
+///                 async_std::task::sleep(Duration::from_secs(1)).await;
+///                 Python::with_gil(|py| {
+///                     event_loop_hdl
+///                         .as_ref(py)
+///                         .call_method1(
+///                             "call_soon_threadsafe",
+///                             (event_loop_hdl
+///                                 .as_ref(py)
+///                                 .getattr("stop")
+///                                 .map_err(|e| e.print_and_set_sys_last_vars(py))
+///                                 .unwrap(),),
+///                             )
+///                             .unwrap();
+///                 })
+///             });
 ///     
-///         pyo3_asyncio::run_forever(py)?;
-///         pyo3_asyncio::get_running_loop(py)?.call_method0("close")?;
+///             pyo3_asyncio::run_forever(py)?;
 ///
-///         Ok(())
+///             Ok(())
+///         })
 ///     })
 /// }
 /// # #[cfg(not(feature = "async-std-runtime"))]
 /// # fn main() {}
+#[deprecated(since = "0.14.0")]
+#[allow(deprecated)]
 pub fn run_forever(py: Python) -> PyResult<()> {
-    let result = if let Err(e) = get_running_loop(py)?.call_method0("run_forever") {
+    if let Err(e) = get_event_loop(py).call_method0("run_forever") {
         if e.is_instance::<PyKeyboardInterrupt>(py) {
             Ok(())
         } else {
@@ -325,11 +332,7 @@ pub fn run_forever(py: Python) -> PyResult<()> {
         }
     } else {
         Ok(())
-    };
-
-    close(get_running_loop(py)?)?;
-
-    result
+    }
 }
 
 /// Shutdown the event loops and perform any necessary cleanup

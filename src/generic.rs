@@ -4,8 +4,8 @@ use pyo3::prelude::*;
 
 #[allow(deprecated)]
 use crate::{
-    call_soon_threadsafe, close, create_future, dump_err, err::RustPanic, get_event_loop,
-    get_running_loop,
+    asyncio_get_event_loop, call_soon_threadsafe, close, create_future, dump_err, err::RustPanic,
+    get_event_loop, get_running_loop,
 };
 
 /// Generic utilities for a JoinError
@@ -141,7 +141,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let event_loop = get_running_loop(py)?;
+    let event_loop = asyncio_get_event_loop(py)?;
 
     let coro = future_into_py_with_loop::<R, _>(event_loop, async move {
         fut.await?;
@@ -231,7 +231,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let event_loop = get_running_loop(py)?;
+    let event_loop = asyncio_get_event_loop(py)?;
 
     let result = run_until_complete::<R, F>(py, fut);
 

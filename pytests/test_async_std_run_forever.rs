@@ -10,17 +10,22 @@ fn dump_err(py: Python, e: PyErr) {
 
 fn main() {
     Python::with_gil(|py| {
-        let event_loop = PyObject::from(pyo3_asyncio::get_running_loop(py).unwrap());
+        let asyncio = py.import("asyncio")?;
+
+        let event_loop = asyncio.call_method0("new_event_loop")?;
+        asyncio.call_method1("set_event_loop", (event_loop,))?;
+
+        let event_loop_hdl = PyObject::from(event_loop);
 
         async_std::task::spawn(async move {
             async_std::task::sleep(Duration::from_secs(1)).await;
 
             Python::with_gil(|py| {
-                event_loop
+                event_loop_hdl
                     .as_ref(py)
                     .call_method1(
                         "call_soon_threadsafe",
-                        (event_loop
+                        (event_loop_hdl
                             .as_ref(py)
                             .getattr("stop")
                             .map_err(|e| dump_err(py, e))
@@ -31,7 +36,7 @@ fn main() {
             })
         });
 
-        pyo3_asyncio::run_forever(py)?;
+        event_loop.call_method0("run_forever")?;
 
         println!("test test_run_forever ... ok");
         Ok(())

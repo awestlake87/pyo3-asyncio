@@ -136,15 +136,6 @@ async fn test_panic() -> PyResult<()> {
     }
 }
 
-#[allow(deprecated)]
-fn main() -> pyo3::PyResult<()> {
-    Python::with_gil(|py| {
-        // into_coroutine requires the 0.13 API
-        pyo3_asyncio::try_init(py)?;
-        pyo3_asyncio::async_std::run(py, pyo3_asyncio::testing::main())
-    })
-}
-
 #[pyo3_asyncio::async_std::test]
 async fn test_local_future_into_py() -> PyResult<()> {
     Python::with_gil(|py| {
@@ -160,4 +151,13 @@ async fn test_local_future_into_py() -> PyResult<()> {
     .await?;
 
     Ok(())
+}
+
+#[allow(deprecated)]
+fn main() -> pyo3::PyResult<()> {
+    Python::with_gil(|py| {
+        // into_coroutine requires the 0.13 API
+        pyo3_asyncio::try_init(py)?;
+        pyo3_asyncio::async_std::run(py, pyo3_asyncio::testing::main())
+    })
 }
