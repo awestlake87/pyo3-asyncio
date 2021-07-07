@@ -10,7 +10,7 @@ fn dump_err(py: Python, e: PyErr) {
 
 fn main() {
     Python::with_gil(|py| {
-        let event_loop = PyObject::from(pyo3_asyncio::get_event_loop(py).unwrap());
+        let event_loop = PyObject::from(pyo3_asyncio::get_running_loop(py).unwrap());
 
         async_std::task::spawn(async move {
             async_std::task::sleep(Duration::from_secs(1)).await;

@@ -110,8 +110,8 @@ where
 }
 
 /// Get the current event loop from either Python or Rust async task local context
-pub fn current_event_loop(py: Python) -> PyResult<&PyAny> {
-    generic::current_event_loop::<AsyncStdRuntime>(py)
+pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
+    generic::get_current_loop::<AsyncStdRuntime>(py)
 }
 
 /// Get the task local event loop for the current async_std task
@@ -276,7 +276,7 @@ where
 ///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::into_coroutine
 ///     let secs = Rc::new(secs);
 ///     Ok(pyo3_asyncio::async_std::local_future_into_py_with_loop(
-///         pyo3_asyncio::async_std::current_event_loop(py)?,
+///         pyo3_asyncio::async_std::get_current_loop(py)?,
 ///         async move {
 ///             async_std::task::sleep(Duration::from_secs(*secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -399,5 +399,5 @@ where
 /// }
 /// ```
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    into_future_with_loop(current_event_loop(awaitable.py())?, awaitable)
+    into_future_with_loop(get_current_loop(awaitable.py())?, awaitable)
 }

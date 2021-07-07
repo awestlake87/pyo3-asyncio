@@ -4,8 +4,8 @@ use pyo3::prelude::*;
 
 #[allow(deprecated)]
 use crate::{
-    call_soon_threadsafe, create_future, dump_err, err::RustPanic, get_cached_event_loop,
-    get_event_loop,
+    call_soon_threadsafe, close, create_future, dump_err, err::RustPanic, get_event_loop,
+    get_running_loop,
 };
 
 /// Generic utilities for a JoinError
@@ -48,14 +48,14 @@ pub trait SpawnLocalExt: Runtime {
 }
 
 /// Get the current event loop from either Python or Rust async task local context
-pub fn current_event_loop<R>(py: Python) -> PyResult<&PyAny>
+pub fn get_current_loop<R>(py: Python) -> PyResult<&PyAny>
 where
     R: Runtime,
 {
     if let Some(event_loop) = R::get_task_event_loop(py) {
         Ok(event_loop)
     } else {
-        get_event_loop(py)
+        get_running_loop(py)
     }
 }
 
@@ -141,7 +141,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let event_loop = get_event_loop(py)?;
+    let event_loop = get_running_loop(py)?;
 
     let coro = future_into_py_with_loop::<R, _>(event_loop, async move {
         fut.await?;
@@ -231,28 +231,13 @@ where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let event_loop = get_event_loop(py)?;
+    let event_loop = get_running_loop(py)?;
 
     let result = run_until_complete::<R, F>(py, fut);
 
-    event_loop.call_method1(
-        "run_until_complete",
-        (event_loop.call_method0("shutdown_asyncgens")?,),
-    )?;
+    close(event_loop)?;
 
-    // how to do this prior to 3.9?
-    if event_loop.hasattr("shutdown_default_executor")? {
-        event_loop.call_method1(
-            "run_until_complete",
-            (event_loop.call_method0("shutdown_default_executor")?,),
-        )?;
-    }
-
-    event_loop.call_method0("close")?;
-
-    result?;
-
-    Ok(())
+    result
 }
 
 fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
@@ -340,7 +325,7 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 /// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 ///     let secs = secs.extract()?;
 ///     pyo3_asyncio::generic::future_into_py_with_loop::<MyCustomRuntime, _>(
-///         pyo3_asyncio::generic::current_event_loop::<MyCustomRuntime>(py)?,
+///         pyo3_asyncio::generic::get_current_loop::<MyCustomRuntime>(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -477,7 +462,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    future_into_py_with_loop::<R, F>(current_event_loop::<R>(py)?, fut)
+    future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
@@ -565,7 +550,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    Ok(future_into_py_with_loop::<R, F>(get_cached_event_loop(py), fut)?.into())
+    Ok(future_into_py_with_loop::<R, F>(get_event_loop(py), fut)?.into())
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
@@ -653,7 +638,7 @@ where
 /// #[pyfunction]
 /// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
 ///     pyo3_asyncio::generic::local_future_into_py_with_loop::<MyCustomRuntime, _>(
-///         pyo3_asyncio::get_event_loop(py)?,
+///         pyo3_asyncio::get_running_loop(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -794,7 +779,7 @@ where
 /// #[pyfunction]
 /// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
 ///     pyo3_asyncio::generic::local_future_into_py_with_loop::<MyCustomRuntime, _>(
-///         pyo3_asyncio::get_event_loop(py)?,
+///         pyo3_asyncio::get_running_loop(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -807,5 +792,5 @@ where
     R: SpawnLocalExt,
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    local_future_into_py_with_loop::<R, F>(current_event_loop::<R>(py)?, fut)
+    local_future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
 }

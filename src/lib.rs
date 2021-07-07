@@ -210,6 +210,25 @@ where
     Ok(result)
 }
 
+fn close(event_loop: &PyAny) -> PyResult<()> {
+    event_loop.call_method1(
+        "run_until_complete",
+        (event_loop.call_method0("shutdown_asyncgens")?,),
+    )?;
+
+    // how to do this prior to 3.9?
+    if event_loop.hasattr("shutdown_default_executor")? {
+        event_loop.call_method1(
+            "run_until_complete",
+            (event_loop.call_method0("shutdown_default_executor")?,),
+        )?;
+    }
+
+    event_loop.call_method0("close")?;
+
+    Ok(())
+}
+
 /// Attempt to initialize the Python and Rust event loops
 ///
 /// - Must be called before any other pyo3-asyncio functions.
@@ -218,7 +237,7 @@ where
 #[deprecated(since = "0.14.0")]
 pub fn try_init(py: Python) -> PyResult<()> {
     CACHED_EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
-        let event_loop = get_event_loop(py)?;
+        let event_loop = get_running_loop(py)?;
         let executor = py
             .import("concurrent.futures.thread")?
             .call_method0("ThreadPoolExecutor")?;
@@ -238,13 +257,15 @@ fn asyncio(py: Python) -> PyResult<&PyAny> {
 }
 
 /// Get a reference to the Python Event Loop from Rust
-pub fn get_event_loop(py: Python) -> PyResult<&PyAny> {
+pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
+    // Ideally should call get_running_loop, but calls get_event_loop for compatibility between
+    // versions.
     asyncio(py)?.call_method0("get_event_loop")
 }
 
 /// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
 #[deprecated(since = "0.14.0")]
-pub fn get_cached_event_loop(py: Python) -> &PyAny {
+pub fn get_event_loop(py: Python) -> &PyAny {
     CACHED_EVENT_LOOP.get().expect(EXPECT_INIT).as_ref(py)
 }
 
@@ -263,43 +284,40 @@ pub fn get_cached_event_loop(py: Python) -> &PyAny {
 ///
 /// ```
 /// # #[cfg(feature = "async-std-runtime")]
-/// fn main() {
+/// fn main() -> pyo3::PyResult<()> {
 ///     use std::time::Duration;
 ///     use pyo3::prelude::*;
 ///
 ///     Python::with_gil(|py| {
-///         pyo3_asyncio::with_runtime(py, || -> PyResult<()> {
-///             let event_loop = PyObject::from(pyo3_asyncio::get_event_loop(py)?);
-///             // Wait 1 second, then stop the event loop
-///             async_std::task::spawn(async move {
-///                 async_std::task::sleep(Duration::from_secs(1)).await;
-///                 Python::with_gil(|py| {
-///                     event_loop
-///                         .as_ref(py)
-///                         .call_method1(
-///                             "call_soon_threadsafe",
-///                             (event_loop
-///                                 .as_ref(py)
-///                                 .getattr("stop")
-///                                 .map_err(|e| e.print_and_set_sys_last_vars(py))
-///                                 .unwrap(),),
-///                             )
+///         let event_loop = PyObject::from(pyo3_asyncio::get_running_loop(py)?);
+///         // Wait 1 second, then stop the event loop
+///         async_std::task::spawn(async move {
+///             async_std::task::sleep(Duration::from_secs(1)).await;
+///             Python::with_gil(|py| {
+///                 event_loop
+///                     .as_ref(py)
+///                     .call_method1(
+///                         "call_soon_threadsafe",
+///                         (event_loop
+///                             .as_ref(py)
+///                             .getattr("stop")
 ///                             .map_err(|e| e.print_and_set_sys_last_vars(py))
-///                             .unwrap();
-///                 })
-///             });
+///                             .unwrap(),),
+///                         )
+///                         .unwrap();
+///             })
+///         });
 ///     
-///             pyo3_asyncio::run_forever(py)?;
-///             Ok(())
-///         })
-///         .map_err(|e| e.print_and_set_sys_last_vars(py))
-///         .unwrap();
+///         pyo3_asyncio::run_forever(py)?;
+///         pyo3_asyncio::get_running_loop(py)?.call_method0("close")?;
+///
+///         Ok(())
 ///     })
 /// }
 /// # #[cfg(not(feature = "async-std-runtime"))]
-/// fn main() {}
+/// # fn main() {}
 pub fn run_forever(py: Python) -> PyResult<()> {
-    if let Err(e) = get_event_loop(py)?.call_method0("run_forever") {
+    let result = if let Err(e) = get_running_loop(py)?.call_method0("run_forever") {
         if e.is_instance::<PyKeyboardInterrupt>(py) {
             Ok(())
         } else {
@@ -307,7 +325,11 @@ pub fn run_forever(py: Python) -> PyResult<()> {
         }
     } else {
         Ok(())
-    }
+    };
+
+    close(get_running_loop(py)?)?;
+
+    result
 }
 
 /// Shutdown the event loops and perform any necessary cleanup
@@ -319,22 +341,7 @@ pub fn try_close(py: Python) -> PyResult<()> {
     }
 
     if let Some(event_loop) = CACHED_EVENT_LOOP.get() {
-        let event_loop = event_loop.as_ref(py);
-
-        event_loop.call_method1(
-            "run_until_complete",
-            (event_loop.call_method0("shutdown_asyncgens")?,),
-        )?;
-
-        // how to do this prior to 3.9?
-        if event_loop.hasattr("shutdown_default_executor")? {
-            event_loop.call_method1(
-                "run_until_complete",
-                (event_loop.call_method0("shutdown_default_executor")?,),
-            )?;
-        }
-
-        event_loop.call_method0("close")?;
+        close(event_loop.as_ref(py))?;
     }
 
     Ok(())
@@ -435,7 +442,7 @@ fn call_soon_threadsafe(event_loop: &PyAny, args: impl IntoPy<Py<PyTuple>>) -> P
 ///
 ///     Python::with_gil(|py| {
 ///         pyo3_asyncio::into_future_with_loop(
-///             pyo3_asyncio::get_event_loop(py)?,
+///             pyo3_asyncio::get_running_loop(py)?,
 ///             test_mod
 ///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
 ///                 .as_ref(py),
@@ -526,7 +533,7 @@ pub fn into_future_with_loop(
 )]
 #[allow(deprecated)]
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    into_future_with_loop(get_cached_event_loop(awaitable.py()), awaitable)
+    into_future_with_loop(get_event_loop(awaitable.py()), awaitable)
 }
 
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {

@@ -10,7 +10,7 @@ fn dump_err(py: Python<'_>, e: PyErr) {
 
 pub(super) fn test_main() {
     Python::with_gil(|py| {
-        let event_loop = PyObject::from(pyo3_asyncio::get_event_loop(py).unwrap());
+        let event_loop = PyObject::from(pyo3_asyncio::get_running_loop(py).unwrap());
 
         pyo3_asyncio::tokio::get_runtime().spawn(async move {
             tokio::time::sleep(Duration::from_secs(1)).await;

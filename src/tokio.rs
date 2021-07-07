@@ -116,8 +116,8 @@ where
 }
 
 /// Get the current event loop from either Python or Rust async task local context
-pub fn current_event_loop(py: Python) -> PyResult<&PyAny> {
-    generic::current_event_loop::<TokioRuntime>(py)
+pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
+    generic::get_current_loop::<TokioRuntime>(py)
 }
 
 /// Get the task local event loop for the current tokio task
@@ -364,7 +364,7 @@ where
 ///     let secs = Rc::new(secs);
 ///
 ///     pyo3_asyncio::tokio::local_future_into_py_with_loop(
-///         pyo3_asyncio::tokio::current_event_loop(py)?,
+///         pyo3_asyncio::tokio::get_current_loop(py)?,
 ///         async move {
 ///             tokio::time::sleep(Duration::from_secs(*secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -517,5 +517,5 @@ where
 /// }
 /// ```
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    into_future_with_loop(current_event_loop(awaitable.py())?, awaitable)
+    into_future_with_loop(get_current_loop(awaitable.py())?, awaitable)
 }
