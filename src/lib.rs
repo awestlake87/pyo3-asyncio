@@ -264,7 +264,7 @@ fn asyncio_get_event_loop(py: Python) -> PyResult<&PyAny> {
 pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
     // Ideally should call get_running_loop, but calls get_event_loop for compatibility between
     // versions.
-    asyncio(py)?.call_method0("get_running_loop")
+    asyncio(py)?.call_method0("get_event_loop")
 }
 
 /// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
