@@ -95,7 +95,7 @@
 //!     }
 //!
 //!     #[pyo3_asyncio::async_std::test]
-//!     fn test_blocking_sleep(_event_loop: PyObject) -> PyResult<()> {
+//!     fn test_blocking_sleep() -> PyResult<()> {
 //!         thread::sleep(Duration::from_secs(1));
 //!         Ok(())
 //!     }
@@ -125,7 +125,7 @@
 //!     }
 //!
 //!     #[pyo3_asyncio::tokio::test]
-//!     fn test_blocking_sleep(_event_loop: PyObject) -> PyResult<()> {
+//!     fn test_blocking_sleep() -> PyResult<()> {
 //!         thread::sleep(Duration::from_secs(1));
 //!         Ok(())
 //!     }
@@ -163,7 +163,7 @@
 //!     }
 //! #   #[cfg(feature = "async-std-runtime")]
 //!     #[pyo3_asyncio::async_std::test]
-//!     fn test_async_std_sync_test_compiles(_event_loop: PyObject) -> PyResult<()> {
+//!     fn test_async_std_sync_test_compiles() -> PyResult<()> {
 //!         Ok(())
 //!     }
 //!
@@ -174,7 +174,7 @@
 //!     }
 //! #   #[cfg(feature = "tokio-runtime")]
 //!     #[pyo3_asyncio::tokio::test]
-//!     fn test_tokio_sync_test_compiles(_event_loop: PyObject) -> PyResult<()> {
+//!     fn test_tokio_sync_test_compiles() -> PyResult<()> {
 //!         Ok(())
 //!     }
 //! }
@@ -341,7 +341,7 @@ mod tests {
     }
     #[cfg(feature = "async-std-runtime")]
     #[pyo3_asyncio::async_std::test]
-    fn test_async_std_sync_test_compiles(_event_loop: PyObject) -> PyResult<()> {
+    fn test_async_std_sync_test_compiles() -> PyResult<()> {
         Ok(())
     }
 
@@ -352,7 +352,7 @@ mod tests {
     }
     #[cfg(feature = "tokio-runtime")]
     #[pyo3_asyncio::tokio::test]
-    fn test_tokio_sync_test_compiles(_event_loop: PyObject) -> PyResult<()> {
+    fn test_tokio_sync_test_compiles() -> PyResult<()> {
         Ok(())
     }
 }

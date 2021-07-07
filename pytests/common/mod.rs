@@ -28,6 +28,7 @@ pub(super) async fn test_into_future(event_loop: PyObject) -> PyResult<()> {
     Ok(())
 }
 
+#[allow(deprecated)]
 pub(super) async fn test_into_future_0_13() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
         let test_mod =

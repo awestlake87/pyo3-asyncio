@@ -2,6 +2,7 @@ use std::{future::Future, pin::Pin};
 
 use pyo3::prelude::*;
 
+#[allow(deprecated)]
 use crate::{
     call_soon_threadsafe, create_future, dump_err, err::RustPanic, get_cached_event_loop,
     get_event_loop,
@@ -238,11 +239,15 @@ where
         "run_until_complete",
         (event_loop.call_method0("shutdown_asyncgens")?,),
     )?;
+
     // how to do this prior to 3.9?
-    // event_loop.call_method1(
-    //     "run_until_complete",
-    //     (event_loop.call_method0("shutdown_default_executor")?,),
-    // )?;
+    if event_loop.hasattr("shutdown_default_executor")? {
+        event_loop.call_method1(
+            "run_until_complete",
+            (event_loop.call_method0("shutdown_default_executor")?,),
+        )?;
+    }
+
     event_loop.call_method0("close")?;
 
     result?;
@@ -550,6 +555,11 @@ where
 ///     })
 /// }
 /// ```
+#[deprecated(
+    since = "0.14.0",
+    note = "Use the pyo3_asyncio::generic::future_into_py instead"
+)]
+#[allow(deprecated)]
 pub fn into_coroutine<R, F>(py: Python, fut: F) -> PyResult<PyObject>
 where
     R: Runtime,

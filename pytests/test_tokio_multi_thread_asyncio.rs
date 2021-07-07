@@ -3,6 +3,7 @@ mod tokio_asyncio;
 
 use pyo3::prelude::*;
 
+#[allow(deprecated)]
 fn main() -> pyo3::PyResult<()> {
     Python::with_gil(|py| {
         // into_coroutine requires the 0.13 API

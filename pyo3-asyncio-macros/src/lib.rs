@@ -124,6 +124,13 @@ pub fn tokio_main(args: TokenStream, item: TokenStream) -> TokenStream {
 ///     thread::sleep(Duration::from_secs(1));
 ///     Ok(())
 /// }
+///
+/// // blocking test functions can optionally accept an event_loop parameter
+/// #[pyo3_asyncio::async_std::test]
+/// fn test_blocking_sleep_with_event_loop(event_loop: PyObject) -> PyResult<()> {
+///     thread::sleep(Duration::from_secs(1));
+///     Ok(())
+/// }
 /// ```
 #[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
 #[proc_macro_attribute]
@@ -136,19 +143,31 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let vis = &input.vis;
 
     let fn_impl = if input.sig.asyncness.is_none() {
+        // Optionally pass an event_loop parameter to blocking tasks
+        let task = if sig.inputs.is_empty() {
+            quote! {
+                Box::pin(pyo3_asyncio::async_std::re_exports::spawn_blocking(move || {
+                    #name()
+                }))
+            }
+        } else {
+            quote! {
+                let event_loop = Python::with_gil(|py| {
+                    pyo3_asyncio::async_std::task_event_loop(py).unwrap().into()
+                });
+                Box::pin(pyo3_asyncio::async_std::re_exports::spawn_blocking(move || {
+                    #name(event_loop)
+                }))
+            }
+        };
+
         quote! {
             #vis fn #name() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
                 #sig {
                     #body
                 }
 
-                let event_loop = Python::with_gil(|py| {
-                    pyo3_asyncio::async_std::task_event_loop(py).unwrap().into()
-                });
-
-                Box::pin(pyo3_asyncio::async_std::re_exports::spawn_blocking(move || {
-                    #name(event_loop)
-                }))
+                #task
             }
         }
     } else {
@@ -204,6 +223,13 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///     thread::sleep(Duration::from_secs(1));
 ///     Ok(())
 /// }
+///
+/// // blocking test functions can optionally accept an event_loop parameter
+/// #[pyo3_asyncio::tokio::test]
+/// fn test_blocking_sleep_with_event_loop(event_loop: PyObject) -> PyResult<()> {
+///     thread::sleep(Duration::from_secs(1));
+///     Ok(())
+/// }
 /// ```
 #[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
 #[proc_macro_attribute]
@@ -216,16 +242,24 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let vis = &input.vis;
 
     let fn_impl = if input.sig.asyncness.is_none() {
-        quote! {
-            #vis fn #name() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
-                #sig {
-                    #body
-                }
-
+        // Optionally pass an event_loop parameter to blocking tasks
+        let task = if sig.inputs.is_empty() {
+            quote! {
+                Box::pin(async move {
+                    match pyo3_asyncio::tokio::get_runtime().spawn_blocking(move || #name()).await {
+                        Ok(result) => result,
+                        Err(e) => {
+                            assert!(e.is_panic());
+                            Err(pyo3::exceptions::PyException::new_err("rust future panicked"))
+                        }
+                    }
+                })
+            }
+        } else {
+            quote! {
                 let event_loop = Python::with_gil(|py| {
                     pyo3_asyncio::tokio::task_event_loop(py).unwrap().into()
                 });
-
                 Box::pin(async move {
                     match pyo3_asyncio::tokio::get_runtime().spawn_blocking(move || #name(event_loop)).await {
                         Ok(result) => result,
@@ -235,6 +269,16 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         }
                     }
                 })
+            }
+        };
+
+        quote! {
+            #vis fn #name() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
+                #sig {
+                    #body
+                }
+
+                #task
             }
         }
     } else {

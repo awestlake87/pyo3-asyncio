@@ -215,6 +215,11 @@ where
 ///     })
 /// }
 /// ```
+#[deprecated(
+    since = "0.14.0",
+    note = "Use the pyo3_asyncio::async_std::future_into_py instead"
+)]
+#[allow(deprecated)]
 pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
