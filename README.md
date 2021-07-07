@@ -162,10 +162,7 @@ fn rust_sleep(py: Python) -> PyResult<PyObject> {
 #[pymodule]
 fn my_async_module(py: Python, m: &PyModule) -> PyResult<()> {
     pyo3_asyncio::try_init(py)?;
-    // Tokio needs explicit initialization before any pyo3-asyncio conversions.
-    // The module import is a prime place to do this.
-    pyo3_asyncio::tokio::init_multi_thread_once();
-
+    
     m.add_function(wrap_pyfunction!(rust_sleep, m)?)?;
 
     Ok(())
