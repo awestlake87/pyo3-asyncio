@@ -6,10 +6,21 @@ use async_std::task;
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
+#[allow(deprecated)]
+fn sleep_into_coroutine(py: Python, secs: &PyAny) -> PyResult<PyObject> {
     let secs = secs.extract()?;
 
     pyo3_asyncio::async_std::into_coroutine(py, async move {
+        task::sleep(Duration::from_secs(secs)).await;
+        Python::with_gil(|py| Ok(py.None()))
+    })
+}
+
+#[pyfunction]
+fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+    let secs = secs.extract()?;
+
+    pyo3_asyncio::async_std::future_into_py(py, async move {
         task::sleep(Duration::from_secs(secs)).await;
         Python::with_gil(|py| Ok(py.None()))
     })
@@ -20,17 +31,42 @@ async fn test_into_coroutine() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
         let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
 
-        sleeper_mod.add_wrapped(wrap_pyfunction!(sleep_for))?;
+        sleeper_mod.add_wrapped(wrap_pyfunction!(sleep_into_coroutine))?;
 
         let test_mod = PyModule::from_code(
             py,
             common::TEST_MOD,
-            "test_rust_coroutine/test_mod.py",
-            "test_mod",
+            "test_into_coroutine_mod.py",
+            "test_into_coroutine_mod",
         )?;
 
-        pyo3_asyncio::into_future(
-            test_mod.call_method1("sleep_for_1s", (sleeper_mod.getattr("sleep_for")?,))?,
+        pyo3_asyncio::async_std::into_future(test_mod.call_method1(
+            "sleep_for_1s",
+            (sleeper_mod.getattr("sleep_into_coroutine")?,),
+        )?)
+    })?;
+
+    fut.await?;
+
+    Ok(())
+}
+
+#[pyo3_asyncio::async_std::test]
+async fn test_future_into_py() -> PyResult<()> {
+    let fut = Python::with_gil(|py| {
+        let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
+
+        sleeper_mod.add_wrapped(wrap_pyfunction!(sleep))?;
+
+        let test_mod = PyModule::from_code(
+            py,
+            common::TEST_MOD,
+            "test_future_into_py_mod.py",
+            "test_future_into_py_mod",
+        )?;
+
+        pyo3_asyncio::async_std::into_future(
+            test_mod.call_method1("sleep_for_1s", (sleeper_mod.getattr("sleep")?,))?,
         )
     })?;
 
@@ -47,7 +83,7 @@ async fn test_async_sleep() -> PyResult<()> {
     task::sleep(Duration::from_secs(1)).await;
 
     Python::with_gil(|py| {
-        pyo3_asyncio::into_future(asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
+        pyo3_asyncio::async_std::into_future(asyncio.as_ref(py).call_method1("sleep", (1.0,))?)
     })?
     .await?;
 
@@ -61,26 +97,47 @@ fn test_blocking_sleep() -> PyResult<()> {
 
 #[pyo3_asyncio::async_std::test]
 async fn test_into_future() -> PyResult<()> {
-    common::test_into_future().await
+    common::test_into_future(Python::with_gil(|py| {
+        pyo3_asyncio::async_std::task_event_loop(py).unwrap().into()
+    }))
+    .await
+}
+
+#[pyo3_asyncio::async_std::test]
+async fn test_into_future_0_13() -> PyResult<()> {
+    common::test_into_future_0_13().await
 }
 
 #[pyo3_asyncio::async_std::test]
 async fn test_other_awaitables() -> PyResult<()> {
-    common::test_other_awaitables().await
+    common::test_other_awaitables(Python::with_gil(|py| {
+        pyo3_asyncio::async_std::task_event_loop(py).unwrap().into()
+    }))
+    .await
 }
 
 #[pyo3_asyncio::async_std::test]
-fn test_init_twice() -> PyResult<()> {
-    common::test_init_twice()
-}
+async fn test_panic() -> PyResult<()> {
+    let fut = Python::with_gil(|py| -> PyResult<_> {
+        pyo3_asyncio::async_std::into_future(pyo3_asyncio::async_std::future_into_py(py, async {
+            panic!("this panic was intentional!")
+        })?)
+    })?;
 
-#[pyo3_asyncio::async_std::main]
-async fn main() -> pyo3::PyResult<()> {
-    pyo3_asyncio::testing::main().await
+    match fut.await {
+        Ok(_) => panic!("coroutine should panic"),
+        Err(e) => Python::with_gil(|py| {
+            if e.is_instance::<pyo3_asyncio::err::RustPanic>(py) {
+                Ok(())
+            } else {
+                panic!("expected RustPanic err")
+            }
+        }),
+    }
 }
 
 #[pyo3_asyncio::async_std::test]
-async fn test_local_coroutine() -> PyResult<()> {
+async fn test_local_future_into_py() -> PyResult<()> {
     Python::with_gil(|py| {
         let non_send_secs = Rc::new(1);
 
@@ -89,9 +146,18 @@ async fn test_local_coroutine() -> PyResult<()> {
             Ok(Python::with_gil(|py| py.None()))
         })?;
 
-        pyo3_asyncio::into_future(py_future)
+        pyo3_asyncio::async_std::into_future(py_future)
     })?
     .await?;
 
     Ok(())
+}
+
+#[allow(deprecated)]
+fn main() -> pyo3::PyResult<()> {
+    Python::with_gil(|py| {
+        // into_coroutine requires the 0.13 API
+        pyo3_asyncio::try_init(py)?;
+        pyo3_asyncio::async_std::run(py, pyo3_asyncio::testing::main())
+    })
 }

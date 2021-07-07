@@ -12,7 +12,24 @@ async def sleep_for_1s(sleep_for):
     await sleep_for(1)
 "#;
 
-pub(super) async fn test_into_future() -> PyResult<()> {
+pub(super) async fn test_into_future(event_loop: PyObject) -> PyResult<()> {
+    let fut = Python::with_gil(|py| {
+        let test_mod =
+            PyModule::from_code(py, TEST_MOD, "test_rust_coroutine/test_mod.py", "test_mod")?;
+
+        pyo3_asyncio::into_future_with_loop(
+            event_loop.as_ref(py),
+            test_mod.call_method1("py_sleep", (1.into_py(py),))?,
+        )
+    })?;
+
+    fut.await?;
+
+    Ok(())
+}
+
+#[allow(deprecated)]
+pub(super) async fn test_into_future_0_13() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
         let test_mod =
             PyModule::from_code(py, TEST_MOD, "test_rust_coroutine/test_mod.py", "test_mod")?;
@@ -30,13 +47,13 @@ pub(super) fn test_blocking_sleep() -> PyResult<()> {
     Ok(())
 }
 
-pub(super) async fn test_other_awaitables() -> PyResult<()> {
+pub(super) async fn test_other_awaitables(event_loop: PyObject) -> PyResult<()> {
     let fut = Python::with_gil(|py| {
         let functools = py.import("functools")?;
         let time = py.import("time")?;
 
         // spawn a blocking sleep in the threadpool executor - returns a task, not a coroutine
-        let task = pyo3_asyncio::get_event_loop(py).call_method1(
+        let task = event_loop.as_ref(py).call_method1(
             "run_in_executor",
             (
                 py.None(),
@@ -44,18 +61,10 @@ pub(super) async fn test_other_awaitables() -> PyResult<()> {
             ),
         )?;
 
-        pyo3_asyncio::into_future(task)
+        pyo3_asyncio::into_future_with_loop(event_loop.as_ref(py), task)
     })?;
 
     fut.await?;
-
-    Ok(())
-}
-
-pub(super) fn test_init_twice() -> PyResult<()> {
-    // try_init has already been called in test main - ensure a second call doesn't mess the other
-    // tests up
-    Python::with_gil(|py| pyo3_asyncio::try_init(py))?;
 
     Ok(())
 }
