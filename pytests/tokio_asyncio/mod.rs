@@ -97,7 +97,7 @@ fn test_blocking_sleep() -> PyResult<()> {
 #[pyo3_asyncio::tokio::test]
 async fn test_into_future() -> PyResult<()> {
     common::test_into_future(Python::with_gil(|py| {
-        pyo3_asyncio::tokio::task_event_loop(py).unwrap().into()
+        pyo3_asyncio::tokio::get_current_loop(py).unwrap().into()
     }))
     .await
 }
@@ -110,7 +110,7 @@ async fn test_into_future_0_13() -> PyResult<()> {
 #[pyo3_asyncio::tokio::test]
 async fn test_other_awaitables() -> PyResult<()> {
     common::test_other_awaitables(Python::with_gil(|py| {
-        pyo3_asyncio::tokio::task_event_loop(py).unwrap().into()
+        pyo3_asyncio::tokio::get_current_loop(py).unwrap().into()
     }))
     .await
 }

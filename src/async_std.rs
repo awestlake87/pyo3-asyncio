@@ -1,14 +1,10 @@
-use std::{any::Any, future::Future, panic::AssertUnwindSafe, pin::Pin};
+use std::{any::Any, cell::RefCell, future::Future, panic::AssertUnwindSafe, pin::Pin};
 
 use async_std::task;
 use futures::prelude::*;
-use once_cell::unsync::OnceCell;
-use pyo3::{prelude::*, PyNativeType};
+use pyo3::prelude::*;
 
-use crate::{
-    generic::{self, JoinError, Runtime, SpawnLocalExt},
-    into_future_with_loop,
-};
+use crate::generic::{self, JoinError, Runtime, SpawnLocalExt};
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 /// re-exports for macros
@@ -37,7 +33,7 @@ impl JoinError for AsyncStdJoinErr {
 }
 
 async_std::task_local! {
-    static EVENT_LOOP: OnceCell<PyObject> = OnceCell::new()
+    static EVENT_LOOP: RefCell<Option<PyObject>> = RefCell::new(None);
 }
 
 struct AsyncStdRuntime;
@@ -50,11 +46,19 @@ impl Runtime for AsyncStdRuntime {
     where
         F: Future<Output = R> + Send + 'static,
     {
-        EVENT_LOOP.with(|c| c.set(event_loop).unwrap());
-        Box::pin(fut)
+        let old = EVENT_LOOP.with(|c| c.replace(Some(event_loop)));
+        Box::pin(async move {
+            let result = fut.await;
+            EVENT_LOOP.with(|c| c.replace(old));
+            result
+        })
     }
     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-        match EVENT_LOOP.try_with(|c| c.get().map(|event_loop| event_loop.clone().into_ref(py))) {
+        match EVENT_LOOP.try_with(|c| {
+            c.borrow()
+                .as_ref()
+                .map(|event_loop| event_loop.clone().into_ref(py))
+        }) {
             Ok(event_loop) => event_loop,
             Err(_) => None,
         }
@@ -78,8 +82,12 @@ impl SpawnLocalExt for AsyncStdRuntime {
     where
         F: Future<Output = R> + 'static,
     {
-        EVENT_LOOP.with(|c| c.set(event_loop).unwrap());
-        Box::pin(fut)
+        let old = EVENT_LOOP.with(|c| c.replace(Some(event_loop)));
+        Box::pin(async move {
+            let result = fut.await;
+            EVENT_LOOP.with(|c| c.replace(old));
+            result
+        })
     }
 
     fn spawn_local<F>(fut: F) -> Self::JoinHandle
@@ -110,13 +118,12 @@ where
 }
 
 /// Get the current event loop from either Python or Rust async task local context
+///
+/// This function first checks if the runtime has a task-local reference to the Python event loop.
+/// If not, it calls [`get_running_loop`](`crate::get_running_loop`) to get the event loop
+/// associated with the current OS thread.
 pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
     generic::get_current_loop::<AsyncStdRuntime>(py)
-}
-
-/// Get the task local event loop for the current async_std task
-pub fn task_event_loop(py: Python) -> Option<&PyAny> {
-    AsyncStdRuntime::get_task_event_loop(py)
 }
 
 /// Run the event loop until the given Future completes
@@ -124,7 +131,7 @@ pub fn task_event_loop(py: Python) -> Option<&PyAny> {
 /// The event loop runs until the given future is complete.
 ///
 /// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
-/// [`crate::run_forever`]
+/// [`run_forever`](`crate::run_forever`)
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -230,6 +237,39 @@ where
 /// Convert a Rust Future into a Python awaitable
 ///
 /// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::async_std::future_into_py_with_loop(
+///         pyo3_asyncio::async_std::get_current_loop(py)?,
+///         async move {
+///             async_std::task::sleep(Duration::from_secs(secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+/// ```
+pub fn future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    generic::future_into_py_with_loop::<AsyncStdRuntime, F>(event_loop, fut)
+}
+
+/// Convert a Rust Future into a Python awaitable
+///
+/// # Arguments
 /// * `py` - The current PyO3 GIL guard
 /// * `fut` - The Rust future to be converted
 ///
@@ -260,7 +300,7 @@ where
 /// Convert a `!Send` Rust Future into a Python awaitable
 ///
 /// # Arguments
-/// * `py` - The current PyO3 GIL guard
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
 /// * `fut` - The Rust future to be converted
 ///
 /// # Examples
@@ -273,7 +313,7 @@ where
 /// /// Awaitable non-send sleep function
 /// #[pyfunction]
 /// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::into_coroutine
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::future_into_py
 ///     let secs = Rc::new(secs);
 ///     Ok(pyo3_asyncio::async_std::local_future_into_py_with_loop(
 ///         pyo3_asyncio::async_std::get_current_loop(py)?,
@@ -321,7 +361,7 @@ where
 /// /// Awaitable non-send sleep function
 /// #[pyfunction]
 /// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::into_coroutine
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::future_into_py
 ///     let secs = Rc::new(secs);
 ///     pyo3_asyncio::async_std::local_future_into_py(py, async move {
 ///         async_std::task::sleep(Duration::from_secs(*secs)).await;
@@ -399,5 +439,5 @@ where
 /// }
 /// ```
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    into_future_with_loop(get_current_loop(awaitable.py())?, awaitable)
+    generic::into_future::<AsyncStdRuntime>(awaitable)
 }

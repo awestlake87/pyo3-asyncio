@@ -414,6 +414,7 @@ fn call_soon_threadsafe(event_loop: &PyAny, args: impl IntoPy<Py<PyTuple>>) -> P
 /// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
 ///
 /// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
 /// * `awaitable` - The Python `awaitable` to be converted
 ///
 /// # Examples

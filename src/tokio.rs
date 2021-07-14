@@ -6,12 +6,9 @@ use ::tokio::{
 };
 use futures::future::pending;
 use once_cell::{sync::OnceCell, unsync::OnceCell as UnsyncOnceCell};
-use pyo3::{prelude::*, PyNativeType};
+use pyo3::prelude::*;
 
-use crate::{
-    generic::{self, Runtime as GenericRuntime, SpawnLocalExt},
-    into_future_with_loop,
-};
+use crate::generic::{self, Runtime as GenericRuntime, SpawnLocalExt};
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 /// re-exports for macros
@@ -116,13 +113,12 @@ where
 }
 
 /// Get the current event loop from either Python or Rust async task local context
+///
+/// This function first checks if the runtime has a task-local reference to the Python event loop.
+/// If not, it calls [`get_running_loop`](`crate::get_running_loop`) to get the event loop
+/// associated with the current OS thread.
 pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
     generic::get_current_loop::<TokioRuntime>(py)
-}
-
-/// Get the task local event loop for the current tokio task
-pub fn task_event_loop(py: Python) -> Option<&PyAny> {
-    TokioRuntime::get_task_event_loop(py)
 }
 
 /// Initialize the Tokio Runtime with a custom build
@@ -317,6 +313,39 @@ where
 /// Convert a Rust Future into a Python awaitable
 ///
 /// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::tokio::future_into_py_with_loop(
+///         pyo3_asyncio::tokio::get_current_loop(py)?,
+///         async move {
+///             tokio::time::sleep(Duration::from_secs(secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+/// ```
+pub fn future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    generic::future_into_py_with_loop::<TokioRuntime, F>(event_loop, fut)
+}
+
+/// Convert a Rust Future into a Python awaitable
+///
+/// # Arguments
 /// * `py` - The current PyO3 GIL guard
 /// * `fut` - The Rust future to be converted
 ///
@@ -347,7 +376,7 @@ where
 /// Convert a `!Send` Rust Future into a Python awaitable
 ///
 /// # Arguments
-/// * `py` - The current PyO3 GIL guard
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
 /// * `fut` - The Rust future to be converted
 ///
 /// # Examples
@@ -360,7 +389,7 @@ where
 /// /// Awaitable non-send sleep function
 /// #[pyfunction]
 /// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py
 ///     let secs = Rc::new(secs);
 ///
 ///     pyo3_asyncio::tokio::local_future_into_py_with_loop(
@@ -375,9 +404,9 @@ where
 /// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::tokio::main]
 /// async fn main() -> PyResult<()> {
-///     let event_loop = Python::with_gil(|py| {
-///         PyObject::from(pyo3_asyncio::tokio::task_event_loop(py).unwrap())
-///     });
+///     let event_loop = Python::with_gil(|py| -> PyResult<PyObject> {
+///         Ok(pyo3_asyncio::tokio::get_current_loop(py)?.into())
+///     })?;
 ///
 ///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
 ///     // we use spawn_blocking in order to use LocalSet::block_on
@@ -424,7 +453,7 @@ where
 /// /// Awaitable non-send sleep function
 /// #[pyfunction]
 /// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::into_coroutine
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py
 ///     let secs = Rc::new(secs);
 ///     pyo3_asyncio::tokio::local_future_into_py(py, async move {
 ///         tokio::time::sleep(Duration::from_secs(*secs)).await;
@@ -436,7 +465,7 @@ where
 /// #[pyo3_asyncio::tokio::main]
 /// async fn main() -> PyResult<()> {
 ///     let event_loop = Python::with_gil(|py| {
-///         PyObject::from(pyo3_asyncio::tokio::task_event_loop(py).unwrap())
+///         PyObject::from(pyo3_asyncio::tokio::get_current_loop(py).unwrap())
 ///     });
 ///
 ///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
@@ -517,5 +546,5 @@ where
 /// }
 /// ```
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    into_future_with_loop(get_current_loop(awaitable.py())?, awaitable)
+    generic::into_future::<TokioRuntime>(awaitable)
 }

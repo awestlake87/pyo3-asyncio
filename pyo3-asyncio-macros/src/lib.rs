@@ -153,7 +153,7 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
         } else {
             quote! {
                 let event_loop = Python::with_gil(|py| {
-                    pyo3_asyncio::async_std::task_event_loop(py).unwrap().into()
+                    pyo3_asyncio::async_std::get_current_loop(py).unwrap().into()
                 });
                 Box::pin(pyo3_asyncio::async_std::re_exports::spawn_blocking(move || {
                     #name(event_loop)
@@ -258,7 +258,7 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
         } else {
             quote! {
                 let event_loop = Python::with_gil(|py| {
-                    pyo3_asyncio::tokio::task_event_loop(py).unwrap().into()
+                    pyo3_asyncio::tokio::get_current_loop(py).unwrap().into()
                 });
                 Box::pin(async move {
                     match pyo3_asyncio::tokio::get_runtime().spawn_blocking(move || #name(event_loop)).await {
