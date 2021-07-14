@@ -147,6 +147,7 @@ pub mod doc_test {
 
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
+static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
 const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
 static CACHED_EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
@@ -261,10 +262,28 @@ fn asyncio_get_event_loop(py: Python) -> PyResult<&PyAny> {
 }
 
 /// Get a reference to the Python Event Loop from Rust
+///
+/// Equivalent to `asyncio.get_running_loop()` in Python 3.7+
+/// > For Python 3.6, this function falls back to `asyncio.get_event_loop()` which has slightly
+/// different behaviour. See the [`asyncio.get_event_loop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.get_event_loop)
+/// docs to better understand the differences.
 pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
     // Ideally should call get_running_loop, but calls get_event_loop for compatibility between
     // versions.
-    asyncio(py)?.call_method0("get_event_loop")
+    GET_RUNNING_LOOP
+        .get_or_try_init(|| -> PyResult<PyObject> {
+            let asyncio = asyncio(py)?;
+
+            if asyncio.hasattr("get_running_loop")? {
+                // correct behaviour with Python 3.7+
+                Ok(asyncio.getattr("get_running_loop")?.into())
+            } else {
+                // Python 3.6 compatibility mode
+                Ok(asyncio.getattr("get_event_loop")?.into())
+            }
+        })?
+        .as_ref(py)
+        .call0()
 }
 
 /// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
