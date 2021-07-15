@@ -263,13 +263,13 @@ fn asyncio_get_event_loop(py: Python) -> PyResult<&PyAny> {
 
 /// Get a reference to the Python Event Loop from Rust
 ///
-/// Equivalent to `asyncio.get_running_loop()` in Python 3.7+
+/// Equivalent to `asyncio.get_running_loop()` in Python 3.7+.
 /// > For Python 3.6, this function falls back to `asyncio.get_event_loop()` which has slightly
 /// different behaviour. See the [`asyncio.get_event_loop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.get_event_loop)
 /// docs to better understand the differences.
 pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
-    // Ideally should call get_running_loop, but calls get_event_loop for compatibility between
-    // versions.
+    // Ideally should call get_running_loop, but calls get_event_loop for compatibility when
+    // get_running_loop is not available.
     GET_RUNNING_LOOP
         .get_or_try_init(|| -> PyResult<PyObject> {
             let asyncio = asyncio(py)?;
