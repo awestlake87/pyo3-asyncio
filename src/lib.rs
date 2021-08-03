@@ -181,6 +181,9 @@ fn create_future(event_loop: &PyAny) -> PyResult<&PyAny> {
 /// use pyo3::prelude::*;
 ///
 /// fn main() {
+///     // Call this function or use pyo3's "auto-initialize" feature
+///     pyo3::prepare_freethreaded_python();
+///
 ///     Python::with_gil(|py| {
 ///         pyo3_asyncio::with_runtime(py, || {
 ///             println!("PyO3 Asyncio Initialized!");
@@ -310,6 +313,9 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// fn main() -> pyo3::PyResult<()> {
 ///     use std::time::Duration;
 ///     use pyo3::prelude::*;
+///     
+///     // call this or use pyo3 0.14 "auto-initialize" feature
+///     pyo3::prepare_freethreaded_python();
 ///
 ///     Python::with_gil(|py| {
 ///         pyo3_asyncio::with_runtime(py, || {

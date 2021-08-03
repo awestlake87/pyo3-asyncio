@@ -9,6 +9,8 @@ fn dump_err(py: Python, e: PyErr) {
 }
 
 fn main() {
+    pyo3::prepare_freethreaded_python();
+
     Python::with_gil(|py| {
         let asyncio = py.import("asyncio")?;
 

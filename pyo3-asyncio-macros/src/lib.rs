@@ -49,6 +49,8 @@ pub fn async_std_main(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 #body
             }
 
+            pyo3::prepare_freethreaded_python();
+
             pyo3::Python::with_gil(|py| {
                 pyo3_asyncio::async_std::run(py, main())
                     .map_err(|e| {

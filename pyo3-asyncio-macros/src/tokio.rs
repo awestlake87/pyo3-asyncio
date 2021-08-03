@@ -247,6 +247,8 @@ fn parse_knobs(
                 #body
             }
 
+            pyo3::prepare_freethreaded_python();
+
             pyo3_asyncio::tokio::init(
                 #rt
                     .enable_all()

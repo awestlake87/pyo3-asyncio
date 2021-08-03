@@ -220,6 +220,7 @@ pub fn init_current_thread_once() {
 /// #     .build()
 /// #     .expect("Couldn't build the runtime");
 /// #
+/// # pyo3::prepare_freethreaded_python();
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
 /// # pyo3_asyncio::tokio::init_current_thread();

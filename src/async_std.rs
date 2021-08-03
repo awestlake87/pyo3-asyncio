@@ -144,6 +144,8 @@ pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
 /// #
 /// # use pyo3::prelude::*;
 /// #
+/// # pyo3::prepare_freethreaded_python();
+/// #
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
 /// pyo3_asyncio::async_std::run_until_complete(py, async move {
@@ -179,6 +181,9 @@ where
 /// # use pyo3::prelude::*;
 /// #
 /// fn main() {
+///     // call this or use pyo3 0.14 "auto-initialize" feature
+///     pyo3::prepare_freethreaded_python();
+///
 ///     Python::with_gil(|py| {
 ///         pyo3_asyncio::async_std::run(py, async move {
 ///             async_std::task::sleep(Duration::from_secs(1)).await;
