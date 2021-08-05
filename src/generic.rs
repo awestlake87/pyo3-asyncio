@@ -113,6 +113,12 @@ where
     Ok(())
 }
 
+fn cancelled(future: &PyAny) -> PyResult<bool> {
+    future.getattr("cancelled")?
+        .call0()?
+        .is_true()
+}
+
 fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
     match result {
         Ok(val) => {
@@ -214,29 +220,32 @@ where
             let result = fut.await;
 
             Python::with_gil(move |py| {
-                if set_result(py, future_tx1.as_ref(py), result)
+                if cancelled(future_tx1.as_ref(py))
                     .map_err(dump_err(py))
-                    .is_err()
-                {
-
-                    // Cancelled
+                    .unwrap_or(false) {
+                    return;
                 }
+
+                let _ = set_result(py, future_tx1.as_ref(py), result)
+                    .map_err(dump_err(py));
             });
         })
         .await
         {
             if e.is_panic() {
                 Python::with_gil(move |py| {
-                    if set_result(
+                    if cancelled(future_tx2.as_ref(py))
+                        .map_err(dump_err(py))
+                        .unwrap_or(false) {
+                        return;
+                    }
+
+                    let _ = set_result(
                         py,
                         future_tx2.as_ref(py),
                         Err(PyException::new_err("rust future panicked")),
                     )
-                    .map_err(dump_err(py))
-                    .is_err()
-                    {
-                        // Cancelled
-                    }
+                    .map_err(dump_err(py));
                 });
             }
         }
@@ -332,29 +341,32 @@ where
             let result = fut.await;
 
             Python::with_gil(move |py| {
-                if set_result(py, future_tx1.as_ref(py), result)
+                if cancelled(future_tx1.as_ref(py))
                     .map_err(dump_err(py))
-                    .is_err()
-                {
-
-                    // Cancelled
+                    .unwrap_or(false) {
+                    return;
                 }
+
+                let _ = set_result(py, future_tx1.as_ref(py), result)
+                    .map_err(dump_err(py));
             });
         })
         .await
         {
             if e.is_panic() {
                 Python::with_gil(move |py| {
-                    if set_result(
+                    if cancelled(future_tx2.as_ref(py))
+                        .map_err(dump_err(py))
+                        .unwrap_or(false) {
+                        return;
+                    }
+
+                    let _ = set_result(
                         py,
                         future_tx2.as_ref(py),
                         Err(PyException::new_err("rust future panicked")),
                     )
-                    .map_err(dump_err(py))
-                    .is_err()
-                    {
-                        // Cancelled
-                    }
+                    .map_err(dump_err(py));
                 });
             }
         }
