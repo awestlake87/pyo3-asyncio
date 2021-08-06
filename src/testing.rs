@@ -155,7 +155,7 @@
 //! # ))]
 //! mod tests {
 //!     use pyo3::prelude::*;
-//!     
+//!
 //! #   #[cfg(feature = "async-std-runtime")]
 //!     #[pyo3_asyncio::async_std::test]
 //!     async fn test_async_std_async_test_compiles() -> PyResult<()> {
