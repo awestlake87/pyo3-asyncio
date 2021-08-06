@@ -55,6 +55,24 @@ async fn test_async_sleep() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::async_std::test]
+async fn test_cancel() -> PyResult<()> {
+    let py_future = Python::with_gil(|py| {
+        pyo3_asyncio::async_std::into_coroutine(py, async {
+            async_std::task::sleep(Duration::from_secs(1)).await;
+            Ok(Python::with_gil(|py| py.None()))
+        })
+    })?;
+
+    Python::with_gil(|py| -> PyResult<_> {
+        py_future.as_ref(py).call_method0("cancel")?;
+        pyo3_asyncio::into_future(py_future.as_ref(py))
+    })?
+    .await?;
+
+    Ok(())
+}
+
+#[pyo3_asyncio::async_std::test]
 fn test_blocking_sleep() -> PyResult<()> {
     common::test_blocking_sleep()
 }
