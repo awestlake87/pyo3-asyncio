@@ -1,7 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/generic.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>generic.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -365,10 +364,10 @@
 <span id="362">362</span>
 <span id="363">363</span>
 <span id="364">364</span>
-</pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">future</span>::<span class="ident">Future</span>;
+</pre><pre class="rust">
+<span class="kw">use</span> <span class="ident">std::future::Future</span>;
 
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">exceptions</span>::<span class="ident">PyException</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>};
+<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">exceptions::PyException</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">dump_err</span>, <span class="ident">get_event_loop</span>, <span class="ident">CALL_SOON</span>, <span class="ident">CREATE_FUTURE</span>, <span class="ident">EXPECT_INIT</span>};
 
@@ -383,10 +382,10 @@
     <span class="doccomment">/// The error returned by a JoinHandle after being awaited</span>
     <span class="kw">type</span> <span class="ident">JoinError</span>: <span class="ident">JoinError</span> <span class="op">+</span> <span class="ident">Send</span>;
     <span class="doccomment">/// A future that completes with the result of the spawned task</span>
-    <span class="kw">type</span> <span class="ident">JoinHandle</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="self">Self</span>::<span class="ident">JoinError</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span>;
+    <span class="kw">type</span> <span class="ident">JoinHandle</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="self">Self</span><span class="ident">::JoinError</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span>;
 
     <span class="doccomment">/// Spawn a future onto this runtime&#39;s event loop</span>
-    <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">JoinHandle</span>
+    <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::JoinHandle</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>;
 }
@@ -394,7 +393,7 @@
 <span class="doccomment">/// Extension trait for async/await runtimes that support spawning local tasks</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SpawnLocalExt</span>: <span class="ident">Runtime</span> {
     <span class="doccomment">/// Spawn a !Send future onto this runtime&#39;s event loop</span>
-    <span class="kw">fn</span> <span class="ident">spawn_local</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">JoinHandle</span>
+    <span class="kw">fn</span> <span class="ident">spawn_local</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::JoinHandle</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>;
 }
@@ -473,7 +472,7 @@
 {
     <span class="kw">let</span> <span class="ident">coro</span> <span class="op">=</span> <span class="ident">into_coroutine</span>::<span class="op">&lt;</span><span class="ident">R</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="kw">async</span> <span class="kw">move</span> {
         <span class="ident">fut</span>.<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">Python</span>::<span class="ident">with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="ident">py</span>.<span class="prelude-val">None</span>()))
+        <span class="prelude-val">Ok</span>(<span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="ident">py</span>.<span class="prelude-val">None</span>()))
     })<span class="question-mark">?</span>;
 
     <span class="ident">get_event_loop</span>(<span class="ident">py</span>).<span class="ident">call_method1</span>(<span class="string">&quot;run_until_complete&quot;</span>, (<span class="ident">coro</span>,))<span class="question-mark">?</span>;
@@ -577,11 +576,11 @@
     <span class="kw">let</span> <span class="ident">future_tx1</span> <span class="op">=</span> <span class="ident">future_rx</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">future_tx2</span> <span class="op">=</span> <span class="ident">future_rx</span>.<span class="ident">clone</span>();
 
-    <span class="ident">R</span>::<span class="ident">spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">R</span>::<span class="ident">spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
+    <span class="ident">R::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">R::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
             <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">fut</span>.<span class="kw">await</span>;
 
-            <span class="ident">Python</span>::<span class="ident">with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                 <span class="kw">if</span> <span class="ident">set_result</span>(<span class="ident">py</span>, <span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>), <span class="ident">result</span>)
                     .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
                     .<span class="ident">is_err</span>()
@@ -594,11 +593,11 @@
         .<span class="kw">await</span>
         {
             <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">is_panic</span>() {
-                <span class="ident">Python</span>::<span class="ident">with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+                <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                     <span class="kw">if</span> <span class="ident">set_result</span>(
                         <span class="ident">py</span>,
                         <span class="ident">future_tx2</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>),
-                        <span class="prelude-val">Err</span>(<span class="ident">PyException</span>::<span class="ident">new_err</span>(<span class="string">&quot;rust future panicked&quot;</span>)),
+                        <span class="prelude-val">Err</span>(<span class="ident">PyException::new_err</span>(<span class="string">&quot;rust future panicked&quot;</span>)),
                     )
                     .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
                     .<span class="ident">is_err</span>()
@@ -692,14 +691,14 @@
     <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
     <span class="kw">let</span> <span class="ident">future_rx</span> <span class="op">=</span> <span class="ident">CREATE_FUTURE</span>.<span class="ident">get</span>().<span class="ident">expect</span>(<span class="ident">EXPECT_INIT</span>).<span class="ident">as_ref</span>(<span class="ident">py</span>).<span class="ident">call0</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">future_tx1</span> <span class="op">=</span> <span class="ident">PyObject</span>::<span class="ident">from</span>(<span class="ident">future_rx</span>);
+    <span class="kw">let</span> <span class="ident">future_tx1</span> <span class="op">=</span> <span class="ident">PyObject::from</span>(<span class="ident">future_rx</span>);
     <span class="kw">let</span> <span class="ident">future_tx2</span> <span class="op">=</span> <span class="ident">future_tx1</span>.<span class="ident">clone</span>();
 
-    <span class="ident">R</span>::<span class="ident">spawn_local</span>(<span class="kw">async</span> <span class="kw">move</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">R</span>::<span class="ident">spawn_local</span>(<span class="kw">async</span> <span class="kw">move</span> {
+    <span class="ident">R::spawn_local</span>(<span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">R::spawn_local</span>(<span class="kw">async</span> <span class="kw">move</span> {
             <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">fut</span>.<span class="kw">await</span>;
 
-            <span class="ident">Python</span>::<span class="ident">with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                 <span class="kw">if</span> <span class="ident">set_result</span>(<span class="ident">py</span>, <span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>), <span class="ident">result</span>)
                     .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
                     .<span class="ident">is_err</span>()
@@ -712,11 +711,11 @@
         .<span class="kw">await</span>
         {
             <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">is_panic</span>() {
-                <span class="ident">Python</span>::<span class="ident">with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+                <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                     <span class="kw">if</span> <span class="ident">set_result</span>(
                         <span class="ident">py</span>,
                         <span class="ident">future_tx2</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>),
-                        <span class="prelude-val">Err</span>(<span class="ident">PyException</span>::<span class="ident">new_err</span>(<span class="string">&quot;rust future panicked&quot;</span>)),
+                        <span class="prelude-val">Err</span>(<span class="ident">PyException::new_err</span>(<span class="string">&quot;rust future panicked&quot;</span>)),
                     )
                     .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
                     .<span class="ident">is_err</span>()
@@ -731,5 +730,4 @@
     <span class="prelude-val">Ok</span>(<span class="ident">future_rx</span>)
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-search-js="../../search-index.js"></div>
-    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>
