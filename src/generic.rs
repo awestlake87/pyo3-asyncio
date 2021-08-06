@@ -244,6 +244,10 @@ where
     result
 }
 
+fn cancelled(future: &PyAny) -> PyResult<bool> {
+    future.getattr("cancelled")?.call0()?.is_true()
+}
+
 fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
     match result {
         Ok(val) => {
@@ -461,29 +465,34 @@ where
             let result = R::scope(event_loop2.clone(), fut).await;
 
             Python::with_gil(move |py| {
-                if set_result(event_loop2.as_ref(py), future_tx1.as_ref(py), result)
+                if cancelled(future_tx1.as_ref(py))
                     .map_err(dump_err(py))
-                    .is_err()
+                    .unwrap_or(false)
                 {
-
-                    // Cancelled
+                    return;
                 }
+
+                let _ = set_result(event_loop2.as_ref(py), future_tx1.as_ref(py), result)
+                    .map_err(dump_err(py));
             });
         })
         .await
         {
             if e.is_panic() {
                 Python::with_gil(move |py| {
-                    if set_result(
+                    if cancelled(future_tx2.as_ref(py))
+                        .map_err(dump_err(py))
+                        .unwrap_or(false)
+                    {
+                        return;
+                    }
+
+                    let _ = set_result(
                         event_loop.as_ref(py),
                         future_tx2.as_ref(py),
                         Err(RustPanic::new_err("rust future panicked")),
                     )
-                    .map_err(dump_err(py))
-                    .is_err()
-                    {
-                        // Cancelled
-                    }
+                    .map_err(dump_err(py));
                 });
             }
         }
@@ -777,28 +786,34 @@ where
             let result = R::scope_local(event_loop2.clone(), fut).await;
 
             Python::with_gil(move |py| {
-                if set_result(event_loop2.as_ref(py), future_tx1.as_ref(py), result)
+                if cancelled(future_tx1.as_ref(py))
                     .map_err(dump_err(py))
-                    .is_err()
+                    .unwrap_or(false)
                 {
-                    // Cancelled
+                    return;
                 }
+
+                let _ = set_result(event_loop2.as_ref(py), future_tx1.as_ref(py), result)
+                    .map_err(dump_err(py));
             });
         })
         .await
         {
             if e.is_panic() {
                 Python::with_gil(move |py| {
-                    if set_result(
+                    if cancelled(future_tx2.as_ref(py))
+                        .map_err(dump_err(py))
+                        .unwrap_or(false)
+                    {
+                        return;
+                    }
+
+                    let _ = set_result(
                         event_loop.as_ref(py),
                         future_tx2.as_ref(py),
                         Err(RustPanic::new_err("Rust future panicked")),
                     )
-                    .map_err(dump_err(py))
-                    .is_err()
-                    {
-                        // Cancelled
-                    }
+                    .map_err(dump_err(py));
                 });
             }
         }
