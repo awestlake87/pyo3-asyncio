@@ -194,7 +194,7 @@ async fn test_cancel() -> PyResult<()> {
     {
         Python::with_gil(|py| -> PyResult<()> {
             assert!(py
-                .import("asyncio.exceptions")?
+                .import("asyncio")?
                 .getattr("CancelledError")?
                 .downcast::<PyType>()
                 .unwrap()
