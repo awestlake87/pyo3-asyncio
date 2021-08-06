@@ -1,6 +1,11 @@
 use std::{rc::Rc, time::Duration};
 
-use pyo3::{prelude::*, types::PyType, wrap_pyfunction};
+use pyo3::{
+    prelude::*,
+    proc_macro::pymodule,
+    types::{IntoPyDict, PyType},
+    wrap_pyfunction, wrap_pymodule,
+};
 
 use crate::common;
 
@@ -26,8 +31,9 @@ fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 }
 
 #[pyo3_asyncio::tokio::test]
-async fn test_into_coroutine() -> PyResult<()> {
-    let fut = Python::with_gil(|py| {
+fn test_into_coroutine() -> PyResult<()> {
+    #[allow(deprecated)]
+    Python::with_gil(|py| {
         let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
 
         sleeper_mod.add_wrapped(wrap_pyfunction!(sleep_into_coroutine))?;
@@ -39,15 +45,18 @@ async fn test_into_coroutine() -> PyResult<()> {
             "test_into_coroutine_mod",
         )?;
 
-        pyo3_asyncio::tokio::into_future(test_mod.call_method1(
+        let fut = pyo3_asyncio::into_future(test_mod.call_method1(
             "sleep_for_1s",
             (sleeper_mod.getattr("sleep_into_coroutine")?,),
-        )?)
-    })?;
+        )?)?;
 
-    fut.await?;
+        pyo3_asyncio::tokio::run_until_complete(pyo3_asyncio::get_event_loop(py), async move {
+            fut.await?;
+            Ok(())
+        })?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[pyo3_asyncio::tokio::test]
@@ -197,4 +206,49 @@ async fn test_cancel() -> PyResult<()> {
     }
 
     Ok(())
+}
+/// This module is implemented in Rust.
+#[pymodule]
+fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
+    #![allow(deprecated)]
+    #[pyfn(m, "sleep")]
+    fn sleep(py: Python) -> PyResult<&PyAny> {
+        pyo3_asyncio::async_std::future_into_py(py, async move {
+            async_std::task::sleep(Duration::from_millis(500)).await;
+            Ok(Python::with_gil(|py| py.None()))
+        })
+    }
+
+    Ok(())
+}
+
+const TEST_CODE: &str = r#"
+async def main():
+    return await test_mod.sleep()
+
+asyncio.run(main())
+"#;
+
+#[pyo3_asyncio::tokio::test]
+fn test_multiple_asyncio_run() -> PyResult<()> {
+    Python::with_gil(|py| {
+        pyo3_asyncio::tokio::run(py, async move {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            Ok(())
+        })?;
+        pyo3_asyncio::tokio::run(py, async move {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            Ok(())
+        })?;
+
+        let d = [
+            ("asyncio", py.import("asyncio")?.into()),
+            ("test_mod", wrap_pymodule!(test_mod)(py)),
+        ]
+        .into_py_dict(py);
+
+        py.run(TEST_CODE, Some(d), None)?;
+        py.run(TEST_CODE, Some(d), None)?;
+        Ok(())
+    })
 }

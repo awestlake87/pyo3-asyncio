@@ -4,8 +4,8 @@ use pyo3::{prelude::*, PyNativeType};
 
 #[allow(deprecated)]
 use crate::{
-    asyncio_get_event_loop, call_soon_threadsafe, close, create_future, dump_err, err::RustPanic,
-    get_event_loop, get_running_loop, into_future_with_loop,
+    asyncio, call_soon_threadsafe, close, create_future, dump_err, err::RustPanic, get_event_loop,
+    get_running_loop, into_future_with_loop,
 };
 
 /// Generic utilities for a JoinError
@@ -69,7 +69,7 @@ where
 /// [`run_forever`](`crate::run_forever`)
 ///
 /// # Arguments
-/// * `py` - The current PyO3 GIL guard
+/// * `event_loop` - The Python event loop that should run the future
 /// * `fut` - The future to drive to completion
 ///
 /// # Examples
@@ -127,8 +127,9 @@ where
 /// #
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
+/// # let event_loop = py.import("asyncio")?.call_method0("new_event_loop")?;
 /// # #[cfg(feature = "tokio-runtime")]
-/// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _>(py, async move {
+/// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _>(event_loop, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
 /// })?;
@@ -140,13 +141,11 @@ where
 /// # .unwrap();
 /// # });
 /// ```
-pub fn run_until_complete<R, F>(py: Python, fut: F) -> PyResult<()>
+pub fn run_until_complete<R, F>(event_loop: &PyAny, fut: F) -> PyResult<()>
 where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let event_loop = asyncio_get_event_loop(py)?;
-
     let coro = future_into_py_with_loop::<R, _>(event_loop, async move {
         fut.await?;
         Ok(Python::with_gil(|py| py.None()))
@@ -235,9 +234,9 @@ where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let event_loop = asyncio_get_event_loop(py)?;
+    let event_loop = asyncio(py)?.call_method0("new_event_loop")?;
 
-    let result = run_until_complete::<R, F>(py, fut);
+    let result = run_until_complete::<R, F>(event_loop, fut);
 
     close(event_loop)?;
 

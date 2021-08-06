@@ -134,7 +134,7 @@ pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
 /// [`run_forever`](`crate::run_forever`)
 ///
 /// # Arguments
-/// * `py` - The current PyO3 GIL guard
+/// * `event_loop` - The Python event loop that should run the future
 /// * `fut` - The future to drive to completion
 ///
 /// # Examples
@@ -148,7 +148,8 @@ pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
 /// #
 /// # Python::with_gil(|py| {
 /// # pyo3_asyncio::with_runtime(py, || {
-/// pyo3_asyncio::async_std::run_until_complete(py, async move {
+/// # let event_loop = py.import("asyncio")?.call_method0("new_event_loop")?;
+/// pyo3_asyncio::async_std::run_until_complete(event_loop, async move {
 ///     async_std::task::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
 /// })?;
@@ -160,11 +161,11 @@ pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
 /// # .unwrap();
 /// # });
 /// ```
-pub fn run_until_complete<F>(py: Python, fut: F) -> PyResult<()>
+pub fn run_until_complete<F>(event_loop: &PyAny, fut: F) -> PyResult<()>
 where
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    generic::run_until_complete::<AsyncStdRuntime, _>(py, fut)
+    generic::run_until_complete::<AsyncStdRuntime, _>(event_loop, fut)
 }
 
 /// Run the event loop until the given Future completes
