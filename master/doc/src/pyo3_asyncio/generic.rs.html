@@ -493,9 +493,7 @@
 }
 
 <span class="kw">fn</span> <span class="ident">cancelled</span>(<span class="ident">future</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-    <span class="ident">future</span>.<span class="ident">getattr</span>(<span class="string">&quot;cancelled&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">call0</span>()<span class="question-mark">?</span>
-        .<span class="ident">is_true</span>()
+    <span class="ident">future</span>.<span class="ident">getattr</span>(<span class="string">&quot;cancelled&quot;</span>)<span class="question-mark">?</span>.<span class="ident">call0</span>()<span class="question-mark">?</span>.<span class="ident">is_true</span>()
 }
 
 <span class="kw">fn</span> <span class="ident">set_result</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">future</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>, <span class="ident">result</span>: <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -601,12 +599,12 @@
             <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                 <span class="kw">if</span> <span class="ident">cancelled</span>(<span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))
                     .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
-                    .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
+                    .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
+                {
                     <span class="kw">return</span>;
                 }
 
-                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">set_result</span>(<span class="ident">py</span>, <span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>), <span class="ident">result</span>)
-                    .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>));
+                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">set_result</span>(<span class="ident">py</span>, <span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>), <span class="ident">result</span>).<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>));
             });
         })
         .<span class="kw">await</span>
@@ -615,7 +613,8 @@
                 <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                     <span class="kw">if</span> <span class="ident">cancelled</span>(<span class="ident">future_tx2</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))
                         .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
-                        .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
+                        .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
+                    {
                         <span class="kw">return</span>;
                     }
 
@@ -722,12 +721,12 @@
             <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                 <span class="kw">if</span> <span class="ident">cancelled</span>(<span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))
                     .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
-                    .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
+                    .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
+                {
                     <span class="kw">return</span>;
                 }
 
-                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">set_result</span>(<span class="ident">py</span>, <span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>), <span class="ident">result</span>)
-                    .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>));
+                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">set_result</span>(<span class="ident">py</span>, <span class="ident">future_tx1</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>), <span class="ident">result</span>).<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>));
             });
         })
         .<span class="kw">await</span>
@@ -736,7 +735,8 @@
                 <span class="ident">Python::with_gil</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
                     <span class="kw">if</span> <span class="ident">cancelled</span>(<span class="ident">future_tx2</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))
                         .<span class="ident">map_err</span>(<span class="ident">dump_err</span>(<span class="ident">py</span>))
-                        .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
+                        .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
+                    {
                         <span class="kw">return</span>;
                     }
 
