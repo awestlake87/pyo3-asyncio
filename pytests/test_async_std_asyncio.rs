@@ -3,7 +3,7 @@ mod common;
 use std::{rc::Rc, time::Duration};
 
 use async_std::task;
-use pyo3::{prelude::*, wrap_pyfunction};
+use pyo3::{prelude::*, types::PyType, wrap_pyfunction};
 
 #[pyfunction]
 fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
@@ -55,24 +55,6 @@ async fn test_async_sleep() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::async_std::test]
-async fn test_cancel() -> PyResult<()> {
-    let py_future = Python::with_gil(|py| {
-        pyo3_asyncio::async_std::into_coroutine(py, async {
-            async_std::task::sleep(Duration::from_secs(1)).await;
-            Ok(Python::with_gil(|py| py.None()))
-        })
-    })?;
-
-    Python::with_gil(|py| -> PyResult<_> {
-        py_future.as_ref(py).call_method0("cancel")?;
-        pyo3_asyncio::into_future(py_future.as_ref(py))
-    })?
-    .await?;
-
-    Ok(())
-}
-
-#[pyo3_asyncio::async_std::test]
 fn test_blocking_sleep() -> PyResult<()> {
     common::test_blocking_sleep()
 }
@@ -110,6 +92,37 @@ async fn test_local_coroutine() -> PyResult<()> {
         pyo3_asyncio::into_future(py_future)
     })?
     .await?;
+
+    Ok(())
+}
+
+#[pyo3_asyncio::async_std::test]
+async fn test_cancel() -> PyResult<()> {
+    let py_future = Python::with_gil(|py| {
+        pyo3_asyncio::async_std::into_coroutine(py, async {
+            async_std::task::sleep(Duration::from_secs(1)).await;
+            Ok(Python::with_gil(|py| py.None()))
+        })
+    })?;
+
+    if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
+        py_future.as_ref(py).call_method0("cancel")?;
+        pyo3_asyncio::into_future(py_future.as_ref(py))
+    })?
+    .await
+    {
+        Python::with_gil(|py| -> PyResult<()> {
+            assert!(py
+                .import("asyncio.exceptions")?
+                .getattr("CancelledError")?
+                .downcast::<PyType>()
+                .unwrap()
+                .is_instance(e.pvalue(py))?);
+            Ok(())
+        })?;
+    } else {
+        panic!("expected CancelledError");
+    }
 
     Ok(())
 }

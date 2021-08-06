@@ -1,6 +1,6 @@
 use std::{rc::Rc, time::Duration};
 
-use pyo3::{prelude::*, wrap_pyfunction};
+use pyo3::{prelude::*, types::PyType, wrap_pyfunction};
 
 use crate::common;
 
@@ -100,4 +100,35 @@ fn test_local_set_coroutine() -> PyResult<()> {
 
         Ok(())
     })
+}
+
+#[pyo3_asyncio::tokio::test]
+async fn test_cancel() -> PyResult<()> {
+    let py_future = Python::with_gil(|py| {
+        pyo3_asyncio::tokio::into_coroutine(py, async {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            Ok(Python::with_gil(|py| py.None()))
+        })
+    })?;
+
+    if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
+        py_future.as_ref(py).call_method0("cancel")?;
+        pyo3_asyncio::into_future(py_future.as_ref(py))
+    })?
+    .await
+    {
+        Python::with_gil(|py| -> PyResult<()> {
+            assert!(py
+                .import("asyncio.exceptions")?
+                .getattr("CancelledError")?
+                .downcast::<PyType>()
+                .unwrap()
+                .is_instance(e.pvalue(py))?);
+            Ok(())
+        })?;
+    } else {
+        panic!("expected CancelledError");
+    }
+
+    Ok(())
 }
