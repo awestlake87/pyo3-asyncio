@@ -114,9 +114,7 @@ where
 }
 
 fn cancelled(future: &PyAny) -> PyResult<bool> {
-    future.getattr("cancelled")?
-        .call0()?
-        .is_true()
+    future.getattr("cancelled")?.call0()?.is_true()
 }
 
 fn set_result(py: Python, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
@@ -222,12 +220,12 @@ where
             Python::with_gil(move |py| {
                 if cancelled(future_tx1.as_ref(py))
                     .map_err(dump_err(py))
-                    .unwrap_or(false) {
+                    .unwrap_or(false)
+                {
                     return;
                 }
 
-                let _ = set_result(py, future_tx1.as_ref(py), result)
-                    .map_err(dump_err(py));
+                let _ = set_result(py, future_tx1.as_ref(py), result).map_err(dump_err(py));
             });
         })
         .await
@@ -236,7 +234,8 @@ where
                 Python::with_gil(move |py| {
                     if cancelled(future_tx2.as_ref(py))
                         .map_err(dump_err(py))
-                        .unwrap_or(false) {
+                        .unwrap_or(false)
+                    {
                         return;
                     }
 
@@ -343,12 +342,12 @@ where
             Python::with_gil(move |py| {
                 if cancelled(future_tx1.as_ref(py))
                     .map_err(dump_err(py))
-                    .unwrap_or(false) {
+                    .unwrap_or(false)
+                {
                     return;
                 }
 
-                let _ = set_result(py, future_tx1.as_ref(py), result)
-                    .map_err(dump_err(py));
+                let _ = set_result(py, future_tx1.as_ref(py), result).map_err(dump_err(py));
             });
         })
         .await
@@ -357,7 +356,8 @@ where
                 Python::with_gil(move |py| {
                     if cancelled(future_tx2.as_ref(py))
                         .map_err(dump_err(py))
-                        .unwrap_or(false) {
+                        .unwrap_or(false)
+                    {
                         return;
                     }
 
