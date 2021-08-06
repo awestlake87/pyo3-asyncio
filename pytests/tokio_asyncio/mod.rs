@@ -125,16 +125,6 @@ async fn test_other_awaitables() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::tokio::test]
-fn test_init_tokio_twice() -> PyResult<()> {
-    // tokio has already been initialized in test main. call these functions to
-    // make sure they don't cause problems with the other tests.
-    pyo3_asyncio::tokio::init_multi_thread_once();
-    pyo3_asyncio::tokio::init_current_thread_once();
-
-    Ok(())
-}
-
-#[pyo3_asyncio::tokio::test]
 fn test_local_future_into_py(event_loop: PyObject) -> PyResult<()> {
     tokio::task::LocalSet::new().block_on(pyo3_asyncio::tokio::get_runtime(), async {
         Python::with_gil(|py| {

@@ -124,8 +124,8 @@ Export an async function that makes use of `async-std`:
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<PyObject> {
-    pyo3_asyncio::async_std::into_coroutine(py, async {
+fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+    pyo3_asyncio::async_std::future_into_py(py, async {
         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
         Ok(Python::with_gil(|py| py.None()))
     })
@@ -148,8 +148,8 @@ If you want to use `tokio` instead, here's what your module should look like:
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<PyObject> {
-    pyo3_asyncio::tokio::into_coroutine(py, async {
+fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+    pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Ok(Python::with_gil(|py| py.None()))
     })
@@ -157,10 +157,6 @@ fn rust_sleep(py: Python) -> PyResult<PyObject> {
 
 #[pymodule]
 fn my_async_module(py: Python, m: &PyModule) -> PyResult<()> {
-    // Tokio needs explicit initialization before any pyo3-asyncio conversions.
-    // The module import is a prime place to do this.
-    pyo3_asyncio::tokio::init_multi_thread_once();
-
     m.add_function(wrap_pyfunction!(rust_sleep, m)?)?;
 
     Ok(())
