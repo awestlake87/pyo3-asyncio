@@ -90,17 +90,14 @@
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Utilities for writing PyO3 Asyncio tests
 #[cfg(feature = "testing")]
-#[doc(inline)]
 pub mod testing;
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>async-std-runtime</code></span> PyO3 Asyncio functions specific to the async-std runtime
 #[cfg(feature = "async-std")]
-#[doc(inline)]
 pub mod async_std;
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>tokio-runtime</code></span> PyO3 Asyncio functions specific to the tokio runtime
 #[cfg(feature = "tokio-runtime")]
-#[doc(inline)]
 pub mod tokio;
 
 /// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
