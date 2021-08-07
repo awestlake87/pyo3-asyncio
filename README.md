@@ -361,6 +361,121 @@ async fn main() -> PyResult<()> {
 }
 ```
 
+### Non-standard Python Event Loops
+
+Python allows you to use alternatives to the default `asyncio` event loop. One
+popular alternative is `uvloop`. In `v0.13` using non-standard event loops was
+a bit of an ordeal, but in `v0.14` it's trivial.
+
+#### Using `uvloop` in a PyO3 Asyncio Native Extensions
+
+```toml
+# Cargo.toml
+
+[lib]
+name = "my_async_module"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.14", features = ["extension-module", "auto-initialize"] }
+pyo3-asyncio = { version = "0.14", features = ["tokio-runtime"] }
+async-std = "1.9"
+tokio = "1.4"
+```
+
+```rust
+//! lib.rs
+
+use pyo3::{prelude::*, wrap_pyfunction};
+
+#[pyfunction]
+fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+    pyo3_asyncio::tokio::future_into_py(py, async {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        Ok(Python::with_gil(|py| py.None()))
+    })
+}
+
+#[pymodule]
+fn my_async_module(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(rust_sleep, m)?)?;
+
+    Ok(())
+}
+```
+
+```bash
+$ cargo build --release && mv target/release/libmy_async_module.so my_async_module.so
+   Compiling pyo3-asyncio-lib v0.1.0 (pyo3-asyncio-lib)
+    Finished release [optimized] target(s) in 1.00s
+$ PYTHONPATH=target/release/ python3
+Python 3.8.8 (default, Apr 13 2021, 19:58:26) 
+[GCC 7.3.0] :: Anaconda, Inc. on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import asyncio
+>>> import uvloop
+>>> 
+>>> import my_async_module
+>>> 
+>>> uvloop.install()
+>>> 
+>>> async def main():
+...     await my_async_module.rust_sleep()
+... 
+>>> asyncio.run(main())
+>>>
+```
+
+#### Using `uvloop` in Rust Applications
+
+Using `uvloop` in Rust applications is a bit trickier, but it's still possible
+with relatively few modifications.
+
+> Unfortunately, we can't make use of the `#[pyo3_asyncio::<runtime>::main]` attribute with non-standard event loops. This is because the `#[pyo3_asyncio::<runtime>::main]` proc macro has to interact with the Python
+event loop before we can install the `uvloop` policy.
+
+```toml
+[dependencies]
+async-std = "1.9"
+pyo3 = "0.14"
+pyo3-asyncio = { version = "0.14", features = ["async-std-runtime"] }
+```
+
+```rust
+//! main.rs
+
+use pyo3::{prelude::*, types::PyType};
+
+fn main() -> PyResult<()> {
+    pyo3::prepare_freethreaded_python();
+
+    Python::with_gil(|py| {
+        let uvloop = py.import("uvloop")?;
+        uvloop.call_method0("install")?;
+
+        // store a reference for the assertion
+        let uvloop = PyObject::from(uvloop);
+
+        pyo3_asyncio::async_std::run(py, async move {
+            // verify that we are on a uvloop.Loop
+            Python::with_gil(|py| -> PyResult<()> {
+                assert!(uvloop
+                    .as_ref(py)
+                    .getattr("Loop")?
+                    .downcast::<PyType>()
+                    .unwrap()
+                    .is_instance(pyo3_asyncio::async_std::get_current_loop(py)?)?);
+                Ok(())
+            })?;
+
+            async_std::task::sleep(std::time::Duration::from_secs(1)).await;
+
+            Ok(())
+        })
+    })
+}
+```
+
 ### Event Loop References and Thread-awareness
 
 One problem that arises when interacting with Python's asyncio library is that the functions we use to get a reference to the Python event loop can only be called in certain contexts. Since PyO3 Asyncio needs to interact with Python's event loop during conversions, the context of these conversions can matter a lot. 
