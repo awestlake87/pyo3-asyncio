@@ -363,23 +363,25 @@ async fn main() -> PyResult<()> {
 
 ### Event Loop References and Thread-awareness
 
-One problem that arises when interacting with Python's asyncio library is that the functions we use to get a reference to the Python event loop can only be called in certain contexts. Since PyO3 Asyncio requires references to the event loop when performing conversions between Rust and Python, this is unfortunately something that you need to worry about.
+One problem that arises when interacting with Python's asyncio library is that the functions we use to get a reference to the Python event loop can only be called in certain contexts. Since PyO3 Asyncio needs to interact with Python's event loop during conversions, the context of these conversions can matter a lot. 
+
+> The core conversions we've mentioned so far in this guide should insulate you from these concerns in most cases, but in the event that they don't, this section should provide you with the information you need to solve these problems.
 
 #### The Main Dilemma
 
-Python programs can have many independent event loop instances throughout the lifetime of the application (`asyncio.run` for example creates its own event loop each time it's called for instance), and they can even run concurrent with other event loops. The most correct method of obtaining a reference to the Python event loop is via `asyncio.get_running_loop`.
+Python programs can have many independent event loop instances throughout the lifetime of the application (`asyncio.run` for example creates its own event loop each time it's called for instance), and they can even run concurrent with other event loops. For this reason, the most correct method of obtaining a reference to the Python event loop is via `asyncio.get_running_loop`.
 
-`asyncio.get_running_loop` returns the event loop associated with the current OS thread. It can be used inside Python coroutines to spawn concurrent tasks, interact with timers, or in our case signal between Rust and Python. This is all well and good when we are operating on a Python thread, but what happens when we want to perform a PyO3 Asyncio conversion on a _Rust_ thread? Since the Rust thread is not associated with a Python event loop, `asyncio.get_running_loop` will fail.
+`asyncio.get_running_loop` returns the event loop associated with the current OS thread. It can be used inside Python coroutines to spawn concurrent tasks, interact with timers, or in our case signal between Rust and Python. This is all well and good when we are operating on a Python thread, but since Rust threads are not associated with a Python event loop, `asyncio.get_running_loop` will fail when called on a Rust runtime.
 
 #### The Solution
 
-A really straightforward way of dealing with this problem is to pass a reference to the associated Python event loop for every conversion. That's why in PyO3 Asyncio, we introduced a new set of conversion functions that do just that:
+A really straightforward way of dealing with this problem is to pass a reference to the associated Python event loop for every conversion. That's why in `v0.14`, we introduced a new set of conversion functions that do just that:
 
 - `pyo3_asyncio::into_future_with_loop` - Convert a Python awaitable into a Rust future with the given asyncio event loop.
 - `pyo3_asyncio::<runtime>::future_into_py_with_loop` - Convert a Rust future into a Python awaitable with the given asyncio event loop.
 - `pyo3_asyncio::<runtime>::local_future_into_py_with_loop` - Convert a `!Send` Rust future into a Python awaitable with the given asyncio event loop.
 
-One clear disadvantage to this approach (besides the verbose naming) is that the Rust application has to explicitly track its references to the Python event loop. In native libraries, we can't make any assumptions about the underlying event loop, so the only reliable way to make sure our conversions work properly is to store a reference to the current event loop to use later on.
+One clear disadvantage to this approach (aside from the verbose naming) is that the Rust application has to explicitly track its references to the Python event loop. In native libraries, we can't make any assumptions about the underlying event loop, so the only reliable way to make sure our conversions work properly is to store a reference to the current event loop at the callsite to use later on.
 
 ```rust
 use pyo3::prelude::*;
@@ -420,7 +422,7 @@ Another disadvantage to this explicit approach that is less obvious is that we c
 
 In order to detect the Python event loop at the callsite, we need something like `asyncio.get_running_loop` that works for _both Python and Rust_. In Python, `asyncio.get_running_loop` uses thread-local data to retrieve the event loop associated with the current thread. What we need in Rust is something that can retrieve the Python event loop associated with the current _task_.
 
-Enter `pyo3_asyncio::<runtime>::get_current_loop`. This function first checks task-local data for a Python event loop, then falls back on `asyncio.get_running_loop` if no task-local event loop is found. This way both bases are convered.
+Enter `pyo3_asyncio::<runtime>::get_current_loop`. This function first checks task-local data for a Python event loop, then falls back on `asyncio.get_running_loop` if no task-local event loop is found. This way both bases are covered.
 
 Now, all we need is a way to store the event loop in task-local data. Since this is a runtime-specific feature, you can find the following functions in each runtime module:
 
@@ -440,6 +442,7 @@ fn sleep(py: Python) -> PyResult<&PyAny> {
 
     pyo3_asyncio::tokio::future_into_py_with_loop(
         current_loop, 
+        // Store the current loop in task-local data 
         pyo3_asyncio::tokio::scope(current_loop.into(), async move {
             let py_sleep = Python::with_gil(|py| {
                 pyo3_asyncio::into_future_with_loop(
@@ -464,6 +467,7 @@ fn wrap_sleep(py: Python) -> PyResult<&PyAny> {
 
     pyo3_asyncio::tokio::future_into_py_with_loop(
         current_loop, 
+        // Store the current loop in task-local data 
         pyo3_asyncio::tokio::scope(current_loop.into(), async move {
             let py_sleep = Python::with_gil(|py| {
                 pyo3_asyncio::into_future_with_loop(
@@ -491,11 +495,14 @@ fn my_mod(py: Python, m: &PyModule) -> PyResult<()> {
 
 Even though this is more correct, it's clearly not more ergonomic. That's why we introduced a new set of functions with this functionality baked in:
 
-- `pyo3_asyncio::<runtime>::into_future` - Convert a Python awaitable into a Rust future (using `pyo3_asyncio::<runtime>::get_current_loop`)
-- `pyo3_asyncio::<runtime>::future_into_py` - Convert a Rust future into a Python awaitable (using `pyo3_asyncio::<runtime>::get_current_loop` and `pyo3_asyncio::<runtime>::scope` to set the task-local event loop for the given Rust future)
-- `pyo3_asyncio::<runtime>::local_future_into_py` - Convert a `!Send` Rust future into a Python awaitable (using `pyo3_asyncio::<runtime>::get_current_loop` and `pyo3_asyncio::<runtime>::scope_local` to set the task-local event loop for the given Rust future).
+- `pyo3_asyncio::<runtime>::into_future` 
+  > Convert a Python awaitable into a Rust future (using `pyo3_asyncio::<runtime>::get_current_loop`)
+- `pyo3_asyncio::<runtime>::future_into_py` 
+  > Convert a Rust future into a Python awaitable (using `pyo3_asyncio::<runtime>::get_current_loop` and `pyo3_asyncio::<runtime>::scope` to set the task-local event loop for the given Rust future)
+- `pyo3_asyncio::<runtime>::local_future_into_py` 
+  > Convert a `!Send` Rust future into a Python awaitable (using `pyo3_asyncio::<runtime>::get_current_loop` and `pyo3_asyncio::<runtime>::scope_local` to set the task-local event loop for the given Rust future).
 
-__These are the functions that we recommend using__. With these functions, the previous example can be written like so:
+__These are the functions that we recommend using__. With these functions, the previous example can be rewritten to be more compact:
 
 ```rust
 use pyo3::prelude::*;
@@ -545,10 +552,10 @@ Part of the reason why it's taken so long to push out a `v0.14` release is becau
 
 This new release should address most the core issues that users have reported in the `v0.13` release, so I think we can expect more stability going forward.
 
-Also, a special thanks to @ShadowJonathan for helping with the design and review
+Also, a special thanks to [@ShadowJonathan](https://github.com/ShadowJonathan) for helping with the design and review
 of these changes!
 
-- @awestlake87
+- [@awestlake87](https://github.com/awestlake87)
 
 ## PyO3 Asyncio in Cargo Tests
 
