@@ -381,7 +381,7 @@ asyncio.run(rust_sleep())
 ```
 
 You might be surprised to find out that this throws an error:
-```
+```bash
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
 RuntimeError: no running event loop
