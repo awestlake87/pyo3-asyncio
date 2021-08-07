@@ -21,7 +21,24 @@
 
 This library can give spurious failures during finalization prior to PyO3 release `v0.13.2`. Make sure your PyO3 dependency is up-to-date!
 
+## PyO3 Asyncio Primer
+
+If you are working with a Python library that makes use of async functions or wish to provide 
+Python bindings for an async Rust library, [`pyo3-asyncio`](https://github.com/awestlake87/pyo3-asyncio)
+likely has the tools you need. It provides conversions between async functions in both Python and 
+Rust and was designed with first-class support for popular Rust runtimes such as 
+[`tokio`](https://tokio.rs/) and [`async-std`](https://async.rs/). In addition, all async Python 
+code runs on the default `asyncio` event loop, so `pyo3-asyncio` should work just fine with existing 
+Python libraries.
+
+In the following sections, we'll give a general overview of `pyo3-asyncio` explaining how to call 
+async Python functions with PyO3, how to call async Rust functions from Python, and how to configure
+your codebase to manage the runtimes of both.
+
 ## Quickstart
+
+Here are some examples to get you started right away! A more detailed breakdown
+of the concepts in these examples can be found in the following sections.
 
 ### Rust Applications
 Here we initialize the runtime, import Python's `asyncio` library and run the given future to completion using Python's default `EventLoop` and `async-std`. Inside the future, we convert `asyncio` sleep into a Rust future and await it.
@@ -177,30 +194,16 @@ Python 3.8.5 (default, Jan 27 2021, 15:41:15)
 [GCC 9.3.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import asyncio
+>>>
 >>> from my_async_module import rust_sleep
 >>> 
+>>> async def main():
+>>>     await rust_sleep()
+>>>
 >>> # should sleep for 1s
->>> asyncio.get_event_loop().run_until_complete(rust_sleep())
+>>> asyncio.run(main())
 >>>
 ```
-
-> Note that we are using `EventLoop.run_until_complete` here instead of the newer `asyncio.run`. That is because `asyncio.run` will set up its own internal event loop that `pyo3_asyncio` will not be aware of. For this reason, running `pyo3_asyncio` conversions through `asyncio.run` is not currently supported.
-> 
-> This restriction may be lifted in a future release.
-
-## PyO3 Asyncio Primer
-
-If you are working with a Python library that makes use of async functions or wish to provide 
-Python bindings for an async Rust library, [`pyo3-asyncio`](https://github.com/awestlake87/pyo3-asyncio)
-likely has the tools you need. It provides conversions between async functions in both Python and 
-Rust and was designed with first-class support for popular Rust runtimes such as 
-[`tokio`](https://tokio.rs/) and [`async-std`](https://async.rs/). In addition, all async Python 
-code runs on the default `asyncio` event loop, so `pyo3-asyncio` should work just fine with existing 
-Python libraries.
-
-In the following sections, we'll give a general overview of `pyo3-asyncio` explaining how to call 
-async Python functions with PyO3, how to call async Rust functions from Python, and how to configure
-your codebase to manage the runtimes of both.
 
 ## Awaiting an Async Python Function in Rust
 
@@ -359,6 +362,49 @@ async fn main() -> PyResult<()> {
 
     Ok(())
 }
+```
+
+### A Note About `asyncio.run`
+
+In Python 3.7+, the recommended way to run a top-level coroutine with `asyncio`
+is with `asyncio.run`. In `v0.13` we recommended against using this function due to initialization issues, but in `v0.14` it's perfectly valid to use this function... with a caveat.
+
+Since our Rust <--> Python conversions require a reference to the Python event loop, this poses a problem. Imagine we have a PyO3 Asyncio module that defines
+a `rust_sleep` function like in previous examples. You might rightfully assume that you can call pass this directly into `asyncio.run` like this:
+
+```python
+import asyncio
+
+from my_async_module import rust_sleep
+
+asyncio.run(rust_sleep())
+```
+
+You might be surprised to find out that this throws an error:
+```
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+RuntimeError: no running event loop
+```
+
+What's happening here is that we are calling `rust_sleep` _before_ the future is
+actually running on the event loop created by `asyncio.run`. This is counter-intuitive, but expected behaviour, and unfortunately there doesn't seem to be a good way of solving this problem within PyO3 Asyncio itself.
+
+However, we can make this example work with a simple workaround:
+
+```python
+import asyncio
+
+from my_async_module import rust_sleep
+
+# Calling main will just construct the coroutine that later calls rust_sleep.
+# - This ensures that rust_sleep will be called when the event loop is running,
+#   not before.
+async def main():
+    await rust_sleep()
+
+# Run the main() coroutine at the top-level instead
+asyncio.run(main())
 ```
 
 ### Non-standard Python Event Loops
