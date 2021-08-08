@@ -1,6 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Run the event loop forever"><meta name="keywords" content="rust, rustlang, rust-lang, run_forever"><title>run_forever in pyo3_asyncio - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings"></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><div class="sidebar-elems"><h2 class="location">Other items in<br><a href="index.html">pyo3_asyncio</a></h2><div id="sidebar-vars" data-name="run_forever" data-ty="fn" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img src="../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img src="../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Function <a href="index.html">pyo3_asyncio</a>::<wbr><a class="fn" href="#">run_forever</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/pyo3_asyncio/lib.rs.html#275-285" title="goto source code">[src]</a></span></h1><pre class="rust fn">pub fn run_forever(py: Python&lt;'_&gt;) -&gt; PyResult&lt;<a class="primitive" href="https://doc.rust-lang.org/1.54.0/std/primitive.unit.html">()</a>&gt;</pre><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Run the event loop forever</p>
+<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><div class="sidebar-elems"><h2 class="location">Other items in<br><a href="index.html">pyo3_asyncio</a></h2><div id="sidebar-vars" data-name="run_forever" data-ty="fn" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img src="../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img src="../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Function <a href="index.html">pyo3_asyncio</a>::<wbr><a class="fn" href="#">run_forever</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/pyo3_asyncio/lib.rs.html#553-563" title="goto source code">[src]</a></span></h1><pre class="rust fn">pub fn run_forever(py: Python&lt;'_&gt;) -&gt; PyResult&lt;<a class="primitive" href="https://doc.rust-lang.org/1.54.0/std/primitive.unit.html">()</a>&gt;</pre><div class="item-info"><div class="stab deprecated"><span class="emoji">👎</span> Deprecated since 0.14.0: <p>see the <a href="https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014">migration guide</a> for more details</p>
+</div></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Run the event loop forever</p>
 <p>This can be called instead of <code>run_until_complete</code> to run the event loop
 until <code>stop</code> is called rather than driving a future to completion.</p>
 <p>After this function returns, the event loop can be resumed with either <code>run_until_complete</code> or
@@ -11,25 +12,38 @@ until <code>stop</code> is called rather than driving a future to completion.</p
 </ul>
 <h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
 <div class="example-wrap"><pre class="rust rust-example-rendered">
-<span class="comment">// Wait 1 second, then stop the event loop</span>
-<span class="ident">async_std::task::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-    <span class="ident">async_std::task::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">1</span>)).<span class="kw">await</span>;
-    <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-        <span class="kw">let</span> <span class="ident">event_loop</span> <span class="op">=</span> <span class="ident">pyo3_asyncio::get_event_loop</span>(<span class="ident">py</span>);
-         
-        <span class="ident">event_loop</span>
-            .<span class="ident">call_method1</span>(
-                <span class="string">&quot;call_soon_threadsafe&quot;</span>,
-                (<span class="ident">event_loop</span>
-                    .<span class="ident">getattr</span>(<span class="string">&quot;stop&quot;</span>)
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">print_and_set_sys_last_vars</span>(<span class="ident">py</span>))
-                    .<span class="ident">unwrap</span>(),),
-                )
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">print_and_set_sys_last_vars</span>(<span class="ident">py</span>))
-                .<span class="ident">unwrap</span>();
-    })
-});        
+<span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">pyo3::PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
+    <span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+     
+    <span class="comment">// call this or use pyo3 0.14 &quot;auto-initialize&quot; feature</span>
+    <span class="ident">pyo3::prepare_freethreaded_python</span>();
 
-<span class="comment">// block until stop is called</span>
-<span class="ident">pyo3_asyncio::run_forever</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;</pre></div>
+    <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+        <span class="ident">pyo3_asyncio::with_runtime</span>(<span class="ident">py</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">event_loop_hdl</span> <span class="op">=</span> <span class="ident">PyObject::from</span>(<span class="ident">pyo3_asyncio::get_event_loop</span>(<span class="ident">py</span>));
+            <span class="comment">// Wait 1 second, then stop the event loop</span>
+            <span class="ident">async_std::task::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
+                <span class="ident">async_std::task::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">1</span>)).<span class="kw">await</span>;
+                <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+                    <span class="ident">event_loop_hdl</span>
+                        .<span class="ident">as_ref</span>(<span class="ident">py</span>)
+                        .<span class="ident">call_method1</span>(
+                            <span class="string">&quot;call_soon_threadsafe&quot;</span>,
+                            (<span class="ident">event_loop_hdl</span>
+                                .<span class="ident">as_ref</span>(<span class="ident">py</span>)
+                                .<span class="ident">getattr</span>(<span class="string">&quot;stop&quot;</span>)
+                                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">print_and_set_sys_last_vars</span>(<span class="ident">py</span>))
+                                .<span class="ident">unwrap</span>(),),
+                            )
+                            .<span class="ident">unwrap</span>();
+                })
+            });
+     
+            <span class="ident">pyo3_asyncio::run_forever</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;
+
+            <span class="prelude-val">Ok</span>(())
+        })
+    })
+}</pre></div>
 </div></details></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="pyo3_asyncio" data-search-index-js="../search-index.js" data-search-js="../search.js"></div><script src="../main.js"></script></body></html>

@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Rust Bindings to the Python Asyncio Event Loop"><meta name="keywords" content="rust, rustlang, rust-lang, pyo3_asyncio"><title>pyo3_asyncio - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings"></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><h2 class="location">Crate pyo3_asyncio</h2><div class="block version"><p>Version 0.13.5</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all pyo3_asyncio's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="pyo3_asyncio" data-ty="mod" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img src="../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img src="../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">pyo3_asyncio</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/pyo3_asyncio/lib.rs.html#1-433" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Rust Bindings to the Python Asyncio Event Loop</p>
+<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><h2 class="location">Crate pyo3_asyncio</h2><div class="block version"><p>Version 0.14.0</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all pyo3_asyncio's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="pyo3_asyncio" data-ty="mod" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img src="../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img src="../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">pyo3_asyncio</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/pyo3_asyncio/lib.rs.html#1-779" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Rust Bindings to the Python Asyncio Event Loop</p>
 <h1 id="motivation" class="section-header"><a href="#motivation">Motivation</a></h1>
 <p>This crate aims to provide a convenient interface to manage the interop between Python and
 Rust’s async/await models. It supports conversions between Rust and Python futures and manages
@@ -20,6 +20,194 @@ handles the communication between separate Rust event loops.</p>
 to have control over the main thread in order to handle signals like CTRL-C correctly. This
 means that Cargo’s default test harness will no longer work since it doesn’t provide a method of
 overriding the main function to add our event loop initialization and finalization.</p>
+<h2 id="event-loop-references" class="section-header"><a href="#event-loop-references">Event Loop References</a></h2>
+<p>One problem that arises when interacting with Python’s asyncio library is that the functions we use to get a reference to the Python event loop can only be called in certain contexts. Since PyO3 Asyncio needs to interact with Python’s event loop during conversions, the context of these conversions can matter a lot.</p>
+<blockquote>
+<p>The core conversions we’ve mentioned so far in this guide should insulate you from these concerns in most cases, but in the event that they don’t, this section should provide you with the information you need to solve these problems.</p>
+</blockquote>
+<h3 id="the-main-dilemma" class="section-header"><a href="#the-main-dilemma">The Main Dilemma</a></h3>
+<p>Python programs can have many independent event loop instances throughout the lifetime of the application (<code>asyncio.run</code> for example creates its own event loop each time it’s called for instance), and they can even run concurrent with other event loops. For this reason, the most correct method of obtaining a reference to the Python event loop is via <code>asyncio.get_running_loop</code>.</p>
+<p><code>asyncio.get_running_loop</code> returns the event loop associated with the current OS thread. It can be used inside Python coroutines to spawn concurrent tasks, interact with timers, or in our case signal between Rust and Python. This is all well and good when we are operating on a Python thread, but since Rust threads are not associated with a Python event loop, <code>asyncio.get_running_loop</code> will fail when called on a Rust runtime.</p>
+<h3 id="the-solution" class="section-header"><a href="#the-solution">The Solution</a></h3>
+<p>A really straightforward way of dealing with this problem is to pass a reference to the associated Python event loop for every conversion. That’s why in <code>v0.14</code>, we introduced a new set of conversion functions that do just that:</p>
+<ul>
+<li><code>pyo3_asyncio::into_future_with_loop</code> - Convert a Python awaitable into a Rust future with the given asyncio event loop.</li>
+<li><code>pyo3_asyncio::&lt;runtime&gt;::future_into_py_with_loop</code> - Convert a Rust future into a Python awaitable with the given asyncio event loop.</li>
+<li><code>pyo3_asyncio::&lt;runtime&gt;::local_future_into_py_with_loop</code> - Convert a <code>!Send</code> Rust future into a Python awaitable with the given asyncio event loop.</li>
+</ul>
+<p>One clear disadvantage to this approach (aside from the verbose naming) is that the Rust application has to explicitly track its references to the Python event loop. In native libraries, we can’t make any assumptions about the underlying event loop, so the only reliable way to make sure our conversions work properly is to store a reference to the current event loop at the callsite to use later on.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+
+<span class="attribute">#[<span class="ident">pyfunction</span>]</span>
+<span class="kw">fn</span> <span class="ident">sleep</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">current_loop</span> <span class="op">=</span> <span class="ident">pyo3_asyncio::get_running_loop</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">loop_ref</span> <span class="op">=</span> <span class="ident">PyObject::from</span>(<span class="ident">current_loop</span>);
+
+    <span class="comment">// Convert the async move { } block to a Python awaitable</span>
+    <span class="ident">pyo3_asyncio::tokio::future_into_py_with_loop</span>(<span class="ident">current_loop</span>, <span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">let</span> <span class="ident">py_sleep</span> <span class="op">=</span> <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="comment">// Sometimes we need to call other async Python functions within</span>
+            <span class="comment">// this future. In order for this to work, we need to track the</span>
+            <span class="comment">// event loop from earlier.</span>
+            <span class="ident">pyo3_asyncio::into_future_with_loop</span>(
+                <span class="ident">loop_ref</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>),
+                <span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;asyncio&quot;</span>)<span class="question-mark">?</span>.<span class="ident">call_method1</span>(<span class="string">&quot;sleep&quot;</span>, (<span class="number">1</span>,))<span class="question-mark">?</span>
+            )
+        })<span class="question-mark">?</span>;
+
+        <span class="ident">py_sleep</span>.<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(<span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="ident">py</span>.<span class="prelude-val">None</span>()))
+    })
+}
+
+<span class="attribute">#[<span class="ident">pymodule</span>]</span>
+<span class="kw">fn</span> <span class="ident">my_mod</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">PyModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="ident">m</span>.<span class="ident">add_function</span>(<span class="macro">wrap_pyfunction!</span>(<span class="ident">sleep</span>, <span class="ident">m</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(())
+}</pre></div>
+<blockquote>
+<p>A naive solution to this tracking problem would be to cache a global reference to the asyncio event loop that all PyO3 Asyncio conversions can use. In fact this is what we did in PyO3 Asyncio <code>v0.13</code>. This works well for applications, but it soon became clear that this is not so ideal for libraries. Libraries usually have no direct control over how the event loop is managed, they’re just expected to work with any event loop at any point in the application. This problem is compounded further when multiple event loops are used in the application since the global reference will only point to one.</p>
+</blockquote>
+<p>Another disadvantage to this explicit approach that is less obvious is that we can no longer call our <code>#[pyfunction] fn sleep</code> on a Rust runtime since <code>asyncio.get_running_loop</code> only works on Python threads! It’s clear that we need a slightly more flexible approach.</p>
+<p>In order to detect the Python event loop at the callsite, we need something like <code>asyncio.get_running_loop</code> that works for <em>both Python and Rust</em>. In Python, <code>asyncio.get_running_loop</code> uses thread-local data to retrieve the event loop associated with the current thread. What we need in Rust is something that can retrieve the Python event loop associated with the current <em>task</em>.</p>
+<p>Enter <code>pyo3_asyncio::&lt;runtime&gt;::get_current_loop</code>. This function first checks task-local data for a Python event loop, then falls back on <code>asyncio.get_running_loop</code> if no task-local event loop is found. This way both bases are covered.</p>
+<p>Now, all we need is a way to store the event loop in task-local data. Since this is a runtime-specific feature, you can find the following functions in each runtime module:</p>
+<ul>
+<li><code>pyo3_asyncio::&lt;runtime&gt;::scope</code> - Store the event loop in task-local data when executing the given Future.</li>
+<li><code>pyo3_asyncio::&lt;runtime&gt;::scope_local</code> - Store the event loop in task-local data when executing the given <code>!Send</code> Future.</li>
+</ul>
+<p>With these new functions, we can make our previous example more correct:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+
+<span class="attribute">#[<span class="ident">pyfunction</span>]</span>
+<span class="kw">fn</span> <span class="ident">sleep</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
+    <span class="comment">// get the current event loop through task-local data</span>
+    <span class="comment">// OR `asyncio.get_running_loop`</span>
+    <span class="kw">let</span> <span class="ident">current_loop</span> <span class="op">=</span> <span class="ident">pyo3_asyncio::tokio::get_current_loop</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;
+
+    <span class="ident">pyo3_asyncio::tokio::future_into_py_with_loop</span>(
+        <span class="ident">current_loop</span>,
+        <span class="comment">// Store the current loop in task-local data</span>
+        <span class="ident">pyo3_asyncio::tokio::scope</span>(<span class="ident">current_loop</span>.<span class="ident">into</span>(), <span class="kw">async</span> <span class="kw">move</span> {
+            <span class="kw">let</span> <span class="ident">py_sleep</span> <span class="op">=</span> <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+                <span class="ident">pyo3_asyncio::into_future_with_loop</span>(
+                    <span class="comment">// Now we can get the current loop through task-local data</span>
+                    <span class="ident">pyo3_asyncio::tokio::get_current_loop</span>(<span class="ident">py</span>)<span class="question-mark">?</span>,
+                    <span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;asyncio&quot;</span>)<span class="question-mark">?</span>.<span class="ident">call_method1</span>(<span class="string">&quot;sleep&quot;</span>, (<span class="number">1</span>,))<span class="question-mark">?</span>
+                )
+            })<span class="question-mark">?</span>;
+
+            <span class="ident">py_sleep</span>.<span class="kw">await</span><span class="question-mark">?</span>;
+
+            <span class="prelude-val">Ok</span>(<span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="ident">py</span>.<span class="prelude-val">None</span>()))
+        })
+    )
+}
+
+<span class="attribute">#[<span class="ident">pyfunction</span>]</span>
+<span class="kw">fn</span> <span class="ident">wrap_sleep</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
+    <span class="comment">// get the current event loop through task-local data</span>
+    <span class="comment">// OR `asyncio.get_running_loop`</span>
+    <span class="kw">let</span> <span class="ident">current_loop</span> <span class="op">=</span> <span class="ident">pyo3_asyncio::tokio::get_current_loop</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;
+
+    <span class="ident">pyo3_asyncio::tokio::future_into_py_with_loop</span>(
+        <span class="ident">current_loop</span>,
+        <span class="comment">// Store the current loop in task-local data</span>
+        <span class="ident">pyo3_asyncio::tokio::scope</span>(<span class="ident">current_loop</span>.<span class="ident">into</span>(), <span class="kw">async</span> <span class="kw">move</span> {
+            <span class="kw">let</span> <span class="ident">py_sleep</span> <span class="op">=</span> <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+                <span class="ident">pyo3_asyncio::into_future_with_loop</span>(
+                    <span class="ident">pyo3_asyncio::tokio::get_current_loop</span>(<span class="ident">py</span>)<span class="question-mark">?</span>,
+                    <span class="comment">// We can also call sleep within a Rust task since the</span>
+                    <span class="comment">// event loop is stored in task local data</span>
+                    <span class="ident">sleep</span>(<span class="ident">py</span>)<span class="question-mark">?</span>
+                )
+            })<span class="question-mark">?</span>;
+
+            <span class="ident">py_sleep</span>.<span class="kw">await</span><span class="question-mark">?</span>;
+
+            <span class="prelude-val">Ok</span>(<span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="ident">py</span>.<span class="prelude-val">None</span>()))
+        })
+    )
+}
+
+<span class="attribute">#[<span class="ident">pymodule</span>]</span>
+<span class="kw">fn</span> <span class="ident">my_mod</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">PyModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="ident">m</span>.<span class="ident">add_function</span>(<span class="macro">wrap_pyfunction!</span>(<span class="ident">sleep</span>, <span class="ident">m</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+    <span class="ident">m</span>.<span class="ident">add_function</span>(<span class="macro">wrap_pyfunction!</span>(<span class="ident">wrap_sleep</span>, <span class="ident">m</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(())
+}</pre></div>
+<p>Even though this is more correct, it’s clearly not more ergonomic. That’s why we introduced a new set of functions with this functionality baked in:</p>
+<ul>
+<li><code>pyo3_asyncio::&lt;runtime&gt;::into_future</code>
+<blockquote>
+<p>Convert a Python awaitable into a Rust future (using <code>pyo3_asyncio::&lt;runtime&gt;::get_current_loop</code>)</p>
+</blockquote>
+</li>
+<li><code>pyo3_asyncio::&lt;runtime&gt;::future_into_py</code>
+<blockquote>
+<p>Convert a Rust future into a Python awaitable (using <code>pyo3_asyncio::&lt;runtime&gt;::get_current_loop</code> and <code>pyo3_asyncio::&lt;runtime&gt;::scope</code> to set the task-local event loop for the given Rust future)</p>
+</blockquote>
+</li>
+<li><code>pyo3_asyncio::&lt;runtime&gt;::local_future_into_py</code>
+<blockquote>
+<p>Convert a <code>!Send</code> Rust future into a Python awaitable (using <code>pyo3_asyncio::&lt;runtime&gt;::get_current_loop</code> and <code>pyo3_asyncio::&lt;runtime&gt;::scope_local</code> to set the task-local event loop for the given Rust future).</p>
+</blockquote>
+</li>
+</ul>
+<p><strong>These are the functions that we recommend using</strong>. With these functions, the previous example can be rewritten to be more compact:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+
+<span class="attribute">#[<span class="ident">pyfunction</span>]</span>
+<span class="kw">fn</span> <span class="ident">sleep</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
+    <span class="ident">pyo3_asyncio::tokio::future_into_py</span>(<span class="ident">py</span>, <span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">let</span> <span class="ident">py_sleep</span> <span class="op">=</span> <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="ident">pyo3_asyncio::tokio::into_future</span>(
+                <span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;asyncio&quot;</span>)<span class="question-mark">?</span>.<span class="ident">call_method1</span>(<span class="string">&quot;sleep&quot;</span>, (<span class="number">1</span>,))<span class="question-mark">?</span>
+            )
+        })<span class="question-mark">?</span>;
+
+        <span class="ident">py_sleep</span>.<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(<span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="ident">py</span>.<span class="prelude-val">None</span>()))
+    })
+}
+
+<span class="attribute">#[<span class="ident">pyfunction</span>]</span>
+<span class="kw">fn</span> <span class="ident">wrap_sleep</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
+    <span class="ident">pyo3_asyncio::tokio::future_into_py</span>(<span class="ident">py</span>, <span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">let</span> <span class="ident">py_sleep</span> <span class="op">=</span> <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+            <span class="ident">pyo3_asyncio::tokio::into_future</span>(<span class="ident">sleep</span>(<span class="ident">py</span>)<span class="question-mark">?</span>)
+        })<span class="question-mark">?</span>;
+
+        <span class="ident">py_sleep</span>.<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(<span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> <span class="ident">py</span>.<span class="prelude-val">None</span>()))
+    })
+}
+
+<span class="attribute">#[<span class="ident">pymodule</span>]</span>
+<span class="kw">fn</span> <span class="ident">my_mod</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">PyModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="ident">m</span>.<span class="ident">add_function</span>(<span class="macro">wrap_pyfunction!</span>(<span class="ident">sleep</span>, <span class="ident">m</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+    <span class="ident">m</span>.<span class="ident">add_function</span>(<span class="macro">wrap_pyfunction!</span>(<span class="ident">wrap_sleep</span>, <span class="ident">m</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(())
+}</pre></div>
+<h2 id="a-note-for-v013-users" class="section-header"><a href="#a-note-for-v013-users">A Note for <code>v0.13</code> Users</a></h2>
+<p>Hey guys, I realize that these are pretty major changes for <code>v0.14</code>, and I apologize in advance for having to modify the public API so much. I hope
+the explanation above gives some much needed context and justification for all the breaking changes.</p>
+<p>Part of the reason why it’s taken so long to push out a <code>v0.14</code> release is because I wanted to make sure we got this release right. There were a lot of issues with the <code>v0.13</code> release that I hadn’t anticipated, and it’s thanks to your feedback and patience that we’ve worked through these issues to get a more correct, more flexible version out there!</p>
+<p>This new release should address most the core issues that users have reported in the <code>v0.13</code> release, so I think we can expect more stability going forward.</p>
+<p>Also, a special thanks to <a href="https://github.com/ShadowJonathan">@ShadowJonathan</a> for helping with the design and review
+of these changes!</p>
+<ul>
+<li><a href="https://github.com/awestlake87">@awestlake87</a></li>
+</ul>
 <h2 id="rusts-event-loop" class="section-header"><a href="#rusts-event-loop">Rust’s Event Loop</a></h2>
 <p>Currently only the async-std and Tokio runtimes are supported by this crate.</p>
 <blockquote>
@@ -69,14 +257,17 @@ features = [&quot;testing&quot;]
 </div></details><h2 id="reexports" class="section-header"><a href="#reexports">Re-exports</a></h2>
 <table><tr class="import-item"><td><code>pub use <a class="mod" href="https://docs.rs/inventory/0.1.10/inventory/index.html" title="mod inventory">inventory</a>;</code></td><td class="docblock-short"></td></tr></table><h2 id="modules" class="section-header"><a href="#modules">Modules</a></h2>
 <table><tr class="module-item"><td><a class="mod" href="async_std/index.html" title="pyo3_asyncio::async_std mod">async_std</a></td><td class="docblock-short"><p><span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>async-std-runtime</code></span> PyO3 Asyncio functions specific to the async-std runtime</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="err/index.html" title="pyo3_asyncio::err mod">err</a></td><td class="docblock-short"><p>Errors and exceptions related to PyO3 Asyncio</p>
 </td></tr><tr class="module-item"><td><a class="mod" href="generic/index.html" title="pyo3_asyncio::generic mod">generic</a></td><td class="docblock-short"><p>Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime</p>
 </td></tr><tr class="module-item"><td><a class="mod" href="testing/index.html" title="pyo3_asyncio::testing mod">testing</a></td><td class="docblock-short"><p><span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Utilities for writing PyO3 Asyncio tests</p>
 </td></tr><tr class="module-item"><td><a class="mod" href="tokio/index.html" title="pyo3_asyncio::tokio mod">tokio</a></td><td class="docblock-short"><p><span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>tokio-runtime</code></span> PyO3 Asyncio functions specific to the tokio runtime</p>
 </td></tr></table><h2 id="functions" class="section-header"><a href="#functions">Functions</a></h2>
-<table><tr class="module-item"><td><a class="fn" href="fn.get_event_loop.html" title="pyo3_asyncio::get_event_loop fn">get_event_loop</a></td><td class="docblock-short"><p>Get a reference to the Python Event Loop from Rust</p>
-</td></tr><tr class="module-item"><td><a class="fn" href="fn.into_future.html" title="pyo3_asyncio::into_future fn">into_future</a></td><td class="docblock-short"><p>Convert a Python <code>awaitable</code> into a Rust Future</p>
-</td></tr><tr class="module-item"><td><a class="fn" href="fn.run_forever.html" title="pyo3_asyncio::run_forever fn">run_forever</a></td><td class="docblock-short"><p>Run the event loop forever</p>
-</td></tr><tr class="module-item"><td><a class="fn" href="fn.try_close.html" title="pyo3_asyncio::try_close fn">try_close</a></td><td class="docblock-short"><p>Shutdown the event loops and perform any necessary cleanup</p>
-</td></tr><tr class="module-item"><td><a class="fn" href="fn.try_init.html" title="pyo3_asyncio::try_init fn">try_init</a></td><td class="docblock-short"><p>Attempt to initialize the Python and Rust event loops</p>
-</td></tr><tr class="module-item"><td><a class="fn" href="fn.with_runtime.html" title="pyo3_asyncio::with_runtime fn">with_runtime</a></td><td class="docblock-short"><p>Wraps the provided function with the initialization and finalization for PyO3 Asyncio</p>
+<table><tr class="module-item"><td><a class="fn" href="fn.get_event_loop.html" title="pyo3_asyncio::get_event_loop fn">get_event_loop</a></td><td class="docblock-short"><span class="stab deprecated" title="">Deprecated</span><p>Get a reference to the Python event loop cached by <code>try_init</code> (0.13 behaviour)</p>
+</td></tr><tr class="module-item"><td><a class="fn" href="fn.get_running_loop.html" title="pyo3_asyncio::get_running_loop fn">get_running_loop</a></td><td class="docblock-short"><p>Get a reference to the Python Event Loop from Rust</p>
+</td></tr><tr class="module-item"><td><a class="fn" href="fn.into_future.html" title="pyo3_asyncio::into_future fn">into_future</a></td><td class="docblock-short"><span class="stab deprecated" title="">Deprecated</span><p>Convert a Python <code>awaitable</code> into a Rust Future</p>
+</td></tr><tr class="module-item"><td><a class="fn" href="fn.into_future_with_loop.html" title="pyo3_asyncio::into_future_with_loop fn">into_future_with_loop</a></td><td class="docblock-short"><p>Convert a Python <code>awaitable</code> into a Rust Future</p>
+</td></tr><tr class="module-item"><td><a class="fn" href="fn.run_forever.html" title="pyo3_asyncio::run_forever fn">run_forever</a></td><td class="docblock-short"><span class="stab deprecated" title="">Deprecated</span><p>Run the event loop forever</p>
+</td></tr><tr class="module-item"><td><a class="fn" href="fn.try_close.html" title="pyo3_asyncio::try_close fn">try_close</a></td><td class="docblock-short"><span class="stab deprecated" title="">Deprecated</span><p>Shutdown the event loops and perform any necessary cleanup</p>
+</td></tr><tr class="module-item"><td><a class="fn" href="fn.try_init.html" title="pyo3_asyncio::try_init fn">try_init</a></td><td class="docblock-short"><span class="stab deprecated" title="">Deprecated</span><p>Attempt to initialize the Python and Rust event loops</p>
+</td></tr><tr class="module-item"><td><a class="fn" href="fn.with_runtime.html" title="pyo3_asyncio::with_runtime fn">with_runtime</a></td><td class="docblock-short"><span class="stab deprecated" title="">Deprecated</span><p>Wraps the provided function with the initialization and finalization for PyO3 Asyncio</p>
 </td></tr></table></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="pyo3_asyncio" data-search-index-js="../search-index.js" data-search-js="../search.js"></div><script src="../main.js"></script></body></html>
