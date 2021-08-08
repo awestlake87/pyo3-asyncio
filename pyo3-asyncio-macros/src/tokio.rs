@@ -219,7 +219,7 @@ fn parse_knobs(
 
     let config = config.build()?;
 
-    let mut rt = match config.flavor {
+    let builder = match config.flavor {
         RuntimeFlavor::CurrentThread => quote! {
             pyo3_asyncio::tokio::re_exports::runtime::Builder::new_current_thread()
         },
@@ -227,8 +227,15 @@ fn parse_knobs(
             pyo3_asyncio::tokio::re_exports::runtime::Builder::new_multi_thread()
         },
     };
+
+    let mut builder_init = quote! {
+        builder.enable_all();
+    };
     if let Some(v) = config.worker_threads {
-        rt = quote! { #rt.worker_threads(#v) };
+        builder_init = quote! {
+            builder.worker_threads(#v);
+            #builder_init;
+        };
     }
 
     let rt_init = match config.flavor {
@@ -247,25 +254,21 @@ fn parse_knobs(
                 #body
             }
 
-            pyo3_asyncio::tokio::init(
-                #rt
-                    .enable_all()
-                    .build()
-                    .unwrap()
-            );
+            pyo3::prepare_freethreaded_python();
+
+            let mut builder = #builder;
+            #builder_init;
+
+            pyo3_asyncio::tokio::init(builder);
 
             #rt_init
 
             pyo3::Python::with_gil(|py| {
-                pyo3_asyncio::with_runtime(py, || {
-                    pyo3_asyncio::tokio::run_until_complete(py, main())?;
-
-                    Ok(())
-                })
-                .map_err(|e| {
-                    e.print_and_set_sys_last_vars(py);
-                })
-                .unwrap();
+                pyo3_asyncio::tokio::run(py, main())
+                    .map_err(|e| {
+                        e.print_and_set_sys_last_vars(py);
+                    })
+                    .unwrap();
             });
         }
     };
