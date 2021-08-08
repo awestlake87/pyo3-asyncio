@@ -682,7 +682,7 @@
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">deprecated</span>(
     <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Use the pyo3_asyncio::async_std::future_into_py instead\n\t\t(see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)&quot;</span>
+    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Use the pyo3_asyncio::async_std::future_into_py instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)&quot;</span>
 )]</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_coroutine</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>
