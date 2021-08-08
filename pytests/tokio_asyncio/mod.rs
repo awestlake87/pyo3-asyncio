@@ -216,7 +216,7 @@ const TEST_CODE: &str = r#"
 async def main():
     return await test_mod.sleep()
 
-asyncio.run(main())
+asyncio.new_event_loop().run_until_complete(main())
 "#;
 
 #[pyo3_asyncio::tokio::test]
