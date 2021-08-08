@@ -518,8 +518,8 @@ fn main() -> PyResult<()> {
 ```
 
 ### Additional Information
-- Managing event loop references can be tricky with pyo3-asyncio. See [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/#event-loop-references) in the API docs to get a better intuition for how event loop references are managed in this library.
-- Testing pyo3-asyncio libraries and applications requires a custom test harness since Python requires control over the main thread. You can find a testing guide in the [API docs for the `testing` module](https://awestlake87.github.io/pyo3-asyncio/master/doc/testing)
+- Managing event loop references can be tricky with pyo3-asyncio. See [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references) in the API docs to get a better intuition for how event loop references are managed in this library.
+- Testing pyo3-asyncio libraries and applications requires a custom test harness since Python requires control over the main thread. You can find a testing guide in the [API docs for the `testing` module](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/testing)
 
 ## Migrating from 0.13 to 0.14
 

@@ -243,7 +243,7 @@ where
 /// ```
 #[deprecated(
     since = "0.14.0",
-    note = "Use the pyo3_asyncio::tokio::future_into_py instead"
+    note = "Use pyo3_asyncio::tokio::future_into_py instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
 )]
 #[allow(deprecated)]
 pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>

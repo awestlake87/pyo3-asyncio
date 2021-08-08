@@ -391,7 +391,7 @@ fn create_future(event_loop: &PyAny) -> PyResult<&PyAny> {
 /// ```
 #[deprecated(
     since = "0.14.0",
-    note = "Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead"
+    note = "Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead\n\t\t(see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
 )]
 #[allow(deprecated)]
 pub fn with_runtime<F, R>(py: Python, f: F) -> PyResult<R>
@@ -431,7 +431,10 @@ fn close(event_loop: &PyAny) -> PyResult<()> {
 /// - Must be called before any other pyo3-asyncio functions.
 /// - Calling `try_init` a second time returns `Ok(())` and does nothing.
 ///   > In future versions this may return an `Err`.
-#[deprecated(since = "0.14.0")]
+#[deprecated(
+    since = "0.14.0",
+    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
+)]
 pub fn try_init(py: Python) -> PyResult<()> {
     CACHED_EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
         let event_loop = asyncio_get_event_loop(py)?;
@@ -483,7 +486,10 @@ pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
 }
 
 /// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
-#[deprecated(since = "0.14.0")]
+#[deprecated(
+    since = "0.14.0",
+    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
+)]
 pub fn get_event_loop(py: Python) -> &PyAny {
     CACHED_EVENT_LOOP.get().expect(EXPECT_INIT).as_ref(py)
 }
@@ -539,7 +545,10 @@ pub fn get_event_loop(py: Python) -> &PyAny {
 /// }
 /// # #[cfg(not(feature = "async-std-runtime"))]
 /// # fn main() {}
-#[deprecated(since = "0.14.0")]
+#[deprecated(
+    since = "0.14.0",
+    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
+)]
 #[allow(deprecated)]
 pub fn run_forever(py: Python) -> PyResult<()> {
     if let Err(e) = get_event_loop(py).call_method0("run_forever") {
@@ -554,7 +563,10 @@ pub fn run_forever(py: Python) -> PyResult<()> {
 }
 
 /// Shutdown the event loops and perform any necessary cleanup
-#[deprecated(since = "0.14.0")]
+#[deprecated(
+    since = "0.14.0",
+    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
+)]
 pub fn try_close(py: Python) -> PyResult<()> {
     if let Some(exec) = EXECUTOR.get() {
         // Shutdown the executor and wait until all threads are cleaned up
@@ -751,7 +763,7 @@ pub fn into_future_with_loop(
 /// ```
 #[deprecated(
     since = "0.14.0",
-    note = "Use pyo3_asyncio::async_std::into_future or pyo3_asyncio::tokio::into_future"
+    note = "Use pyo3_asyncio::async_std::into_future or pyo3_asyncio::tokio::into_future instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
 )]
 #[allow(deprecated)]
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
