@@ -924,6 +924,8 @@ __Before you get started, I personally recommend taking a look at [Event Loop Re
     - Replace `pyo3_asyncio::get_event_loop` with `pyo3_asyncio::<runtime>::get_current_loop`
 5. After all conversions have been replaced with their `v0.14` counterparts, `pyo3_asyncio::try_init` can safely be removed.
 
+> The `v0.13` API will likely still be supported in version `v0.15`, but no solid guarantees after that point.
+
 ## Known Problems
 
 This library can give spurious failures during finalization prior to PyO3 release `v0.13.2`. Make sure your PyO3 dependency is up-to-date!
