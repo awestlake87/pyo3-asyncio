@@ -17,9 +17,7 @@
 
 > PyO3 Asyncio is a _brand new_ part of the broader PyO3 ecosystem. Feel free to open any issues for feature requests or bugfixes for this crate.
 
-## Known Problems
-
-This library can give spurious failures during finalization prior to PyO3 release `v0.13.2`. Make sure your PyO3 dependency is up-to-date!
+__If you're a new-comer, the best way to get started is to read through the primer below! For `v0.13` users I highly recommend reading through the [migration section](#migrating-from-013-to-014) to get a general idea of what's changed in `v0.14`.__
 
 ## PyO3 Asyncio Primer
 
@@ -832,6 +830,103 @@ async fn main() -> pyo3::PyResult<()> {
     pyo3_asyncio::testing::main().await
 }
 ```
+
+## Migrating from 0.13 to 0.14
+
+So what's changed from `v0.13` to `v0.14`? 
+
+Well, a lot actually. There were some pretty major flaws in the initialization behaviour of `v0.13`. While it would have been nicer to address these issues without changing the public API, I decided it'd be better to break some of the old API rather than completely change the underlying behaviour of the existing functions. I realize this is going to be a bit of a headache, so hopefully this section will help you through it.
+
+To make things a bit easier, I decided to keep most of the old API alongside the new one (with some deprecation warnings to encourage users to move away from it). It should be possible to use the `v0.13` API alongside the newer `v0.14` API, which should allow you to upgrade your application piecemeal rather than all at once.
+
+__Before you get started, I personally recommend taking a look at [Event Loop References and Thread-awareness](#event-loop-references-and-thread-awareness) in order to get a better grasp on the motivation behind these changes and the nuance involved in using the new conversions.__
+
+### 0.14 Highlights
+- Tokio initialization is now lazy.
+  - No configuration necessary if you're using the multithreaded scheduler
+  - Calls to `pyo3_asyncio::tokio::init_multithread` or `pyo3_asyncio::tokio::init_multithread_once` can just be removed.
+  - Calls to `pyo3_asyncio::tokio::init_current_thread` or `pyo3_asyncio::tokio::init_current_thread_once` require some special attention.
+  - Custom runtime configuration is done by passing a `tokio::runtime::Builder` into `pyo3_asyncio::tokio::init` instead of a `tokio::runtime::Runtime`
+- A new, more correct set of functions has been added to replace the `v0.13` conversions.
+  - `pyo3_asyncio::into_future_with_loop`
+  - `pyo3_asyncio::<runtime>::future_into_py_with_loop`
+  - `pyo3_asyncio::<runtime>::local_future_into_py_with_loop`
+  - `pyo3_asyncio::<runtime>::into_future`
+  - `pyo3_asyncio::<runtime>::future_into_py`
+  - `pyo3_asyncio::<runtime>::local_future_into_py`
+  - `pyo3_asyncio::<runtime>::get_current_loop`
+- The `ThreadPoolExecutor` is no longer configured automatically at the start.
+  - Fortunately, this doesn't seem to have much effect on `v0.13` code, it just means that it's now possible to configure the executor manually as you see fit.
+
+### Upgrading Your Code to 0.14
+
+1. Fix PyO3 0.14 initialization.
+    - PyO3 0.14 feature gated its automatic initialization behaviour behind "auto-initialize". You can either enable the "auto-initialize" behaviour in your project or add a call to `pyo3::prepare_freethreaded_python()` to the start of your program.
+    - If you're using the `#[pyo3_asyncio::<runtime>::main]` proc macro attributes, then you can skip this step. `#[pyo3_asyncio::<runtime>::main]` will call `pyo3::prepare_freethreaded_python()` at the start regardless of your project's "auto-initialize" feature.
+2. Fix the tokio initialization.
+    - Calls to `pyo3_asyncio::tokio::init_multithread` or `pyo3_asyncio::tokio::init_multithread_once` can just be removed.
+    - If you're using the current thread scheduler, you'll need to manually spawn the thread that it runs on during initialization:
+        ```rust no_run
+        let mut builder = tokio::runtime::Builder::new_current_thread();
+        builder.enable_all();
+
+        pyo3_asyncio::tokio::init(builder);
+        std::thread::spawn(move || {
+            pyo3_asyncio::tokio::get_runtime().block_on(
+                futures::future::pending::<()>()
+            );
+        });
+        ```
+    - Custom `tokio::runtime::Builder` configs can be passed into `pyo3_asyncio::tokio::init`. The `tokio::runtime::Runtime` will be lazily instantiated on the first call to `pyo3_asyncio::tokio::get_runtime()`
+3. If you're using `pyo3_asyncio::run_forever` in your application, you should switch to a more manual approach. 
+    > `run_forever` is not the recommended way of running an event loop in Python, so it might be a good idea to move away from it. This function would have needed to change for `0.14`, but since it's considered an edge case, it was decided that users could just manually call it if they need to.
+    ```rust
+    use pyo3::prelude::*;
+
+    fn main() -> PyResult<()> {
+        pyo3::prepare_freethreaded_python();
+
+        Python::with_gil(|py| {
+            let asyncio = py.import("asyncio")?;
+
+            let event_loop = asyncio.call_method0("new_event_loop")?;
+            asyncio.call_method1("set_event_loop", (event_loop,))?;
+
+            let event_loop_hdl = PyObject::from(event_loop);
+
+            pyo3_asyncio::tokio::get_runtime().spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+                // Stop the event loop manually
+                Python::with_gil(|py| {
+                    event_loop_hdl
+                        .as_ref(py)
+                        .call_method1(
+                            "call_soon_threadsafe",
+                            (event_loop_hdl
+                                .as_ref(py)
+                                .getattr("stop")
+                                .unwrap(),),
+                        )
+                        .unwrap();
+                })
+            });
+
+            event_loop.call_method0("run_forever")?;
+            Ok(())
+        })
+    }
+    ```
+4. Replace conversions with their newer counterparts.
+    > You may encounter some issues regarding the usage of `get_running_loop` vs `get_event_loop`. For more details on these newer conversions and how they should be used see [Event Loop References and Thread-awareness](#event-loop-references-and-thread-awareness).
+    - Replace `pyo3_asyncio::into_future` with `pyo3_asyncio::<runtime>::into_future`
+    - Replace `pyo3_asyncio::<runtime>::into_coroutine` with `pyo3_asyncio::<runtime>::future_into_py`
+    - Replace `pyo3_asyncio::get_event_loop` with `pyo3_asyncio::<runtime>::get_current_loop`
+5. After all conversions have been replaced with their `v0.14` counterparts, `pyo3_asyncio::try_init` can safely be removed.
+
+## Known Problems
+
+This library can give spurious failures during finalization prior to PyO3 release `v0.13.2`. Make sure your PyO3 dependency is up-to-date!
 
 ## MSRV
 Currently the MSRV for this library is 1.46.0, _but_ if you don't need to use the `async-std-runtime`
