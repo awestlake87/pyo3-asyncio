@@ -529,7 +529,7 @@ Well, a lot actually. There were some pretty major flaws in the initialization b
 
 To make things a bit easier, I decided to keep most of the old API alongside the new one (with some deprecation warnings to encourage users to move away from it). It should be possible to use the `v0.13` API alongside the newer `v0.14` API, which should allow you to upgrade your application piecemeal rather than all at once.
 
-__Before you get started, I personally recommend taking a look at [Event Loop References and Thread-awareness](#event-loop-references-and-thread-awareness) in order to get a better grasp on the motivation behind these changes and the nuance involved in using the new conversions.__
+__Before you get started, I personally recommend taking a look at [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references) in order to get a better grasp on the motivation behind these changes and the nuance involved in using the new conversions.__
 
 ### 0.14 Highlights
 - Tokio initialization is now lazy.
