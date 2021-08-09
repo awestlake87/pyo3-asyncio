@@ -77,7 +77,7 @@ attribute.
 [dependencies]
 pyo3 = { version = "0.14" }
 pyo3-asyncio = { version = "0.14", features = ["attributes", "tokio-runtime"] }
-tokio = "1.4"
+tokio = "1.9"
 ```
 
 ```rust
@@ -128,7 +128,7 @@ For `tokio`:
 [dependencies]
 pyo3 = { version = "0.14", features = ["extension-module"] }
 pyo3-asyncio = { version = "0.14", features = ["tokio-runtime"] }
-tokio = "1.4"
+tokio = "1.9"
 ```
 
 Export an async function that makes use of `async-std`:
@@ -421,7 +421,7 @@ crate-type = ["cdylib"]
 pyo3 = { version = "0.14", features = ["extension-module"] }
 pyo3-asyncio = { version = "0.14", features = ["tokio-runtime"] }
 async-std = "1.9"
-tokio = "1.4"
+tokio = "1.9"
 ```
 
 ```rust
