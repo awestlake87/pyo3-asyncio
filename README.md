@@ -482,7 +482,7 @@ pyo3 = "0.14"
 pyo3-asyncio = { version = "0.14", features = ["async-std-runtime"] }
 ```
 
-```rust
+```rust no_run
 //! main.rs
 
 use pyo3::{prelude::*, types::PyType};

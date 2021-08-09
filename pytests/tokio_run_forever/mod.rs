@@ -38,7 +38,6 @@ pub(super) fn test_main() {
 
         event_loop.call_method0("run_forever")?;
 
-        println!("test test_run_forever ... ok");
         Ok(())
     })
     .map_err(|e| Python::with_gil(|py| dump_err(py, e)))

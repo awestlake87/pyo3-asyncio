@@ -40,7 +40,7 @@ fn main() {
 
         event_loop.call_method0("run_forever")?;
 
-        println!("test test_run_forever ... ok");
+        println!("test test_async_std_run_forever ... ok");
         Ok(())
     })
     .map_err(|e| Python::with_gil(|py| dump_err(py, e)))
