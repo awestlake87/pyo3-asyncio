@@ -666,7 +666,7 @@
 <span class="doccomment">///     pyo3_asyncio::testing::main().await</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">/// # #[cfg(not(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
-<span class="doccomment">/// fn main() { }</span>
+<span class="doccomment">/// # fn main() { }</span>
 <span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">parse_args</span>();
