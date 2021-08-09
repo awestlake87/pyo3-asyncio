@@ -609,7 +609,7 @@ __Before you get started, I personally recommend taking a look at [Event Loop Re
     }
     ```
 4. Replace conversions with their newer counterparts.
-    > You may encounter some issues regarding the usage of `get_running_loop` vs `get_event_loop`. For more details on these newer conversions and how they should be used see [Event Loop References and Thread-awareness](#event-loop-references-and-thread-awareness).
+    > You may encounter some issues regarding the usage of `get_running_loop` vs `get_event_loop`. For more details on these newer conversions and how they should be used see [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references).
     - Replace `pyo3_asyncio::into_future` with `pyo3_asyncio::<runtime>::into_future`
     - Replace `pyo3_asyncio::<runtime>::into_coroutine` with `pyo3_asyncio::<runtime>::future_into_py`
     - Replace `pyo3_asyncio::get_event_loop` with `pyo3_asyncio::<runtime>::get_current_loop`
