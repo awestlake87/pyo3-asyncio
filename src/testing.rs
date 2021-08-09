@@ -308,7 +308,7 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
 ///     pyo3_asyncio::testing::main().await
 /// }
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-/// fn main() { }
+/// # fn main() { }
 /// ```
 pub async fn main() -> PyResult<()> {
     let args = parse_args();
