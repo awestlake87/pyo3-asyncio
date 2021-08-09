@@ -105,7 +105,8 @@ jobs:
       - name: Build
         run: cargo build --features=${{env.features}} --verbose --target ${{ matrix.platform.rust-target }}
 
-      - name: Install pyo3-asyncio test dependencies
+      - if: matrix.platform.os != 'windows-latest' 
+        name: Install pyo3-asyncio test dependencies
         run: |
           python -m pip install -U uvloop
 
