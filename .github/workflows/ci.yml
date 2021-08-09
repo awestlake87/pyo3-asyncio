@@ -131,6 +131,9 @@ jobs:
           toolchain: nightly
           override: true
           profile: minimal
+      - name: Install pyo3-asyncio test dependencies
+        run: |
+          python -m pip install -U uvloop
       - uses: actions-rs/cargo@v1
         with:
           command: test 
