@@ -51,8 +51,9 @@
 //! One clear disadvantage to this approach (aside from the verbose naming) is that the Rust application has to explicitly track its references to the Python event loop. In native libraries, we can't make any assumptions about the underlying event loop, so the only reliable way to make sure our conversions work properly is to store a reference to the current event loop at the callsite to use later on.
 //!
 //! ```rust
-//! use pyo3::prelude::*;
+//! use pyo3::{wrap_pyfunction, prelude::*};
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
 //! fn sleep(py: Python) -> PyResult<&PyAny> {
 //!     let current_loop = pyo3_asyncio::get_running_loop(py)?;
@@ -76,6 +77,7 @@
 //!     })
 //! }
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pymodule]
 //! fn my_mod(py: Python, m: &PyModule) -> PyResult<()> {
 //!     m.add_function(wrap_pyfunction!(sleep, m)?)?;
@@ -101,6 +103,7 @@
 //! ```rust no_run
 //! use pyo3::prelude::*;
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
 //! fn sleep(py: Python) -> PyResult<&PyAny> {
 //!     // get the current event loop through task-local data
@@ -126,6 +129,7 @@
 //!     )
 //! }
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
 //! fn wrap_sleep(py: Python) -> PyResult<&PyAny> {
 //!     // get the current event loop through task-local data
@@ -152,6 +156,7 @@
 //!     )
 //! }
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pymodule]
 //! fn my_mod(py: Python, m: &PyModule) -> PyResult<()> {
 //!     m.add_function(wrap_pyfunction!(sleep, m)?)?;
@@ -174,6 +179,7 @@
 //! ```rust
 //! use pyo3::prelude::*;
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
 //! fn sleep(py: Python) -> PyResult<&PyAny> {
 //!     pyo3_asyncio::tokio::future_into_py(py, async move {
@@ -189,6 +195,7 @@
 //!     })
 //! }
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
 //! fn wrap_sleep(py: Python) -> PyResult<&PyAny> {
 //!     pyo3_asyncio::tokio::future_into_py(py, async move {
@@ -202,6 +209,7 @@
 //!     })
 //! }
 //!
+//! # #[cfg(feature = "tokio-runtime")]
 //! #[pymodule]
 //! fn my_mod(py: Python, m: &PyModule) -> PyResult<()> {
 //!     m.add_function(wrap_pyfunction!(sleep, m)?)?;
@@ -391,7 +399,7 @@ fn create_future(event_loop: &PyAny) -> PyResult<&PyAny> {
 /// ```
 #[deprecated(
     since = "0.14.0",
-    note = "Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead\n\t\t(see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
+    note = "Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
 )]
 #[allow(deprecated)]
 pub fn with_runtime<F, R>(py: Python, f: F) -> PyResult<R>

@@ -203,8 +203,8 @@ fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     #![allow(deprecated)]
     #[pyfn(m, "sleep")]
     fn sleep(py: Python) -> PyResult<&PyAny> {
-        pyo3_asyncio::async_std::future_into_py(py, async move {
-            async_std::task::sleep(Duration::from_millis(500)).await;
+        pyo3_asyncio::tokio::future_into_py(py, async move {
+            tokio::time::sleep(Duration::from_millis(500)).await;
             Ok(Python::with_gil(|py| py.None()))
         })
     }

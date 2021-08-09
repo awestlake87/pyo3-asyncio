@@ -30,18 +30,24 @@
 //!
 //! `pytests/test_example.rs` for the `tokio` runtime:
 //! ```rust
+//! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 //! #[pyo3_asyncio::tokio::main]
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
+//! # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
+//! # fn main() {}
 //! ```
 //!
 //! `pytests/test_example.rs` for the `async-std` runtime:
 //! ```rust
+//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 //! #[pyo3_asyncio::async_std::main]
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
+//! # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
+//! # fn main() {}
 //! ```
 //!
 //! ## Cargo Configuration
@@ -69,6 +75,7 @@
 //!
 //! For `async-std` use the [`pyo3_asyncio::async_std::test`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/async_std/attr.test.html) attribute:
 //! ```rust
+//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 //! mod tests {
 //!     use std::{time::Duration, thread};
 //!
@@ -89,14 +96,18 @@
 //!     }
 //! }
 //!
+//! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 //! #[pyo3_asyncio::async_std::main]
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
+//! # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
+//! # fn main() {}
 //! ```
 //!
 //! For `tokio` use the [`pyo3_asyncio::tokio::test`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/tokio/attr.test.html) attribute:
 //! ```rust
+//! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 //! mod tests {
 //!     use std::{time::Duration, thread};
 //!
@@ -117,10 +128,13 @@
 //!     }
 //! }
 //!
+//! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 //! #[pyo3_asyncio::tokio::main]
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
+//! # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
+//! # fn main() {}
 //! ```
 //!
 //! ## Lib Tests
