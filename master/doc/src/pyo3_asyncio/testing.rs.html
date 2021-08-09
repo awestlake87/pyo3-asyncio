@@ -341,6 +341,20 @@
 <span id="339">339</span>
 <span id="340">340</span>
 <span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
 </pre><pre class="rust">
 <span class="doccomment">//! # PyO3 Asyncio Testing Utilities</span>
 <span class="doccomment">//!</span>
@@ -374,18 +388,24 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! `pytests/test_example.rs` for the `tokio` runtime:</span>
 <span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]</span>
 <span class="doccomment">//! #[pyo3_asyncio::tokio::main]</span>
 <span class="doccomment">//! async fn main() -&gt; pyo3::PyResult&lt;()&gt; {</span>
 <span class="doccomment">//!     pyo3_asyncio::testing::main().await</span>
 <span class="doccomment">//! }</span>
+<span class="doccomment">//! # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
+<span class="doccomment">//! # fn main() {}</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! `pytests/test_example.rs` for the `async-std` runtime:</span>
 <span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! # #[cfg(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;))]</span>
 <span class="doccomment">//! #[pyo3_asyncio::async_std::main]</span>
 <span class="doccomment">//! async fn main() -&gt; pyo3::PyResult&lt;()&gt; {</span>
 <span class="doccomment">//!     pyo3_asyncio::testing::main().await</span>
 <span class="doccomment">//! }</span>
+<span class="doccomment">//! # #[cfg(not(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
+<span class="doccomment">//! # fn main() {}</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Cargo Configuration</span>
@@ -413,6 +433,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! For `async-std` use the [`pyo3_asyncio::async_std::test`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/async_std/attr.test.html) attribute:</span>
 <span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! # #[cfg(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;))]</span>
 <span class="doccomment">//! mod tests {</span>
 <span class="doccomment">//!     use std::{time::Duration, thread};</span>
 <span class="doccomment">//!</span>
@@ -433,14 +454,18 @@
 <span class="doccomment">//!     }</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;))]</span>
 <span class="doccomment">//! #[pyo3_asyncio::async_std::main]</span>
 <span class="doccomment">//! async fn main() -&gt; pyo3::PyResult&lt;()&gt; {</span>
 <span class="doccomment">//!     pyo3_asyncio::testing::main().await</span>
 <span class="doccomment">//! }</span>
+<span class="doccomment">//! # #[cfg(not(all(feature = &quot;async-std-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
+<span class="doccomment">//! # fn main() {}</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! For `tokio` use the [`pyo3_asyncio::tokio::test`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/tokio/attr.test.html) attribute:</span>
 <span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]</span>
 <span class="doccomment">//! mod tests {</span>
 <span class="doccomment">//!     use std::{time::Duration, thread};</span>
 <span class="doccomment">//!</span>
@@ -461,10 +486,13 @@
 <span class="doccomment">//!     }</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]</span>
 <span class="doccomment">//! #[pyo3_asyncio::tokio::main]</span>
 <span class="doccomment">//! async fn main() -&gt; pyo3::PyResult&lt;()&gt; {</span>
 <span class="doccomment">//!     pyo3_asyncio::testing::main().await</span>
 <span class="doccomment">//! }</span>
+<span class="doccomment">//! # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
+<span class="doccomment">//! # fn main() {}</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Lib Tests</span>

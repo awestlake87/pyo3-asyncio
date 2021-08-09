@@ -779,6 +779,14 @@
 <span id="777">777</span>
 <span id="778">778</span>
 <span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
 </pre><pre class="rust">
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
@@ -833,8 +841,9 @@
 <span class="doccomment">//! One clear disadvantage to this approach (aside from the verbose naming) is that the Rust application has to explicitly track its references to the Python event loop. In native libraries, we can&#39;t make any assumptions about the underlying event loop, so the only reliable way to make sure our conversions work properly is to store a reference to the current event loop at the callsite to use later on.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```rust</span>
-<span class="doccomment">//! use pyo3::prelude::*;</span>
+<span class="doccomment">//! use pyo3::{wrap_pyfunction, prelude::*};</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">//!     let current_loop = pyo3_asyncio::get_running_loop(py)?;</span>
@@ -858,6 +867,7 @@
 <span class="doccomment">//!     })</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pymodule]</span>
 <span class="doccomment">//! fn my_mod(py: Python, m: &amp;PyModule) -&gt; PyResult&lt;()&gt; {</span>
 <span class="doccomment">//!     m.add_function(wrap_pyfunction!(sleep, m)?)?;</span>
@@ -883,6 +893,7 @@
 <span class="doccomment">//! ```rust no_run</span>
 <span class="doccomment">//! use pyo3::prelude::*;</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">//!     // get the current event loop through task-local data</span>
@@ -908,6 +919,7 @@
 <span class="doccomment">//!     )</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn wrap_sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">//!     // get the current event loop through task-local data</span>
@@ -934,6 +946,7 @@
 <span class="doccomment">//!     )</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pymodule]</span>
 <span class="doccomment">//! fn my_mod(py: Python, m: &amp;PyModule) -&gt; PyResult&lt;()&gt; {</span>
 <span class="doccomment">//!     m.add_function(wrap_pyfunction!(sleep, m)?)?;</span>
@@ -956,6 +969,7 @@
 <span class="doccomment">//! ```rust</span>
 <span class="doccomment">//! use pyo3::prelude::*;</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py(py, async move {</span>
@@ -971,6 +985,7 @@
 <span class="doccomment">//!     })</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn wrap_sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py(py, async move {</span>
@@ -984,6 +999,7 @@
 <span class="doccomment">//!     })</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pymodule]</span>
 <span class="doccomment">//! fn my_mod(py: Python, m: &amp;PyModule) -&gt; PyResult&lt;()&gt; {</span>
 <span class="doccomment">//!     m.add_function(wrap_pyfunction!(sleep, m)?)?;</span>
@@ -1173,7 +1189,7 @@
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">deprecated</span>(
     <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead\n\t\t(see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)&quot;</span>
+    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)&quot;</span>
 )]</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_runtime</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">f</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>
