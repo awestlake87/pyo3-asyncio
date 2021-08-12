@@ -178,11 +178,12 @@ fn multi_thread() -> Builder {
 /// # .unwrap();
 /// # });
 /// ```
-pub fn run_until_complete<F>(event_loop: &PyAny, fut: F) -> PyResult<()>
+pub fn run_until_complete<F, T>(event_loop: &PyAny, fut: F) -> PyResult<T>
 where
-    F: Future<Output = PyResult<()>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: Send + Sync + 'static,
 {
-    generic::run_until_complete::<TokioRuntime, _>(event_loop, fut)
+    generic::run_until_complete::<TokioRuntime, _, T>(event_loop, fut)
 }
 
 /// Run the event loop until the given Future completes
@@ -211,11 +212,12 @@ where
 ///     })
 /// }
 /// ```
-pub fn run<F>(py: Python, fut: F) -> PyResult<()>
+pub fn run<F, T>(py: Python, fut: F) -> PyResult<T>
 where
-    F: Future<Output = PyResult<()>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: Send + Sync + 'static,
 {
-    generic::run::<TokioRuntime, F>(py, fut)
+    generic::run::<TokioRuntime, F, T>(py, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable

@@ -1,4 +1,8 @@
-use std::{future::Future, pin::Pin};
+use std::{
+    future::Future,
+    pin::Pin,
+    sync::{Arc, Mutex},
+};
 
 use pyo3::{prelude::*, PyNativeType};
 
@@ -129,7 +133,7 @@ where
 /// # pyo3_asyncio::with_runtime(py, || {
 /// # let event_loop = py.import("asyncio")?.call_method0("new_event_loop")?;
 /// # #[cfg(feature = "tokio-runtime")]
-/// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _>(event_loop, async move {
+/// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _, _>(event_loop, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
 /// })?;
@@ -141,19 +145,26 @@ where
 /// # .unwrap();
 /// # });
 /// ```
-pub fn run_until_complete<R, F>(event_loop: &PyAny, fut: F) -> PyResult<()>
+pub fn run_until_complete<R, F, T>(event_loop: &PyAny, fut: F) -> PyResult<T>
 where
     R: Runtime,
-    F: Future<Output = PyResult<()>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: Send + Sync + 'static,
 {
+    let result_tx = Arc::new(Mutex::new(None));
+    let result_rx = Arc::clone(&result_tx);
     let coro = future_into_py_with_loop::<R, _, ()>(event_loop, async move {
-        fut.await?;
+        let val = fut.await?;
+        if let Ok(mut result) = result_tx.lock() {
+            *result = Some(val);
+        }
         Ok(())
     })?;
 
     event_loop.call_method1("run_until_complete", (coro,))?;
 
-    Ok(())
+    let result = result_rx.lock().unwrap().take().unwrap();
+    Ok(result)
 }
 
 /// Run the event loop until the given Future completes
@@ -218,7 +229,7 @@ where
 /// #
 /// fn main() {
 ///     Python::with_gil(|py| {
-///         pyo3_asyncio::generic::run::<MyCustomRuntime, _>(py, async move {
+///         pyo3_asyncio::generic::run::<MyCustomRuntime, _, _>(py, async move {
 ///             custom_sleep(Duration::from_secs(1)).await;
 ///             Ok(())
 ///         })
@@ -229,14 +240,15 @@ where
 ///     })
 /// }
 /// ```
-pub fn run<R, F>(py: Python, fut: F) -> PyResult<()>
+pub fn run<R, F, T>(py: Python, fut: F) -> PyResult<T>
 where
     R: Runtime,
-    F: Future<Output = PyResult<()>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: Send + Sync + 'static,
 {
     let event_loop = asyncio(py)?.call_method0("new_event_loop")?;
 
-    let result = run_until_complete::<R, F>(event_loop, fut);
+    let result = run_until_complete::<R, F, T>(event_loop, fut);
 
     close(event_loop)?;
 
