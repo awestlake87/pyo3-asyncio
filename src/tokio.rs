@@ -274,7 +274,7 @@ where
 ///         pyo3_asyncio::tokio::get_current_loop(py)?,
 ///         async move {
 ///             tokio::time::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
+///             Ok(())
 ///         }
 ///     )
 /// }
@@ -306,7 +306,7 @@ where
 ///     let secs = secs.extract()?;
 ///     pyo3_asyncio::tokio::future_into_py(py, async move {
 ///         tokio::time::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
+///         Ok(())
 ///     })
 /// }
 /// ```
@@ -341,7 +341,7 @@ where
 ///         pyo3_asyncio::tokio::get_current_loop(py)?,
 ///         async move {
 ///             tokio::time::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
+///             Ok(())
 ///         }
 ///     )
 /// }
@@ -375,11 +375,12 @@ where
 /// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py_with_loop<'p, F>(event_loop: &'p PyAny, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py_with_loop<'p, F, T>(event_loop: &'p PyAny, fut: F) -> PyResult<&PyAny>
 where
-    F: Future<Output = PyResult<PyObject>> + 'static,
+    F: Future<Output = PyResult<T>> + 'static,
+    T: IntoPy<PyObject>,
 {
-    generic::local_future_into_py_with_loop::<TokioRuntime, _>(event_loop, fut)
+    generic::local_future_into_py_with_loop::<TokioRuntime, _, T>(event_loop, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable
@@ -402,7 +403,7 @@ where
 ///     let secs = Rc::new(secs);
 ///     pyo3_asyncio::tokio::local_future_into_py(py, async move {
 ///         tokio::time::sleep(Duration::from_secs(*secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
+///         Ok(())
 ///     })
 /// }
 ///
@@ -435,11 +436,12 @@ where
 /// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py<F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
-    F: Future<Output = PyResult<PyObject>> + 'static,
+    F: Future<Output = PyResult<T>> + 'static,
+    T: IntoPy<PyObject>,
 {
-    generic::local_future_into_py::<TokioRuntime, _>(py, fut)
+    generic::local_future_into_py::<TokioRuntime, _, T>(py, fut)
 }
 
 /// Convert a Python `awaitable` into a Rust Future

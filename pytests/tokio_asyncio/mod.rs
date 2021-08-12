@@ -26,7 +26,7 @@ fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 
     pyo3_asyncio::tokio::future_into_py(py, async move {
         tokio::time::sleep(Duration::from_secs(secs)).await;
-        Python::with_gil(|py| Ok(py.None()))
+        Ok(())
     })
 }
 

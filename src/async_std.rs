@@ -261,7 +261,7 @@ where
 ///         pyo3_asyncio::async_std::get_current_loop(py)?,
 ///         async move {
 ///             async_std::task::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
+///             Ok(())
 ///         }
 ///     )
 /// }
@@ -293,7 +293,7 @@ where
 ///     let secs = secs.extract()?;
 ///     pyo3_asyncio::async_std::future_into_py(py, async move {
 ///         async_std::task::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
+///         Ok(())
 ///     })
 /// }
 /// ```
@@ -327,7 +327,7 @@ where
 ///         pyo3_asyncio::async_std::get_current_loop(py)?,
 ///         async move {
 ///             async_std::task::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
+///             Ok(())
 ///         }
 ///     )?.into())
 /// }
@@ -346,11 +346,12 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py_with_loop<F, T>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
-    F: Future<Output = PyResult<PyObject>> + 'static,
+    F: Future<Output = PyResult<T>> + 'static,
+    T: IntoPy<PyObject>,
 {
-    generic::local_future_into_py_with_loop::<AsyncStdRuntime, _>(event_loop, fut)
+    generic::local_future_into_py_with_loop::<AsyncStdRuntime, _, T>(event_loop, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable
@@ -373,7 +374,7 @@ where
 ///     let secs = Rc::new(secs);
 ///     pyo3_asyncio::async_std::local_future_into_py(py, async move {
 ///         async_std::task::sleep(Duration::from_secs(*secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
+///         Ok(())
 ///     })
 /// }
 ///
@@ -391,11 +392,12 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-pub fn local_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py<F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
-    F: Future<Output = PyResult<PyObject>> + 'static,
+    F: Future<Output = PyResult<T>> + 'static,
+    T: IntoPy<PyObject>,
 {
-    generic::local_future_into_py::<AsyncStdRuntime, _>(py, fut)
+    generic::local_future_into_py::<AsyncStdRuntime, _, T>(py, fut)
 }
 
 /// Convert a Python `awaitable` into a Rust Future
