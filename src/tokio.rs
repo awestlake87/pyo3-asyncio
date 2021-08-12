@@ -279,11 +279,12 @@ where
 ///     )
 /// }
 /// ```
-pub fn future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+pub fn future_into_py_with_loop<F, T>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: IntoPy<PyObject>,
 {
-    generic::future_into_py_with_loop::<TokioRuntime, F>(event_loop, fut)
+    generic::future_into_py_with_loop::<TokioRuntime, F, T>(event_loop, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable
@@ -309,11 +310,12 @@ where
 ///     })
 /// }
 /// ```
-pub fn future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+pub fn future_into_py<F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: IntoPy<PyObject>,
 {
-    generic::future_into_py::<TokioRuntime, _>(py, fut)
+    generic::future_into_py::<TokioRuntime, _, T>(py, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable

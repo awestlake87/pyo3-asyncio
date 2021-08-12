@@ -146,9 +146,9 @@ where
     R: Runtime,
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
-    let coro = future_into_py_with_loop::<R, _>(event_loop, async move {
+    let coro = future_into_py_with_loop::<R, _, ()>(event_loop, async move {
         fut.await?;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })?;
 
     event_loop.call_method1("run_until_complete", (coro,))?;
@@ -446,10 +446,11 @@ where
 ///     )
 /// }
 /// ```
-pub fn future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+pub fn future_into_py_with_loop<R, F, T>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime,
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: IntoPy<PyObject>,
 {
     let future_rx = create_future(event_loop)?;
     let future_tx1 = PyObject::from(future_rx);
@@ -471,8 +472,12 @@ where
                     return;
                 }
 
-                let _ = set_result(event_loop2.as_ref(py), future_tx1.as_ref(py), result)
-                    .map_err(dump_err(py));
+                let _ = set_result(
+                    event_loop2.as_ref(py),
+                    future_tx1.as_ref(py),
+                    result.map(|val| val.into_py(py)),
+                )
+                .map_err(dump_err(py));
             });
         })
         .await
@@ -575,12 +580,13 @@ where
 ///     })
 /// }
 /// ```
-pub fn future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
+pub fn future_into_py<R, F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime,
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: IntoPy<PyObject>,
 {
-    future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
+    future_into_py_with_loop::<R, F, T>(get_current_loop::<R>(py)?, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
@@ -668,7 +674,7 @@ where
     R: Runtime,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    Ok(future_into_py_with_loop::<R, F>(get_event_loop(py), fut)?.into())
+    Ok(future_into_py_with_loop::<R, F, PyObject>(get_event_loop(py), fut)?.into())
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
