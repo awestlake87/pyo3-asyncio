@@ -1,4 +1,8 @@
-use std::{rc::Rc, time::Duration};
+use std::{
+    rc::Rc,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use pyo3::{
     prelude::*,
@@ -168,12 +172,19 @@ async fn test_panic() -> PyResult<()> {
 
 #[pyo3_asyncio::tokio::test]
 async fn test_cancel() -> PyResult<()> {
+    let completed = Arc::new(Mutex::new(false));
+
     let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
-        Ok(pyo3_asyncio::tokio::future_into_py(py, async {
-            tokio::time::sleep(Duration::from_secs(1)).await;
-            Ok(Python::with_gil(|py| py.None()))
-        })?
-        .into())
+        let completed = Arc::clone(&completed);
+        Ok(
+            pyo3_asyncio::tokio::cancellable_future_into_py(py, async move {
+                tokio::time::sleep(Duration::from_secs(1)).await;
+                *completed.lock().unwrap() = true;
+
+                Ok(Python::with_gil(|py| py.None()))
+            })?
+            .into(),
+        )
     })?;
 
     if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
@@ -195,8 +206,14 @@ async fn test_cancel() -> PyResult<()> {
         panic!("expected CancelledError");
     }
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    if *completed.lock().unwrap() {
+        panic!("future still completed")
+    }
+
     Ok(())
 }
+
 /// This module is implemented in Rust.
 #[pymodule]
 fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {

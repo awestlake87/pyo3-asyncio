@@ -1,5 +1,11 @@
-use std::{future::Future, pin::Pin};
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
+use futures::channel::oneshot;
+use pin_project_lite::pin_project;
 use pyo3::{prelude::*, PyNativeType};
 
 #[allow(deprecated)]
@@ -500,6 +506,188 @@ where
     Ok(future_rx)
 }
 
+pin_project! {
+    /// Future returned by [`timeout`](timeout) and [`timeout_at`](timeout_at).
+    #[must_use = "futures do nothing unless you `.await` or poll them"]
+    #[derive(Debug)]
+    struct Cancellable<T> {
+        #[pin]
+        future: T,
+        #[pin]
+        cancel_rx: oneshot::Receiver<()>,
+
+        poll_cancel_rx: bool
+    }
+}
+
+impl<T> Cancellable<T> {
+    fn new_with_cancel_rx(future: T, cancel_rx: oneshot::Receiver<()>) -> Self {
+        Self {
+            future,
+            cancel_rx,
+
+            poll_cancel_rx: true,
+        }
+    }
+}
+
+impl<T> Future for Cancellable<T>
+where
+    T: Future<Output = PyResult<PyObject>>,
+{
+    type Output = T::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+
+        // First, try polling the future
+        if let Poll::Ready(v) = this.future.poll(cx) {
+            return Poll::Ready(v);
+        }
+
+        // Now check for cancellation
+        if *this.poll_cancel_rx {
+            match this.cancel_rx.poll(cx) {
+                Poll::Ready(Ok(())) => {
+                    *this.poll_cancel_rx = false;
+                    // The python future has already been cancelled, so this return value will never
+                    // be used.
+                    Poll::Ready(Ok(Python::with_gil(|py| py.None())))
+                }
+                Poll::Ready(Err(_)) => {
+                    *this.poll_cancel_rx = false;
+                    Poll::Pending
+                }
+                Poll::Pending => Poll::Pending,
+            }
+        } else {
+            Poll::Pending
+        }
+    }
+}
+
+#[pyclass]
+struct PyDoneCallback {
+    cancel_tx: Option<oneshot::Sender<()>>,
+}
+
+#[pymethods]
+impl PyDoneCallback {
+    #[call]
+    pub fn __call__(&mut self, fut: &PyAny) -> PyResult<()> {
+        let py = fut.py();
+
+        if cancelled(fut).map_err(dump_err(py)).unwrap_or(false) {
+            let _ = self.cancel_tx.take().unwrap().send(());
+        }
+
+        Ok(())
+    }
+}
+
+/// Convert a Rust Future into a Python awaitable with a generic runtime
+///
+/// Unlike [`future_into_py_with_loop`], this function will stop the Rust future from running when
+/// the `asyncio.Future` is cancelled from Python.
+///
+/// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl MyCustomRuntime {
+/// #     async fn sleep(_: Duration) {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #     
+/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
+/// #         unreachable!()
+/// #     }
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::generic::cancellable_future_into_py_with_loop::<MyCustomRuntime, _>(
+///         pyo3_asyncio::generic::get_current_loop::<MyCustomRuntime>(py)?,
+///         async move {
+///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+/// ```
+pub fn cancellable_future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+where
+    R: Runtime,
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    let (cancel_tx, cancel_rx) = oneshot::channel();
+
+    let py_fut = future_into_py_with_loop::<R, _>(
+        event_loop,
+        Cancellable::new_with_cancel_rx(fut, cancel_rx),
+    )?;
+
+    py_fut.call_method1(
+        "add_done_callback",
+        (PyDoneCallback {
+            cancel_tx: Some(cancel_tx),
+        },),
+    )?;
+
+    Ok(py_fut)
+}
+
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
 /// # Arguments
@@ -581,6 +769,92 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
+}
+
+/// Convert a Rust Future into a Python awaitable with a generic runtime
+///
+/// Unlike [`future_into_py`], this function will stop the Rust future from running when the
+/// `asyncio.Future` is cancelled from Python.
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl MyCustomRuntime {
+/// #     async fn sleep(_: Duration) {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #     
+/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
+/// #         unreachable!()
+/// #     }
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::generic::cancellable_future_into_py::<MyCustomRuntime, _>(py, async move {
+///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+/// ```
+pub fn cancellable_future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
+where
+    R: Runtime,
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    cancellable_future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime

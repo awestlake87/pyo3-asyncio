@@ -1,6 +1,10 @@
 mod common;
 
-use std::{rc::Rc, time::Duration};
+use std::{
+    rc::Rc,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use async_std::task;
 use pyo3::{
@@ -171,12 +175,19 @@ async fn test_local_future_into_py() -> PyResult<()> {
 
 #[pyo3_asyncio::async_std::test]
 async fn test_cancel() -> PyResult<()> {
+    let completed = Arc::new(Mutex::new(false));
+
     let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
-        Ok(pyo3_asyncio::async_std::future_into_py(py, async {
-            async_std::task::sleep(Duration::from_secs(1)).await;
-            Ok(Python::with_gil(|py| py.None()))
-        })?
-        .into())
+        let completed = Arc::clone(&completed);
+        Ok(
+            pyo3_asyncio::async_std::cancellable_future_into_py(py, async move {
+                async_std::task::sleep(Duration::from_secs(1)).await;
+                *completed.lock().unwrap() = true;
+
+                Ok(Python::with_gil(|py| py.None()))
+            })?
+            .into(),
+        )
     })?;
 
     if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
@@ -196,6 +207,11 @@ async fn test_cancel() -> PyResult<()> {
         })?;
     } else {
         panic!("expected CancelledError");
+    }
+
+    async_std::task::sleep(Duration::from_secs(1)).await;
+    if *completed.lock().unwrap() {
+        panic!("future still completed")
     }
 
     Ok(())

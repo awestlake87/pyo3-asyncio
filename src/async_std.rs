@@ -275,6 +275,42 @@ where
 
 /// Convert a Rust Future into a Python awaitable
 ///
+/// Unlike [`future_into_py_with_loop`], this function will stop the Rust future from running when
+/// the `asyncio.Future` is cancelled from Python.
+///
+/// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::async_std::cancellable_future_into_py_with_loop(
+///         pyo3_asyncio::async_std::get_current_loop(py)?,
+///         async move {
+///             async_std::task::sleep(Duration::from_secs(secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+/// ```
+pub fn cancellable_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    generic::cancellable_future_into_py_with_loop::<AsyncStdRuntime, F>(event_loop, fut)
+}
+
+/// Convert a Rust Future into a Python awaitable
+///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
 /// * `fut` - The Rust future to be converted
@@ -301,6 +337,39 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     generic::future_into_py::<AsyncStdRuntime, _>(py, fut)
+}
+
+/// Convert a Rust Future into a Python awaitable
+///
+/// Unlike [`future_into_py`], this function will stop the Rust future from running when
+/// the `asyncio.Future` is cancelled from Python.
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::async_std::cancellable_future_into_py(py, async move {
+///         async_std::task::sleep(Duration::from_secs(secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+/// ```
+pub fn cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+{
+    generic::cancellable_future_into_py::<AsyncStdRuntime, _>(py, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable
