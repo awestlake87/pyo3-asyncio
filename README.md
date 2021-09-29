@@ -624,5 +624,5 @@ This library can give spurious failures during finalization prior to PyO3 releas
 ## MSRV
 Currently the MSRV for this library is 1.46.0, _but_ if you don't need to use the `async-std-runtime` 
 or `testing` features, you can still use rust 1.45.0. 
-> `async-std` depends on `socket2` which fails to compile under 1.45.0.
-> `testing` indirectly relies on `bitflags` through `clap`, which is now locked in at MSRV 1.46.0
+- `async-std` depends on `socket2` which fails to compile under 1.45.0.
+- The `testing` feature indirectly relies on `bitflags` through `clap`, which is now locked in at MSRV 1.46.0
