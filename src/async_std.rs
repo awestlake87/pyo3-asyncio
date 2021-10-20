@@ -278,6 +278,10 @@ where
 /// Unlike [`future_into_py_with_loop`], this function will stop the Rust future from running when
 /// the `asyncio.Future` is cancelled from Python.
 ///
+/// __This function will be deprecated in favor of [`future_into_py_with_loop`] in `v0.15` because 
+/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly 
+/// replaced with [`future_into_py_with_loop`].__
+///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
 /// * `fut` - The Rust future to be converted
@@ -343,6 +347,10 @@ where
 ///
 /// Unlike [`future_into_py`], this function will stop the Rust future from running when
 /// the `asyncio.Future` is cancelled from Python.
+///
+/// __This function will be deprecated in favor of [`future_into_py`] in `v0.15` because 
+/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly 
+/// replaced with [`future_into_py`].__
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard

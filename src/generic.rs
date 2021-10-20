@@ -1097,6 +1097,111 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
 ///
+/// Unlike [`local_future_into_py_with_loop`], this function will stop the Rust future from running 
+/// when the `asyncio.Future` is cancelled from Python.
+///
+/// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl MyCustomRuntime {
+/// #     async fn sleep(_: Duration) {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #     
+/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
+/// #         unreachable!()
+/// #     }
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+///     // Rc is !Send so it cannot be passed into pyo3_asyncio::generic::future_into_py
+///     let secs = Rc::new(secs);
+///
+///     pyo3_asyncio::generic::local_cancellable_future_into_py_with_loop::<MyCustomRuntime, _>(
+///         pyo3_asyncio::get_running_loop(py)?,
+///         async move {
+///             MyCustomRuntime::sleep(Duration::from_secs(*secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+/// ```
+pub fn local_cancellable_future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
+where
+    R: Runtime + SpawnLocalExt,
+    F: Future<Output = PyResult<PyObject>> + 'static,
+{
+    let (cancel_tx, cancel_rx) = oneshot::channel();
+
+    let py_fut = local_future_into_py_with_loop::<R, _>(
+        event_loop,
+        Cancellable::new_with_cancel_rx(fut, cancel_rx),
+    )?;
+
+    py_fut.call_method1(
+        "add_done_callback",
+        (PyDoneCallback {
+            cancel_tx: Some(cancel_tx),
+        },),
+    )?;
+
+    Ok(py_fut)
+}
+
+/// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
+///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
 /// * `fut` - The Rust future to be converted
