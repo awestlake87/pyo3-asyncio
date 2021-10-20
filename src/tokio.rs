@@ -291,6 +291,10 @@ where
 /// Unlike [`future_into_py_with_loop`], this function will stop the Rust future from running when
 /// the `asyncio.Future` is cancelled from Python.
 ///
+/// __This function will be deprecated in favor of [`future_into_py_with_loop`] in `v0.15` because
+/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`future_into_py_with_loop`].__
+///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
 /// * `fut` - The Rust future to be converted
@@ -356,6 +360,10 @@ where
 ///
 /// Unlike [`future_into_py`], this function will stop the Rust future from running when
 /// the `asyncio.Future` is cancelled from Python.
+///
+/// __This function will be deprecated in favor of [`future_into_py`] in `v0.15` because
+/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`future_into_py`].__
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -451,6 +459,80 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable
 ///
+/// Unlike [`local_future_into_py_with_loop`], this function will stop the Rust future from running when
+/// the `asyncio.Future` is cancelled from Python.
+///
+/// __This function will be deprecated in favor of [`local_future_into_py_with_loop`] in `v0.15` because
+/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`local_future_into_py_with_loop`].__
+///
+/// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::{rc::Rc, time::Duration};
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable non-send sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py
+///     let secs = Rc::new(secs);
+///
+///     pyo3_asyncio::tokio::local_cancellable_future_into_py_with_loop(
+///         pyo3_asyncio::tokio::get_current_loop(py)?,
+///         async move {
+///             tokio::time::sleep(Duration::from_secs(*secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+///
+/// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
+/// #[pyo3_asyncio::tokio::main]
+/// async fn main() -> PyResult<()> {
+///     let event_loop = Python::with_gil(|py| -> PyResult<PyObject> {
+///         Ok(pyo3_asyncio::tokio::get_current_loop(py)?.into())
+///     })?;
+///
+///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
+///     // we use spawn_blocking in order to use LocalSet::block_on
+///     tokio::task::spawn_blocking(move || {
+///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to
+///         // pyo3_asyncio::tokio::local_future_into_py will panic.
+///         tokio::task::LocalSet::new().block_on(
+///             pyo3_asyncio::tokio::get_runtime(),  
+///             pyo3_asyncio::tokio::scope_local(event_loop, async {
+///                 Python::with_gil(|py| {
+///                     let py_future = sleep_for(py, 1)?;
+///                     pyo3_asyncio::tokio::into_future(py_future)
+///                 })?
+///                 .await?;
+///
+///                 Ok(())
+///             })
+///         )
+///     }).await.unwrap()
+/// }
+/// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+pub fn local_cancellable_future_into_py_with_loop<'p, F>(
+    event_loop: &'p PyAny,
+    fut: F,
+) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + 'static,
+{
+    generic::local_cancellable_future_into_py_with_loop::<TokioRuntime, _>(event_loop, fut)
+}
+
+/// Convert a `!Send` Rust Future into a Python awaitable
+///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
 /// * `fut` - The Rust future to be converted
@@ -507,6 +589,73 @@ where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
     generic::local_future_into_py::<TokioRuntime, _>(py, fut)
+}
+
+/// Convert a `!Send` Rust Future into a Python awaitable
+///
+/// Unlike [`local_future_into_py`], this function will stop the Rust future from running when
+/// the `asyncio.Future` is cancelled from Python.
+///
+/// __This function will be deprecated in favor of [`local_future_into_py`] in `v0.15` because
+/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`local_future_into_py`].__
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::{rc::Rc, time::Duration};
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable non-send sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py
+///     let secs = Rc::new(secs);
+///     pyo3_asyncio::tokio::local_cancellable_future_into_py(py, async move {
+///         tokio::time::sleep(Duration::from_secs(*secs)).await;
+///         Python::with_gil(|py| Ok(py.None()))
+///     })
+/// }
+///
+/// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
+/// #[pyo3_asyncio::tokio::main]
+/// async fn main() -> PyResult<()> {
+///     let event_loop = Python::with_gil(|py| {
+///         PyObject::from(pyo3_asyncio::tokio::get_current_loop(py).unwrap())
+///     });
+///
+///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
+///     // we use spawn_blocking in order to use LocalSet::block_on
+///     tokio::task::spawn_blocking(move || {
+///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to
+///         // pyo3_asyncio::tokio::local_future_into_py will panic.
+///         tokio::task::LocalSet::new().block_on(
+///             pyo3_asyncio::tokio::get_runtime(),  
+///             pyo3_asyncio::tokio::scope_local(event_loop, async {
+///                 Python::with_gil(|py| {
+///                     let py_future = sleep_for(py, 1)?;
+///                     pyo3_asyncio::tokio::into_future(py_future)
+///                 })?
+///                 .await?;
+///
+///                 Ok(())
+///             })
+///         )
+///     }).await.unwrap()
+/// }
+/// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+pub fn local_cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
+where
+    F: Future<Output = PyResult<PyObject>> + 'static,
+{
+    generic::local_cancellable_future_into_py::<TokioRuntime, _>(py, fut)
 }
 
 /// Convert a Python `awaitable` into a Rust Future

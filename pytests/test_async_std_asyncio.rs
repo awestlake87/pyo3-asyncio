@@ -217,6 +217,52 @@ async fn test_cancel() -> PyResult<()> {
     Ok(())
 }
 
+#[pyo3_asyncio::async_std::test]
+fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
+    async_std::task::block_on(pyo3_asyncio::async_std::scope_local(event_loop, async {
+        let completed = Arc::new(Mutex::new(false));
+
+        let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
+            let completed = Arc::clone(&completed);
+            Ok(
+                pyo3_asyncio::async_std::cancellable_future_into_py(py, async move {
+                    async_std::task::sleep(Duration::from_secs(1)).await;
+                    *completed.lock().unwrap() = true;
+
+                    Ok(Python::with_gil(|py| py.None()))
+                })?
+                .into(),
+            )
+        })?;
+
+        if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
+            py_future.as_ref(py).call_method0("cancel")?;
+            pyo3_asyncio::async_std::into_future(py_future.as_ref(py))
+        })?
+        .await
+        {
+            Python::with_gil(|py| -> PyResult<()> {
+                assert!(py
+                    .import("asyncio")?
+                    .getattr("CancelledError")?
+                    .downcast::<PyType>()
+                    .unwrap()
+                    .is_instance(e.pvalue(py))?);
+                Ok(())
+            })?;
+        } else {
+            panic!("expected CancelledError");
+        }
+
+        async_std::task::sleep(Duration::from_secs(1)).await;
+        if *completed.lock().unwrap() {
+            panic!("future still completed")
+        }
+
+        Ok(())
+    }))
+}
+
 /// This module is implemented in Rust.
 #[pymodule]
 fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
