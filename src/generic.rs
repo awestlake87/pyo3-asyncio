@@ -1333,7 +1333,7 @@ where
 }
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
-/// Unlike [`future_into_py`], this function will stop the Rust future from running when the
+/// Unlike [`local_future_into_py`], this function will stop the Rust future from running when the
 /// `asyncio.Future` is cancelled from Python.
 ///
 /// __This function will be deprecated in favor of [`local_future_into_py`] in `v0.15` because
