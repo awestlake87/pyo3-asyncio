@@ -94,10 +94,10 @@ jobs:
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
 
-      # Omit async-std-runtime feature for MSRV 1.45.0
+      # Omit async-std-runtime and testing features from MSRV 1.45.0 (See README for details)
       - if: matrix.rust == '1.45.0'
         name: Prepare 1.45.0 features
-        run: echo features=testing,attributes,tokio-runtime >> $GITHUB_ENV
+        run: echo features=attributes,tokio-runtime >> $GITHUB_ENV
 
       # Use all features for MSRV 1.46.0 and above
       - if: matrix.rust != '1.45.0'
