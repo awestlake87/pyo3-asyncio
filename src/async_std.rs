@@ -4,7 +4,10 @@ use async_std::task;
 use futures::prelude::*;
 use pyo3::prelude::*;
 
-use crate::generic::{self, JoinError, Runtime, SpawnLocalExt};
+use crate::{
+    generic::{self, ContextExt, JoinError, LocalContextExt, Runtime, SpawnLocalExt},
+    TaskLocals,
+};
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 /// re-exports for macros
@@ -33,7 +36,7 @@ impl JoinError for AsyncStdJoinErr {
 }
 
 async_std::task_local! {
-    static EVENT_LOOP: RefCell<Option<PyObject>> = RefCell::new(None);
+    static TASK_LOCALS: RefCell<Option<TaskLocals>> = RefCell::new(None);
 }
 
 struct AsyncStdRuntime;
@@ -41,28 +44,6 @@ struct AsyncStdRuntime;
 impl Runtime for AsyncStdRuntime {
     type JoinError = AsyncStdJoinErr;
     type JoinHandle = task::JoinHandle<Result<(), AsyncStdJoinErr>>;
-
-    fn scope<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-    where
-        F: Future<Output = R> + Send + 'static,
-    {
-        let old = EVENT_LOOP.with(|c| c.replace(Some(event_loop)));
-        Box::pin(async move {
-            let result = fut.await;
-            EVENT_LOOP.with(|c| c.replace(old));
-            result
-        })
-    }
-    fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-        match EVENT_LOOP.try_with(|c| {
-            c.borrow()
-                .as_ref()
-                .map(|event_loop| event_loop.clone().into_ref(py))
-        }) {
-            Ok(event_loop) => event_loop,
-            Err(_) => None,
-        }
-    }
 
     fn spawn<F>(fut: F) -> Self::JoinHandle
     where
@@ -77,19 +58,28 @@ impl Runtime for AsyncStdRuntime {
     }
 }
 
-impl SpawnLocalExt for AsyncStdRuntime {
-    fn scope_local<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+impl ContextExt for AsyncStdRuntime {
+    fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
     where
-        F: Future<Output = R> + 'static,
+        F: Future<Output = R> + Send + 'static,
     {
-        let old = EVENT_LOOP.with(|c| c.replace(Some(event_loop)));
+        let old = TASK_LOCALS.with(|c| c.replace(Some(locals)));
         Box::pin(async move {
             let result = fut.await;
-            EVENT_LOOP.with(|c| c.replace(old));
+            TASK_LOCALS.with(|c| c.replace(old));
             result
         })
     }
 
+    fn get_task_locals() -> Option<TaskLocals> {
+        match TASK_LOCALS.try_with(|c| c.borrow().clone()) {
+            Ok(locals) => locals,
+            Err(_) => None,
+        }
+    }
+}
+
+impl SpawnLocalExt for AsyncStdRuntime {
     fn spawn_local<F>(fut: F) -> Self::JoinHandle
     where
         F: Future<Output = ()> + 'static,
@@ -101,20 +91,34 @@ impl SpawnLocalExt for AsyncStdRuntime {
     }
 }
 
+impl LocalContextExt for AsyncStdRuntime {
+    fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+    where
+        F: Future<Output = R> + 'static,
+    {
+        let old = TASK_LOCALS.with(|c| c.replace(Some(locals)));
+        Box::pin(async move {
+            let result = fut.await;
+            TASK_LOCALS.with(|c| c.replace(old));
+            result
+        })
+    }
+}
+
 /// Set the task local event loop for the given future
-pub async fn scope<F, R>(event_loop: PyObject, fut: F) -> R
+pub async fn scope<F, R>(locals: TaskLocals, fut: F) -> R
 where
     F: Future<Output = R> + Send + 'static,
 {
-    AsyncStdRuntime::scope(event_loop, fut).await
+    AsyncStdRuntime::scope(locals, fut).await
 }
 
 /// Set the task local event loop for the given !Send future
-pub async fn scope_local<F, R>(event_loop: PyObject, fut: F) -> R
+pub async fn scope_local<F, R>(locals: TaskLocals, fut: F) -> R
 where
     F: Future<Output = R> + 'static,
 {
-    AsyncStdRuntime::scope_local(event_loop, fut).await
+    AsyncStdRuntime::scope_local(locals, fut).await
 }
 
 /// Get the current event loop from either Python or Rust async task local context

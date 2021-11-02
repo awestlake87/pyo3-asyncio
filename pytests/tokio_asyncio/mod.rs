@@ -10,6 +10,7 @@ use pyo3::{
     types::{IntoPyDict, PyType},
     wrap_pyfunction, wrap_pymodule,
 };
+use pyo3_asyncio::TaskLocals;
 
 use crate::common;
 
@@ -216,9 +217,13 @@ async fn test_cancel() -> PyResult<()> {
 
 #[pyo3_asyncio::tokio::test]
 fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
+    let locals = Python::with_gil(|py| -> PyResult<TaskLocals> {
+        Ok(TaskLocals::new(event_loop.as_ref(py)).copy_context(py)?)
+    })?;
+
     tokio::task::LocalSet::new().block_on(
         pyo3_asyncio::tokio::get_runtime(),
-        pyo3_asyncio::tokio::scope_local(event_loop, async {
+        pyo3_asyncio::tokio::scope_local(locals, async {
             let completed = Arc::new(Mutex::new(false));
             let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
                 let completed = Arc::clone(&completed);

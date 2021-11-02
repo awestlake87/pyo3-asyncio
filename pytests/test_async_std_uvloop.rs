@@ -1,7 +1,6 @@
-use pyo3::{prelude::*, types::PyType};
-
 #[cfg(not(target_os = "windows"))]
-fn main() -> PyResult<()> {
+fn main() -> pyo3::PyResult<()> {
+    use pyo3::{prelude::*, types::PyType};
     pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {

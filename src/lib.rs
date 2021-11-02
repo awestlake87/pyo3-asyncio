@@ -292,6 +292,10 @@
 //! features = ["testing"]
 //! ```
 
+/// Re-exported for #[test] attributes
+#[cfg(all(feature = "attributes", feature = "testing"))]
+pub use inventory;
+
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Utilities for writing PyO3 Asyncio tests
 #[cfg(feature = "testing")]
 pub mod testing;
@@ -309,16 +313,6 @@ pub mod err;
 
 /// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
 pub mod generic;
-
-use std::future::Future;
-
-use futures::channel::oneshot;
-use once_cell::sync::OnceCell;
-use pyo3::{exceptions::PyKeyboardInterrupt, prelude::*, types::PyTuple, PyNativeType};
-
-/// Re-exported for #[test] attributes
-#[cfg(all(feature = "attributes", feature = "testing"))]
-pub use inventory;
 
 /// Test README
 #[doc(hidden)]
@@ -346,7 +340,21 @@ pub mod doc_test {
     doctest!("../README.md", readme_md);
 }
 
+use std::future::Future;
+
+use futures::channel::oneshot;
+use once_cell::sync::OnceCell;
+use pyo3::{
+    exceptions::PyKeyboardInterrupt,
+    prelude::*,
+    types::{PyDict, PyTuple},
+    PyNativeType,
+};
+
+use crate::generic::{ContextExt, Runtime};
+
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
+static CONTEXTVARS: OnceCell<PyObject> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
@@ -491,6 +499,62 @@ pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
         })?
         .as_ref(py)
         .call0()
+}
+
+fn contextvars(py: Python) -> PyResult<&PyAny> {
+    CONTEXTVARS
+        .get_or_try_init(|| Ok(py.import("contextvars")?.into()))
+        .map(|contextvars| contextvars.as_ref(py))
+}
+
+fn copy_context(py: Python) -> PyResult<&PyAny> {
+    contextvars(py)?.call_method0("copy_context")
+}
+
+/// Task-local data to store for Python conversions.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct TaskLocals {
+    /// Track the event loop of the Python task
+    pub event_loop: PyObject,
+    /// Track the contextvars of the Python task
+    pub context: PyObject,
+}
+
+impl TaskLocals {
+    /// At a minimum, TaskLocals must store the event loop.
+    pub fn new(event_loop: &PyAny) -> Self {
+        Self {
+            event_loop: event_loop.into(),
+            context: event_loop.py().None(),
+        }
+    }
+
+    /// Either copy the task locals from the current task OR get the current running loop and
+    /// contextvars from Python.
+    pub fn from_current_context<R>(py: Python) -> PyResult<Self>
+    where
+        R: Runtime + ContextExt,
+    {
+        if let Some(locals) = R::get_task_locals() {
+            Ok(locals)
+        } else {
+            Ok(TaskLocals::new(get_running_loop(py)?).copy_context(py)?)
+        }
+    }
+
+    /// Manually provide the contextvars for the current task.
+    pub fn context(self, context: &PyAny) -> Self {
+        Self {
+            context: context.into(),
+            ..self
+        }
+    }
+
+    /// Capture the current task's contextvars
+    pub fn copy_context(self, py: Python) -> PyResult<Self> {
+        Ok(self.context(copy_context(py)?))
+    }
 }
 
 /// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
@@ -639,9 +703,96 @@ impl PyEnsureFuture {
     }
 }
 
-fn call_soon_threadsafe(event_loop: &PyAny, args: impl IntoPy<Py<PyTuple>>) -> PyResult<()> {
-    event_loop.call_method1("call_soon_threadsafe", args)?;
+fn call_soon_threadsafe(
+    event_loop: &PyAny,
+    context: &PyAny,
+    args: impl IntoPy<Py<PyTuple>>,
+) -> PyResult<()> {
+    let py = event_loop.py();
+
+    let kwargs = PyDict::new(py);
+    kwargs.set_item("context", context)?;
+
+    event_loop.call_method("call_soon_threadsafe", args, Some(kwargs))?;
     Ok(())
+}
+
+/// Convert a Python `awaitable` into a Rust Future
+///
+/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// completion handler sends the result of this Task through a
+/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
+/// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
+///
+/// # Arguments
+/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `awaitable` - The Python `awaitable` to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// const PYTHON_CODE: &'static str = r#"
+/// import asyncio
+///
+/// async def py_sleep(duration):
+///     await asyncio.sleep(duration)
+/// "#;
+///
+/// async fn py_sleep(seconds: f32) -> PyResult<()> {
+///     let test_mod = Python::with_gil(|py| -> PyResult<PyObject> {
+///         Ok(
+///             PyModule::from_code(
+///                 py,
+///                 PYTHON_CODE,
+///                 "test_into_future/test_mod.py",
+///                 "test_mod"
+///             )?
+///             .into()
+///         )
+///     })?;
+///
+///     Python::with_gil(|py| {
+///         pyo3_asyncio::into_future_with_loop(
+///             pyo3_asyncio::get_running_loop(py)?,
+///             test_mod
+///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
+///                 .as_ref(py),
+///         )
+///     })?
+///     .await?;
+///     Ok(())    
+/// }
+/// ```
+pub fn into_future_with_locals(
+    locals: &TaskLocals,
+    awaitable: &PyAny,
+) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
+    let py = awaitable.py();
+    let (tx, rx) = oneshot::channel();
+
+    call_soon_threadsafe(
+        locals.event_loop.as_ref(py),
+        locals.context.as_ref(py),
+        (PyEnsureFuture {
+            awaitable: awaitable.into(),
+            tx: Some(tx),
+        },),
+    )?;
+
+    Ok(async move {
+        match rx.await {
+            Ok(item) => item,
+            Err(_) => Python::with_gil(|py| {
+                Err(PyErr::from_instance(
+                    asyncio(py)?.call_method0("CancelledError")?,
+                ))
+            }),
+        }
+    })
 }
 
 /// Convert a Python `awaitable` into a Rust Future
@@ -698,26 +849,10 @@ pub fn into_future_with_loop(
     event_loop: &PyAny,
     awaitable: &PyAny,
 ) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    let (tx, rx) = oneshot::channel();
-
-    call_soon_threadsafe(
-        event_loop,
-        (PyEnsureFuture {
-            awaitable: awaitable.into(),
-            tx: Some(tx),
-        },),
-    )?;
-
-    Ok(async move {
-        match rx.await {
-            Ok(item) => item,
-            Err(_) => Python::with_gil(|py| {
-                Err(PyErr::from_instance(
-                    asyncio(py)?.call_method0("CancelledError")?,
-                ))
-            }),
-        }
-    })
+    into_future_with_locals(
+        &TaskLocals::new(event_loop).copy_context(event_loop.py())?,
+        awaitable,
+    )
 }
 
 /// Convert a Python `awaitable` into a Rust Future

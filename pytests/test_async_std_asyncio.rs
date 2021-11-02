@@ -13,6 +13,7 @@ use pyo3::{
     types::{IntoPyDict, PyType},
     wrap_pyfunction, wrap_pymodule,
 };
+use pyo3_asyncio::TaskLocals;
 
 #[pyfunction]
 #[allow(deprecated)]
@@ -219,7 +220,10 @@ async fn test_cancel() -> PyResult<()> {
 
 #[pyo3_asyncio::async_std::test]
 fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
-    async_std::task::block_on(pyo3_asyncio::async_std::scope_local(event_loop, async {
+    let locals = Python::with_gil(|py| -> PyResult<TaskLocals> {
+        Ok(TaskLocals::new(event_loop.as_ref(py)).copy_context(py)?)
+    })?;
+    async_std::task::block_on(pyo3_asyncio::async_std::scope_local(locals, async {
         let completed = Arc::new(Mutex::new(false));
 
         let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
@@ -278,7 +282,7 @@ fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-const TEST_CODE: &str = r#"
+const MULTI_ASYNCIO_CODE: &str = r#"
 async def main():
     return await test_mod.sleep()
 
@@ -303,8 +307,55 @@ fn test_multiple_asyncio_run() -> PyResult<()> {
         ]
         .into_py_dict(py);
 
-        py.run(TEST_CODE, Some(d), None)?;
-        py.run(TEST_CODE, Some(d), None)?;
+        py.run(MULTI_ASYNCIO_CODE, Some(d), None)?;
+        py.run(MULTI_ASYNCIO_CODE, Some(d), None)?;
+        Ok(())
+    })
+}
+
+#[pymodule]
+fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
+    #![allow(deprecated)]
+    #[pyfn(m, "async_callback")]
+    fn async_callback(py: Python, callback: PyObject) -> PyResult<&PyAny> {
+        pyo3_asyncio::async_std::future_into_py(py, async move {
+            Python::with_gil(|py| {
+                pyo3_asyncio::async_std::into_future(callback.as_ref(py).call0()?)
+            })?
+            .await?;
+
+            Ok(Python::with_gil(|py| py.None()))
+        })
+    }
+
+    Ok(())
+}
+
+const CONTEXTVARS_CODE: &str = r#"
+cx = contextvars.ContextVar("cx")
+
+async def contextvars_test():
+    assert cx.get() == "foobar"
+
+async def main():
+    cx.set("foobar")
+    await cvars_mod.async_callback(contextvars_test)
+
+asyncio.run(main())
+"#;
+
+#[pyo3_asyncio::async_std::test]
+fn test_contextvars() -> PyResult<()> {
+    Python::with_gil(|py| {
+        let d = [
+            ("asyncio", py.import("asyncio")?.into()),
+            ("contextvars", py.import("contextvars")?.into()),
+            ("cvars_mod", wrap_pymodule!(cvars_mod)(py)),
+        ]
+        .into_py_dict(py);
+
+        py.run(CONTEXTVARS_CODE, Some(d), None)?;
+        py.run(CONTEXTVARS_CODE, Some(d), None)?;
         Ok(())
     })
 }

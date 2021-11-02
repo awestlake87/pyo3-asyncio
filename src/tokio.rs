@@ -10,7 +10,10 @@ use once_cell::{
 };
 use pyo3::prelude::*;
 
-use crate::generic::{self, Runtime as GenericRuntime, SpawnLocalExt};
+use crate::{
+    generic::{self, ContextExt, LocalContextExt, Runtime as GenericRuntime, SpawnLocalExt},
+    TaskLocals,
+};
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>attributes</code></span>
 /// re-exports for macros
@@ -44,29 +47,12 @@ impl generic::JoinError for task::JoinError {
 struct TokioRuntime;
 
 tokio::task_local! {
-    static EVENT_LOOP: UnsyncOnceCell<PyObject>;
+    static TASK_LOCALS: UnsyncOnceCell<TaskLocals>;
 }
 
 impl GenericRuntime for TokioRuntime {
     type JoinError = task::JoinError;
     type JoinHandle = task::JoinHandle<()>;
-
-    fn scope<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-    where
-        F: Future<Output = R> + Send + 'static,
-    {
-        let cell = UnsyncOnceCell::new();
-        cell.set(event_loop).unwrap();
-
-        Box::pin(EVENT_LOOP.scope(cell, fut))
-    }
-
-    fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-        match EVENT_LOOP.try_with(|c| c.get().map(|event_loop| event_loop.clone().into_ref(py))) {
-            Ok(event_loop) => event_loop,
-            Err(_) => None,
-        }
-    }
 
     fn spawn<F>(fut: F) -> Self::JoinHandle
     where
@@ -78,17 +64,26 @@ impl GenericRuntime for TokioRuntime {
     }
 }
 
-impl SpawnLocalExt for TokioRuntime {
-    fn scope_local<F, R>(event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+impl ContextExt for TokioRuntime {
+    fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
     where
-        F: Future<Output = R> + 'static,
+        F: Future<Output = R> + Send + 'static,
     {
         let cell = UnsyncOnceCell::new();
-        cell.set(event_loop).unwrap();
+        cell.set(locals).unwrap();
 
-        Box::pin(EVENT_LOOP.scope(cell, fut))
+        Box::pin(TASK_LOCALS.scope(cell, fut))
     }
 
+    fn get_task_locals() -> Option<TaskLocals> {
+        match TASK_LOCALS.try_with(|c| c.get().map(|locals| locals.clone())) {
+            Ok(locals) => locals,
+            Err(_) => None,
+        }
+    }
+}
+
+impl SpawnLocalExt for TokioRuntime {
     fn spawn_local<F>(fut: F) -> Self::JoinHandle
     where
         F: Future<Output = ()> + 'static,
@@ -97,20 +92,32 @@ impl SpawnLocalExt for TokioRuntime {
     }
 }
 
+impl LocalContextExt for TokioRuntime {
+    fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+    where
+        F: Future<Output = R> + 'static,
+    {
+        let cell = UnsyncOnceCell::new();
+        cell.set(locals).unwrap();
+
+        Box::pin(TASK_LOCALS.scope(cell, fut))
+    }
+}
+
 /// Set the task local event loop for the given future
-pub async fn scope<F, R>(event_loop: PyObject, fut: F) -> R
+pub async fn scope<F, R>(locals: TaskLocals, fut: F) -> R
 where
     F: Future<Output = R> + Send + 'static,
 {
-    TokioRuntime::scope(event_loop, fut).await
+    TokioRuntime::scope(locals, fut).await
 }
 
 /// Set the task local event loop for the given !Send future
-pub async fn scope_local<F, R>(event_loop: PyObject, fut: F) -> R
+pub async fn scope_local<F, R>(locals: TaskLocals, fut: F) -> R
 where
     F: Future<Output = R> + 'static,
 {
-    TokioRuntime::scope_local(event_loop, fut).await
+    TokioRuntime::scope_local(locals, fut).await
 }
 
 /// Get the current event loop from either Python or Rust async task local context
