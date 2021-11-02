@@ -129,6 +129,12 @@ pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
     generic::get_current_loop::<TokioRuntime>(py)
 }
 
+/// Either copy the task locals from the current task OR get the current running loop and
+/// contextvars from Python.
+pub fn get_current_locals(py: Python) -> PyResult<TaskLocals> {
+    generic::get_current_locals::<TokioRuntime>(py)
+}
+
 /// Initialize the Tokio runtime with a custom build
 pub fn init(builder: Builder) {
     *TOKIO_BUILDER.lock().unwrap() = builder
@@ -431,8 +437,8 @@ where
 /// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::tokio::main]
 /// async fn main() -> PyResult<()> {
-///     let event_loop = Python::with_gil(|py| -> PyResult<PyObject> {
-///         Ok(pyo3_asyncio::tokio::get_current_loop(py)?.into())
+///     let locals = Python::with_gil(|py| -> PyResult<_> {
+///         pyo3_asyncio::tokio::get_current_locals(py)
 ///     })?;
 ///
 ///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
@@ -442,7 +448,7 @@ where
 ///         // pyo3_asyncio::tokio::local_future_into_py will panic.
 ///         tokio::task::LocalSet::new().block_on(
 ///             pyo3_asyncio::tokio::get_runtime(),  
-///             pyo3_asyncio::tokio::scope_local(event_loop, async {
+///             pyo3_asyncio::tokio::scope_local(locals, async {
 ///                 Python::with_gil(|py| {
 ///                     let py_future = sleep_for(py, 1)?;
 ///                     pyo3_asyncio::tokio::into_future(py_future)
@@ -502,8 +508,8 @@ where
 /// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::tokio::main]
 /// async fn main() -> PyResult<()> {
-///     let event_loop = Python::with_gil(|py| -> PyResult<PyObject> {
-///         Ok(pyo3_asyncio::tokio::get_current_loop(py)?.into())
+///     let locals = Python::with_gil(|py| -> PyResult<_> {
+///         pyo3_asyncio::tokio::get_current_locals(py)
 ///     })?;
 ///
 ///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
@@ -513,7 +519,7 @@ where
 ///         // pyo3_asyncio::tokio::local_future_into_py will panic.
 ///         tokio::task::LocalSet::new().block_on(
 ///             pyo3_asyncio::tokio::get_runtime(),  
-///             pyo3_asyncio::tokio::scope_local(event_loop, async {
+///             pyo3_asyncio::tokio::scope_local(locals, async {
 ///                 Python::with_gil(|py| {
 ///                     let py_future = sleep_for(py, 1)?;
 ///                     pyo3_asyncio::tokio::into_future(py_future)
@@ -565,8 +571,8 @@ where
 /// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::tokio::main]
 /// async fn main() -> PyResult<()> {
-///     let event_loop = Python::with_gil(|py| {
-///         PyObject::from(pyo3_asyncio::tokio::get_current_loop(py).unwrap())
+///     let locals = Python::with_gil(|py| {
+///         pyo3_asyncio::tokio::get_current_locals(py).unwrap()
 ///     });
 ///
 ///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
@@ -576,7 +582,7 @@ where
 ///         // pyo3_asyncio::tokio::local_future_into_py will panic.
 ///         tokio::task::LocalSet::new().block_on(
 ///             pyo3_asyncio::tokio::get_runtime(),  
-///             pyo3_asyncio::tokio::scope_local(event_loop, async {
+///             pyo3_asyncio::tokio::scope_local(locals, async {
 ///                 Python::with_gil(|py| {
 ///                     let py_future = sleep_for(py, 1)?;
 ///                     pyo3_asyncio::tokio::into_future(py_future)
@@ -632,8 +638,8 @@ where
 /// # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 /// #[pyo3_asyncio::tokio::main]
 /// async fn main() -> PyResult<()> {
-///     let event_loop = Python::with_gil(|py| {
-///         PyObject::from(pyo3_asyncio::tokio::get_current_loop(py).unwrap())
+///     let locals = Python::with_gil(|py| {
+///         pyo3_asyncio::tokio::get_current_locals(py).unwrap()
 ///     });
 ///
 ///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
@@ -643,7 +649,7 @@ where
 ///         // pyo3_asyncio::tokio::local_future_into_py will panic.
 ///         tokio::task::LocalSet::new().block_on(
 ///             pyo3_asyncio::tokio::get_runtime(),  
-///             pyo3_asyncio::tokio::scope_local(event_loop, async {
+///             pyo3_asyncio::tokio::scope_local(locals, async {
 ///                 Python::with_gil(|py| {
 ///                     let py_future = sleep_for(py, 1)?;
 ///                     pyo3_asyncio::tokio::into_future(py_future)

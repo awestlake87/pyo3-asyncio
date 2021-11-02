@@ -130,6 +130,12 @@ pub fn get_current_loop(py: Python) -> PyResult<&PyAny> {
     generic::get_current_loop::<AsyncStdRuntime>(py)
 }
 
+/// Either copy the task locals from the current task OR get the current running loop and
+/// contextvars from Python.
+pub fn get_current_locals(py: Python) -> PyResult<TaskLocals> {
+    generic::get_current_locals::<AsyncStdRuntime>(py)
+}
+
 /// Run the event loop until the given Future completes
 ///
 /// The event loop runs until the given future is complete.

@@ -108,16 +108,18 @@
 //! fn sleep(py: Python) -> PyResult<&PyAny> {
 //!     // get the current event loop through task-local data
 //!     // OR `asyncio.get_running_loop`
-//!     let current_loop = pyo3_asyncio::tokio::get_current_loop(py)?;
+//!     let locals = Python::with_gil(|py| {
+//!         pyo3_asyncio::tokio::get_current_locals(py).unwrap()
+//!     });
 //!
 //!     pyo3_asyncio::tokio::future_into_py_with_loop(
-//!         current_loop,
+//!         locals.event_loop.clone().into_ref(py),
 //!         // Store the current loop in task-local data
-//!         pyo3_asyncio::tokio::scope(current_loop.into(), async move {
+//!         pyo3_asyncio::tokio::scope(locals.clone(), async move {
 //!             let py_sleep = Python::with_gil(|py| {
-//!                 pyo3_asyncio::into_future_with_loop(
+//!                 pyo3_asyncio::into_future_with_locals(
 //!                     // Now we can get the current loop through task-local data
-//!                     pyo3_asyncio::tokio::get_current_loop(py)?,
+//!                     &pyo3_asyncio::tokio::get_current_locals(py)?,
 //!                     py.import("asyncio")?.call_method1("sleep", (1,))?
 //!                 )
 //!             })?;
@@ -134,15 +136,15 @@
 //! fn wrap_sleep(py: Python) -> PyResult<&PyAny> {
 //!     // get the current event loop through task-local data
 //!     // OR `asyncio.get_running_loop`
-//!     let current_loop = pyo3_asyncio::tokio::get_current_loop(py)?;
+//!     let locals = pyo3_asyncio::tokio::get_current_locals(py)?;
 //!
 //!     pyo3_asyncio::tokio::future_into_py_with_loop(
-//!         current_loop,
+//!         locals.event_loop.clone().into_ref(py),
 //!         // Store the current loop in task-local data
-//!         pyo3_asyncio::tokio::scope(current_loop.into(), async move {
+//!         pyo3_asyncio::tokio::scope(locals.clone(), async move {
 //!             let py_sleep = Python::with_gil(|py| {
-//!                 pyo3_asyncio::into_future_with_loop(
-//!                     pyo3_asyncio::tokio::get_current_loop(py)?,
+//!                 pyo3_asyncio::into_future_with_locals(
+//!                     &pyo3_asyncio::tokio::get_current_locals(py)?,
 //!                     // We can also call sleep within a Rust task since the
 //!                     // event loop is stored in task local data
 //!                     sleep(py)?
@@ -351,8 +353,6 @@ use pyo3::{
     PyNativeType,
 };
 
-use crate::generic::{ContextExt, Runtime};
-
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
 static CONTEXTVARS: OnceCell<PyObject> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
@@ -527,19 +527,6 @@ impl TaskLocals {
         Self {
             event_loop: event_loop.into(),
             context: event_loop.py().None(),
-        }
-    }
-
-    /// Either copy the task locals from the current task OR get the current running loop and
-    /// contextvars from Python.
-    pub fn from_current_context<R>(py: Python) -> PyResult<Self>
-    where
-        R: Runtime + ContextExt,
-    {
-        if let Some(locals) = R::get_task_locals() {
-            Ok(locals)
-        } else {
-            Ok(TaskLocals::new(get_running_loop(py)?).copy_context(py)?)
         }
     }
 

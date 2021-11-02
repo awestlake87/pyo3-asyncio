@@ -76,6 +76,19 @@ where
     }
 }
 
+/// Either copy the task locals from the current task OR get the current running loop and
+/// contextvars from Python.
+pub fn get_current_locals<R>(py: Python) -> PyResult<TaskLocals>
+where
+    R: ContextExt,
+{
+    if let Some(locals) = R::get_task_locals() {
+        Ok(locals)
+    } else {
+        Ok(TaskLocals::new(get_running_loop(py)?).copy_context(py)?)
+    }
+}
+
 /// Run the event loop until the given Future completes
 ///
 /// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
@@ -90,7 +103,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -115,21 +131,23 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -185,7 +203,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -210,21 +231,23 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -299,7 +322,10 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 /// #
 /// # use pyo3::prelude::*;
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -330,21 +356,23 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -386,10 +414,7 @@ pub fn into_future<R>(
 where
     R: Runtime + ContextExt,
 {
-    into_future_with_locals(
-        &TaskLocals::from_current_context::<R>(awaitable.py())?,
-        awaitable,
-    )
+    into_future_with_locals(&get_current_locals::<R>(awaitable.py())?, awaitable)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
@@ -403,7 +428,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -434,21 +462,23 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -463,7 +493,7 @@ where
 ///     let secs = secs.extract()?;
 ///     pyo3_asyncio::generic::future_into_py_with_locals::<MyCustomRuntime, _>(
 ///         py,
-///         TaskLocals::from_current_context::<MyCustomRuntime>(py)?,
+///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -547,7 +577,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -578,21 +611,23 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -720,7 +755,10 @@ impl PyDoneCallback {
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -751,21 +789,23 @@ impl PyDoneCallback {
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -807,7 +847,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -838,21 +881,23 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -876,7 +921,7 @@ where
     R: Runtime + ContextExt,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    future_into_py_with_locals::<R, F>(py, TaskLocals::from_current_context::<R>(py)?, fut)
+    future_into_py_with_locals::<R, F>(py, get_current_locals::<R>(py)?, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
@@ -897,7 +942,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -928,21 +976,23 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -980,7 +1030,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -1011,21 +1064,23 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + Send + 'static
 /// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -1068,7 +1123,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, SpawnLocalExt, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -1099,16 +1157,6 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
@@ -1118,17 +1166,31 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
-/// #         F: Future<Output = R> + 'static
+/// #         F: Future<Output = R> + Send + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
-/// #    
+/// #     fn get_task_locals() -> Option<TaskLocals> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl SpawnLocalExt for MyCustomRuntime {
 /// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl LocalContextExt for MyCustomRuntime {
+/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// #     where
+/// #         F: Future<Output = R> + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
@@ -1146,7 +1208,7 @@ where
 ///
 ///     pyo3_asyncio::generic::local_future_into_py_with_locals::<MyCustomRuntime, _>(
 ///         py,
-///         TaskLocals::from_current_context::<MyCustomRuntime>(py)?,
+///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(*secs)).await;
 ///             Python::with_gil(|py| Ok(py.None()))
@@ -1160,7 +1222,7 @@ pub fn local_future_into_py_with_locals<R, F>(
     fut: F,
 ) -> PyResult<&PyAny>
 where
-    R: SpawnLocalExt + LocalContextExt,
+    R: Runtime + SpawnLocalExt + LocalContextExt,
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
     let (cancel_tx, cancel_rx) = oneshot::channel();
@@ -1234,7 +1296,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, SpawnLocalExt, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -1265,16 +1330,6 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
@@ -1285,16 +1340,18 @@ where
 /// # }
 /// #
 /// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
-/// #     where
-/// #         F: Future<Output = R> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #    
 /// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl LocalContextExt for MyCustomRuntime {
+/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// #     where
+/// #         F: Future<Output = R> + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
@@ -1346,7 +1403,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, SpawnLocalExt, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -1377,16 +1437,6 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
@@ -1397,16 +1447,18 @@ where
 /// # }
 /// #
 /// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
-/// #     where
-/// #         F: Future<Output = R> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #    
 /// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl LocalContextExt for MyCustomRuntime {
+/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// #     where
+/// #         F: Future<Output = R> + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
@@ -1454,7 +1506,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, SpawnLocalExt, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -1485,16 +1540,6 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
@@ -1504,17 +1549,31 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
-/// #         F: Future<Output = R> + 'static
+/// #         F: Future<Output = R> + Send + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
-/// #    
+/// #     fn get_task_locals() -> Option<TaskLocals> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl SpawnLocalExt for MyCustomRuntime {
 /// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl LocalContextExt for MyCustomRuntime {
+/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// #     where
+/// #         F: Future<Output = R> + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
@@ -1561,7 +1620,10 @@ where
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
-/// # use pyo3_asyncio::generic::{JoinError, SpawnLocalExt, Runtime};
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// # };
 /// #
 /// # struct MyCustomJoinError;
 /// #
@@ -1592,16 +1654,6 @@ where
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
 /// #     type JoinHandle = MyCustomJoinHandle;
-/// #     
-/// #     fn scope<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_event_loop(py: Python) -> Option<&PyAny> {
-/// #         unreachable!()
-/// #     }
 /// #
 /// #     fn spawn<F>(fut: F) -> Self::JoinHandle
 /// #     where
@@ -1611,17 +1663,31 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(_event_loop: PyObject, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
-/// #         F: Future<Output = R> + 'static
+/// #         F: Future<Output = R> + Send + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
-/// #    
+/// #     fn get_task_locals() -> Option<TaskLocals> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl SpawnLocalExt for MyCustomRuntime {
 /// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
 /// #     where
 /// #         F: Future<Output = ()> + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl LocalContextExt for MyCustomRuntime {
+/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
+/// #     where
+/// #         F: Future<Output = R> + 'static
 /// #     {
 /// #         unreachable!()
 /// #     }
