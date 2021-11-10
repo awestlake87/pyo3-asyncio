@@ -6,7 +6,7 @@ use std::{
 
 use futures::channel::oneshot;
 use pin_project_lite::pin_project;
-use pyo3::{prelude::*, PyNativeType};
+use pyo3::prelude::*;
 
 #[allow(deprecated)]
 use crate::{
@@ -725,7 +725,6 @@ struct PyDoneCallback {
 
 #[pymethods]
 impl PyDoneCallback {
-    #[call]
     pub fn __call__(&mut self, fut: &PyAny) -> PyResult<()> {
         let py = fut.py();
 

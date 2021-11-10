@@ -350,7 +350,6 @@ use pyo3::{
     exceptions::PyKeyboardInterrupt,
     prelude::*,
     types::{PyDict, PyTuple},
-    PyNativeType,
 };
 
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
@@ -646,7 +645,6 @@ struct PyTaskCompleter {
 
 #[pymethods]
 impl PyTaskCompleter {
-    #[call]
     #[args(task)]
     pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
         debug_assert!(task.call_method0("done")?.extract()?);
@@ -678,7 +676,6 @@ struct PyEnsureFuture {
 
 #[pymethods]
 impl PyEnsureFuture {
-    #[call]
     pub fn __call__(&mut self) -> PyResult<()> {
         Python::with_gil(|py| {
             let task = ensure_future(py, self.awaitable.as_ref(py))?;
