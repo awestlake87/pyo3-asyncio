@@ -114,11 +114,11 @@ pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.14.0", optio
 pyo3 = { version = "0.15", features = ["macros"] }
 
 [dependencies.async-std]
-version = "1.9"
+version = "1.10"
 features = ["unstable"]
 optional = true
 
 [dependencies.tokio]
-version = "1.9" 
+version = "1.13" 
 features = ["full"]
 optional = true
