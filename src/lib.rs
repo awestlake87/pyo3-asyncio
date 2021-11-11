@@ -113,7 +113,7 @@
 //!     });
 //!
 //!     pyo3_asyncio::tokio::future_into_py_with_loop(
-//!         locals.event_loop.clone().into_ref(py),
+//!         locals.event_loop(py),
 //!         // Store the current loop in task-local data
 //!         pyo3_asyncio::tokio::scope(locals.clone(), async move {
 //!             let py_sleep = Python::with_gil(|py| {
@@ -139,7 +139,7 @@
 //!     let locals = pyo3_asyncio::tokio::get_current_locals(py)?;
 //!
 //!     pyo3_asyncio::tokio::future_into_py_with_loop(
-//!         locals.event_loop.clone().into_ref(py),
+//!         locals.event_loop(py),
 //!         // Store the current loop in task-local data
 //!         pyo3_asyncio::tokio::scope(locals.clone(), async move {
 //!             let py_sleep = Python::with_gil(|py| {
@@ -522,12 +522,11 @@ fn copy_context(py: Python) -> PyResult<Option<&PyAny>> {
 
 /// Task-local data to store for Python conversions.
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 pub struct TaskLocals {
     /// Track the event loop of the Python task
-    pub event_loop: PyObject,
+    event_loop: PyObject,
     /// Track the contextvars of the Python task
-    pub context: PyObject,
+    context: PyObject,
 }
 
 impl TaskLocals {
@@ -540,7 +539,7 @@ impl TaskLocals {
     }
 
     /// Manually provide the contextvars for the current task.
-    pub fn context(self, context: &PyAny) -> Self {
+    pub fn with_context(self, context: &PyAny) -> Self {
         Self {
             context: context.into(),
             ..self
@@ -551,10 +550,20 @@ impl TaskLocals {
     pub fn copy_context(self, py: Python) -> PyResult<Self> {
         // No-op if context cannot be copied (Python 3.6 fallback)
         if let Some(cx) = copy_context(py)? {
-            Ok(self.context(cx))
+            Ok(self.with_context(cx))
         } else {
             Ok(self)
         }
+    }
+
+    /// Get a reference to the event loop
+    pub fn event_loop<'p>(&self, py: Python<'p>) -> &'p PyAny {
+        self.event_loop.clone().into_ref(py)
+    }
+
+    /// Get a reference to the python context
+    pub fn context<'p>(&self, py: Python<'p>) -> &'p PyAny {
+        self.context.clone().into_ref(py)
     }
 }
 
@@ -779,8 +788,8 @@ pub fn into_future_with_locals(
     let (tx, rx) = oneshot::channel();
 
     call_soon_threadsafe(
-        locals.event_loop.as_ref(py),
-        locals.context.as_ref(py),
+        locals.event_loop(py),
+        locals.context(py),
         (PyEnsureFuture {
             awaitable: awaitable.into(),
             tx: Some(tx),
