@@ -710,7 +710,12 @@ fn call_soon_threadsafe(
     let py = event_loop.py();
 
     let kwargs = PyDict::new(py);
-    kwargs.set_item("context", context)?;
+
+    // Accommodate for the Python 3.6 fallback
+    // (call_soon_threadsafe does not support the context kwarg in 3.6)
+    if !context.is_none() {
+        kwargs.set_item("context", context)?;
+    }
 
     event_loop.call_method("call_soon_threadsafe", args, Some(kwargs))?;
     Ok(())
