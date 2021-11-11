@@ -858,6 +858,10 @@ pub fn into_future_with_locals(
 ///     Ok(())    
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::into_future_with_locals instead"
+)]
 pub fn into_future_with_loop(
     event_loop: &PyAny,
     awaitable: &PyAny,

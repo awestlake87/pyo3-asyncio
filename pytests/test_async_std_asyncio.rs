@@ -180,15 +180,13 @@ async fn test_cancel() -> PyResult<()> {
 
     let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
         let completed = Arc::clone(&completed);
-        Ok(
-            pyo3_asyncio::async_std::cancellable_future_into_py(py, async move {
-                async_std::task::sleep(Duration::from_secs(1)).await;
-                *completed.lock().unwrap() = true;
+        Ok(pyo3_asyncio::async_std::future_into_py(py, async move {
+            async_std::task::sleep(Duration::from_secs(1)).await;
+            *completed.lock().unwrap() = true;
 
-                Ok(Python::with_gil(|py| py.None()))
-            })?
-            .into(),
-        )
+            Ok(Python::with_gil(|py| py.None()))
+        })?
+        .into())
     })?;
 
     if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
@@ -228,15 +226,13 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
 
         let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
             let completed = Arc::clone(&completed);
-            Ok(
-                pyo3_asyncio::async_std::cancellable_future_into_py(py, async move {
-                    async_std::task::sleep(Duration::from_secs(1)).await;
-                    *completed.lock().unwrap() = true;
+            Ok(pyo3_asyncio::async_std::future_into_py(py, async move {
+                async_std::task::sleep(Duration::from_secs(1)).await;
+                *completed.lock().unwrap() = true;
 
-                    Ok(Python::with_gil(|py| py.None()))
-                })?
-                .into(),
-            )
+                Ok(Python::with_gil(|py| py.None()))
+            })?
+            .into())
         })?;
 
         if let Err(e) = Python::with_gil(|py| -> PyResult<_> {

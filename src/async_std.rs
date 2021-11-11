@@ -276,6 +276,10 @@ where
 ///     )
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::async_std::future_into_py_with_locals instead"
+)]
 pub fn future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
@@ -316,6 +320,10 @@ where
 ///     )
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::async_std::future_into_py_with_locals instead"
+)]
 pub fn cancellable_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
@@ -383,6 +391,10 @@ where
 ///     })
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::async_std::future_into_py instead"
+)]
 pub fn cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
@@ -431,6 +443,10 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::async_std::local_future_into_py_with_locals instead"
+)]
 pub fn local_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
@@ -486,6 +502,10 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::async_std::local_future_into_py_with_locals instead"
+)]
 pub fn local_cancellable_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
@@ -583,6 +603,10 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::async_std::local_future_into_py instead"
+)]
 pub fn local_cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,

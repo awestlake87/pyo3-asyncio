@@ -135,15 +135,19 @@ fn test_local_future_into_py(event_loop: PyObject) -> PyResult<()> {
         Python::with_gil(|py| {
             let non_send_secs = Rc::new(1);
 
-            let py_future = pyo3_asyncio::tokio::local_future_into_py_with_loop(
-                event_loop.as_ref(py),
+            let py_future = pyo3_asyncio::tokio::local_future_into_py_with_locals(
+                py,
+                TaskLocals::new(event_loop.as_ref(py)),
                 async move {
                     tokio::time::sleep(Duration::from_secs(*non_send_secs)).await;
                     Ok(Python::with_gil(|py| py.None()))
                 },
             )?;
 
-            pyo3_asyncio::into_future_with_loop(event_loop.as_ref(py), py_future)
+            pyo3_asyncio::into_future_with_locals(
+                &TaskLocals::new(event_loop.as_ref(py)),
+                py_future,
+            )
         })?
         .await?;
 
@@ -177,15 +181,13 @@ async fn test_cancel() -> PyResult<()> {
 
     let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
         let completed = Arc::clone(&completed);
-        Ok(
-            pyo3_asyncio::tokio::cancellable_future_into_py(py, async move {
-                tokio::time::sleep(Duration::from_secs(1)).await;
-                *completed.lock().unwrap() = true;
+        Ok(pyo3_asyncio::tokio::future_into_py(py, async move {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            *completed.lock().unwrap() = true;
 
-                Ok(Python::with_gil(|py| py.None()))
-            })?
-            .into(),
-        )
+            Ok(Python::with_gil(|py| py.None()))
+        })?
+        .into())
     })?;
 
     if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
@@ -227,14 +229,12 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
             let completed = Arc::new(Mutex::new(false));
             let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
                 let completed = Arc::clone(&completed);
-                Ok(
-                    pyo3_asyncio::tokio::local_cancellable_future_into_py(py, async move {
-                        tokio::time::sleep(Duration::from_secs(1)).await;
-                        *completed.lock().unwrap() = true;
-                        Ok(Python::with_gil(|py| py.None()))
-                    })?
-                    .into(),
-                )
+                Ok(pyo3_asyncio::tokio::local_future_into_py(py, async move {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    *completed.lock().unwrap() = true;
+                    Ok(Python::with_gil(|py| py.None()))
+                })?
+                .into())
             })?;
 
             if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
