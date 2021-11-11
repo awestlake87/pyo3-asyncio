@@ -280,6 +280,7 @@ where
     since = "0.15.0",
     note = "Use pyo3_asyncio::async_std::future_into_py_with_locals instead"
 )]
+#[allow(deprecated)]
 pub fn future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
@@ -324,6 +325,7 @@ where
     since = "0.15.0",
     note = "Use pyo3_asyncio::async_std::future_into_py_with_locals instead"
 )]
+#[allow(deprecated)]
 pub fn cancellable_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
@@ -395,6 +397,7 @@ where
     since = "0.15.0",
     note = "Use pyo3_asyncio::async_std::future_into_py instead"
 )]
+#[allow(deprecated)]
 pub fn cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
@@ -447,6 +450,7 @@ where
     since = "0.15.0",
     note = "Use pyo3_asyncio::async_std::local_future_into_py_with_locals instead"
 )]
+#[allow(deprecated)]
 pub fn local_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
@@ -506,6 +510,7 @@ where
     since = "0.15.0",
     note = "Use pyo3_asyncio::async_std::local_future_into_py_with_locals instead"
 )]
+#[allow(deprecated)]
 pub fn local_cancellable_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,
@@ -607,6 +612,7 @@ where
     since = "0.15.0",
     note = "Use pyo3_asyncio::async_std::local_future_into_py instead"
 )]
+#[allow(deprecated)]
 pub fn local_cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<PyObject>> + 'static,

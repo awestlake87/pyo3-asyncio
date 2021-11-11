@@ -649,6 +649,10 @@ where
 ///     )
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::generic::future_into_py_with_locals instead"
+)]
 pub fn future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt,
@@ -826,6 +830,12 @@ impl PyDoneCallback {
 ///     )
 /// }
 /// ```
+
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::generic::future_into_py_with_locals instead"
+)]
+#[allow(deprecated)]
 pub fn cancellable_future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt,
@@ -1010,12 +1020,16 @@ where
 ///     })
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::generic::future_into_py instead"
+)]
 pub fn cancellable_future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    cancellable_future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
+    future_into_py::<R, F>(py, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
@@ -1482,6 +1496,10 @@ where
 ///     )
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::generic::local_future_into_py_with_locals instead"
+)]
 pub fn local_cancellable_future_into_py_with_loop<R, F>(
     event_loop: &PyAny,
     fut: F,
@@ -1599,7 +1617,7 @@ where
     R: Runtime + ContextExt + SpawnLocalExt + LocalContextExt,
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    local_future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
+    local_future_into_py_with_locals::<R, F>(py, get_current_locals::<R>(py)?, fut)
 }
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
@@ -1711,10 +1729,15 @@ where
 ///     )
 /// }
 /// ```
+///
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::generic::local_future_into_py instead"
+)]
 pub fn local_cancellable_future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt + SpawnLocalExt + LocalContextExt,
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    local_cancellable_future_into_py_with_loop::<R, F>(get_current_loop::<R>(py)?, fut)
+    local_future_into_py::<R, F>(py, fut)
 }
