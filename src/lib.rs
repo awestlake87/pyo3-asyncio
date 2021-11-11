@@ -353,7 +353,7 @@ use pyo3::{
 };
 
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
-static CONTEXTVARS: OnceCell<PyObject> = OnceCell::new();
+static CONTEXTVARS: OnceCell<Option<PyObject>> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
@@ -500,14 +500,24 @@ pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
         .call0()
 }
 
-fn contextvars(py: Python) -> PyResult<&PyAny> {
+/// Returns None only if contextvars cannot be imported (Python 3.6 fallback)
+fn contextvars(py: Python) -> Option<&PyAny> {
     CONTEXTVARS
-        .get_or_try_init(|| Ok(py.import("contextvars")?.into()))
+        .get_or_init(|| match py.import("contextvars") {
+            Ok(contextvars) => Some(contextvars.into()),
+            Err(_) => None,
+        })
+        .as_ref()
         .map(|contextvars| contextvars.as_ref(py))
 }
 
-fn copy_context(py: Python) -> PyResult<&PyAny> {
-    contextvars(py)?.call_method0("copy_context")
+/// Returns Ok(None) only if contextvars cannot be imported (Python 3.6 fallback)
+fn copy_context(py: Python) -> PyResult<Option<&PyAny>> {
+    if let Some(contextvars) = contextvars(py) {
+        Ok(Some(contextvars.call_method0("copy_context")?))
+    } else {
+        Ok(None)
+    }
 }
 
 /// Task-local data to store for Python conversions.
@@ -539,7 +549,12 @@ impl TaskLocals {
 
     /// Capture the current task's contextvars
     pub fn copy_context(self, py: Python) -> PyResult<Self> {
-        Ok(self.context(copy_context(py)?))
+        // No-op if context cannot be copied (Python 3.6 fallback)
+        if let Some(cx) = copy_context(py)? {
+            Ok(self.context(cx))
+        } else {
+            Ok(self)
+        }
     }
 }
 
