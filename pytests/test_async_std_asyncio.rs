@@ -16,55 +16,12 @@ use pyo3::{
 use pyo3_asyncio::TaskLocals;
 
 #[pyfunction]
-#[allow(deprecated)]
-fn sleep_into_coroutine(py: Python, secs: &PyAny) -> PyResult<PyObject> {
-    let secs = secs.extract()?;
-
-    pyo3_asyncio::async_std::into_coroutine(py, async move {
-        task::sleep(Duration::from_secs(secs)).await;
-        Python::with_gil(|py| Ok(py.None()))
-    })
-}
-
-#[pyfunction]
 fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
     let secs = secs.extract()?;
 
     pyo3_asyncio::async_std::future_into_py(py, async move {
         task::sleep(Duration::from_secs(secs)).await;
         Python::with_gil(|py| Ok(py.None()))
-    })
-}
-
-#[pyo3_asyncio::async_std::test]
-fn test_into_coroutine() -> PyResult<()> {
-    #[allow(deprecated)]
-    Python::with_gil(|py| {
-        let sleeper_mod = PyModule::new(py, "rust_sleeper")?;
-
-        sleeper_mod.add_wrapped(wrap_pyfunction!(sleep_into_coroutine))?;
-
-        let test_mod = PyModule::from_code(
-            py,
-            common::TEST_MOD,
-            "test_into_coroutine_mod.py",
-            "test_into_coroutine_mod",
-        )?;
-
-        let fut = pyo3_asyncio::into_future(test_mod.call_method1(
-            "sleep_for_1s",
-            (sleeper_mod.getattr("sleep_into_coroutine")?,),
-        )?)?;
-
-        pyo3_asyncio::async_std::run_until_complete(
-            pyo3_asyncio::get_event_loop(py),
-            async move {
-                fut.await?;
-                Ok(())
-            },
-        )?;
-
-        Ok(())
     })
 }
 
@@ -120,11 +77,6 @@ async fn test_into_future() -> PyResult<()> {
             .into()
     }))
     .await
-}
-
-#[pyo3_asyncio::async_std::test]
-async fn test_into_future_0_13() -> PyResult<()> {
-    common::test_into_future_0_13().await
 }
 
 #[pyo3_asyncio::async_std::test]

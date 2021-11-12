@@ -347,7 +347,6 @@ use std::future::Future;
 use futures::channel::oneshot;
 use once_cell::sync::OnceCell;
 use pyo3::{
-    exceptions::PyKeyboardInterrupt,
     prelude::*,
     types::{PyDict, PyTuple},
 };
@@ -357,7 +356,6 @@ static CONTEXTVARS: OnceCell<Option<PyObject>> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
-const EXPECT_INIT: &str = "PyO3 Asyncio has not been initialized";
 static CACHED_EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
 static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
 
@@ -372,54 +370,6 @@ fn ensure_future<'p>(py: Python<'p>, awaitable: &'p PyAny) -> PyResult<&'p PyAny
 
 fn create_future(event_loop: &PyAny) -> PyResult<&PyAny> {
     event_loop.call_method0("create_future")
-}
-
-#[allow(clippy::needless_doctest_main)]
-/// Wraps the provided function with the initialization and finalization for PyO3 Asyncio
-///
-/// This function **_MUST_** be called from the main thread.
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `f` - The function to call in between intialization and finalization
-///
-/// # Examples
-///
-/// ```
-/// use pyo3::prelude::*;
-///
-/// fn main() {
-///     // Call this function or use pyo3's "auto-initialize" feature
-///     pyo3::prepare_freethreaded_python();
-///
-///     Python::with_gil(|py| {
-///         pyo3_asyncio::with_runtime(py, || {
-///             println!("PyO3 Asyncio Initialized!");
-///             Ok(())
-///         })
-///         .map_err(|e| {
-///             e.print_and_set_sys_last_vars(py);  
-///         })
-///         .unwrap();
-///     })
-/// }
-/// ```
-#[deprecated(
-    since = "0.14.0",
-    note = "Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
-)]
-#[allow(deprecated)]
-pub fn with_runtime<F, R>(py: Python, f: F) -> PyResult<R>
-where
-    F: FnOnce() -> PyResult<R>,
-{
-    try_init(py)?;
-
-    let result = (f)()?;
-
-    try_close(py)?;
-
-    Ok(result)
 }
 
 fn close(event_loop: &PyAny) -> PyResult<()> {
@@ -565,101 +515,6 @@ impl TaskLocals {
     pub fn context<'p>(&self, py: Python<'p>) -> &'p PyAny {
         self.context.clone().into_ref(py)
     }
-}
-
-/// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)
-#[deprecated(
-    since = "0.14.0",
-    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
-)]
-pub fn get_event_loop(py: Python) -> &PyAny {
-    CACHED_EVENT_LOOP.get().expect(EXPECT_INIT).as_ref(py)
-}
-
-/// Run the event loop forever
-///
-/// This can be called instead of `run_until_complete` to run the event loop
-/// until `stop` is called rather than driving a future to completion.
-///
-/// After this function returns, the event loop can be resumed with either `run_until_complete` or
-/// [`crate::run_forever`]
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-///
-/// # Examples
-///
-/// ```
-/// # #[cfg(feature = "async-std-runtime")]
-/// fn main() -> pyo3::PyResult<()> {
-///     use std::time::Duration;
-///     use pyo3::prelude::*;
-///     
-///     // call this or use pyo3 0.14 "auto-initialize" feature
-///     pyo3::prepare_freethreaded_python();
-///
-///     Python::with_gil(|py| {
-///         pyo3_asyncio::with_runtime(py, || {
-///             let event_loop_hdl = PyObject::from(pyo3_asyncio::get_event_loop(py));
-///             // Wait 1 second, then stop the event loop
-///             async_std::task::spawn(async move {
-///                 async_std::task::sleep(Duration::from_secs(1)).await;
-///                 Python::with_gil(|py| {
-///                     event_loop_hdl
-///                         .as_ref(py)
-///                         .call_method1(
-///                             "call_soon_threadsafe",
-///                             (event_loop_hdl
-///                                 .as_ref(py)
-///                                 .getattr("stop")
-///                                 .map_err(|e| e.print_and_set_sys_last_vars(py))
-///                                 .unwrap(),),
-///                             )
-///                             .unwrap();
-///                 })
-///             });
-///     
-///             pyo3_asyncio::run_forever(py)?;
-///
-///             Ok(())
-///         })
-///     })
-/// }
-/// # #[cfg(not(feature = "async-std-runtime"))]
-/// # fn main() {}
-#[deprecated(
-    since = "0.14.0",
-    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
-)]
-#[allow(deprecated)]
-pub fn run_forever(py: Python) -> PyResult<()> {
-    if let Err(e) = get_event_loop(py).call_method0("run_forever") {
-        if e.is_instance::<PyKeyboardInterrupt>(py) {
-            Ok(())
-        } else {
-            Err(e)
-        }
-    } else {
-        Ok(())
-    }
-}
-
-/// Shutdown the event loops and perform any necessary cleanup
-#[deprecated(
-    since = "0.14.0",
-    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
-)]
-pub fn try_close(py: Python) -> PyResult<()> {
-    if let Some(exec) = EXECUTOR.get() {
-        // Shutdown the executor and wait until all threads are cleaned up
-        exec.call_method0(py, "shutdown")?;
-    }
-
-    if let Some(event_loop) = CACHED_EVENT_LOOP.get() {
-        close(event_loop.as_ref(py))?;
-    }
-
-    Ok(())
 }
 
 #[pyclass]
@@ -870,64 +725,6 @@ pub fn into_future_with_loop(
         &TaskLocals::new(event_loop).copy_context(event_loop.py())?,
         awaitable,
     )
-}
-
-/// Convert a Python `awaitable` into a Rust Future
-///
-/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
-/// completion handler sends the result of this Task through a
-/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
-/// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
-///
-/// # Arguments
-/// * `awaitable` - The Python `awaitable` to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// const PYTHON_CODE: &'static str = r#"
-/// import asyncio
-///
-/// async def py_sleep(duration):
-///     await asyncio.sleep(duration)
-/// "#;
-///
-/// async fn py_sleep(seconds: f32) -> PyResult<()> {
-///     let test_mod = Python::with_gil(|py| -> PyResult<PyObject> {
-///         Ok(
-///             PyModule::from_code(
-///                 py,
-///                 PYTHON_CODE,
-///                 "test_into_future/test_mod.py",
-///                 "test_mod"
-///             )?
-///             .into()
-///         )
-///     })?;
-///
-///     Python::with_gil(|py| {
-///         // Only works with cached event loop
-///         pyo3_asyncio::into_future(
-///             test_mod
-///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
-///                 .as_ref(py),
-///         )
-///     })?
-///     .await?;
-///     Ok(())    
-/// }
-/// ```
-#[deprecated(
-    since = "0.14.0",
-    note = "Use pyo3_asyncio::async_std::into_future or pyo3_asyncio::tokio::into_future instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
-)]
-#[allow(deprecated)]
-pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    into_future_with_loop(get_event_loop(awaitable.py()), awaitable)
 }
 
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {

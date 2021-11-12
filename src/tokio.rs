@@ -176,20 +176,14 @@ fn multi_thread() -> Builder {
 /// # use pyo3::prelude::*;
 /// #
 /// # pyo3::prepare_freethreaded_python();
-/// # Python::with_gil(|py| {
-/// # pyo3_asyncio::with_runtime(py, || {
+/// # Python::with_gil(|py| -> PyResult<()> {
 /// # let event_loop = py.import("asyncio")?.call_method0("new_event_loop")?;
 /// pyo3_asyncio::tokio::run_until_complete(event_loop, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
 /// })?;
 /// # Ok(())
-/// # })
-/// # .map_err(|e| {
-/// #    e.print_and_set_sys_last_vars(py);  
-/// # })
-/// # .unwrap();
-/// # });
+/// # }).unwrap();
 /// ```
 pub fn run_until_complete<F>(event_loop: &PyAny, fut: F) -> PyResult<()>
 where
@@ -229,41 +223,6 @@ where
     F: Future<Output = PyResult<()>> + Send + 'static,
 {
     generic::run::<TokioRuntime, F>(py, fut)
-}
-
-/// Convert a Rust Future into a Python awaitable
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: &PyAny) -> PyResult<PyObject> {
-///     let secs = secs.extract()?;
-///     pyo3_asyncio::tokio::into_coroutine(py, async move {
-///         tokio::time::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
-///     })
-/// }
-/// ```
-#[deprecated(
-    since = "0.14.0",
-    note = "Use pyo3_asyncio::tokio::future_into_py instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)"
-)]
-#[allow(deprecated)]
-pub fn into_coroutine<F>(py: Python, fut: F) -> PyResult<PyObject>
-where
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    generic::into_coroutine::<TokioRuntime, _>(py, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable
