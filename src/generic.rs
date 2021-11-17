@@ -176,14 +176,17 @@ where
     let py = event_loop.py();
     let result_tx = Arc::new(Mutex::new(None));
     let result_rx = Arc::clone(&result_tx);
-    let coro =
-        future_into_py_with_locals::<R, _, ()>(py, TaskLocals::new(event_loop), async move {
+    let coro = future_into_py_with_locals::<R, _, ()>(
+        py,
+        TaskLocals::new(event_loop).copy_context(py)?,
+        async move {
             let val = fut.await?;
             if let Ok(mut result) = result_tx.lock() {
                 *result = Some(val);
             }
             Ok(())
-        })?;
+        },
+    )?;
 
     event_loop.call_method1("run_until_complete", (coro,))?;
 
