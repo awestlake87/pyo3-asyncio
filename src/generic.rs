@@ -1,6 +1,7 @@
 use std::{
     future::Future,
     pin::Pin,
+    sync::{Arc, Mutex},
     task::{Context, Poll},
 };
 
@@ -159,31 +160,35 @@ where
 /// # Python::with_gil(|py| -> PyResult<()> {
 /// # let event_loop = py.import("asyncio")?.call_method0("new_event_loop")?;
 /// # #[cfg(feature = "tokio-runtime")]
-/// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _>(event_loop, async move {
+/// pyo3_asyncio::generic::run_until_complete::<MyCustomRuntime, _, _>(event_loop, async move {
 ///     tokio::time::sleep(Duration::from_secs(1)).await;
 ///     Ok(())
 /// })?;
 /// # Ok(())
 /// # }).unwrap();
 /// ```
-pub fn run_until_complete<R, F>(event_loop: &PyAny, fut: F) -> PyResult<()>
+pub fn run_until_complete<R, F, T>(event_loop: &PyAny, fut: F) -> PyResult<T>
 where
     R: Runtime + ContextExt,
-    F: Future<Output = PyResult<()>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: Send + Sync + 'static,
 {
     let py = event_loop.py();
-    let coro = future_into_py_with_locals::<R, _>(
-        py,
-        TaskLocals::new(event_loop).copy_context(py)?,
-        async move {
-            fut.await?;
-            Ok(Python::with_gil(|py| py.None()))
-        },
-    )?;
+    let result_tx = Arc::new(Mutex::new(None));
+    let result_rx = Arc::clone(&result_tx);
+    let coro =
+        future_into_py_with_locals::<R, _, ()>(py, TaskLocals::new(event_loop), async move {
+            let val = fut.await?;
+            if let Ok(mut result) = result_tx.lock() {
+                *result = Some(val);
+            }
+            Ok(())
+        })?;
 
     event_loop.call_method1("run_until_complete", (coro,))?;
 
-    Ok(())
+    let result = result_rx.lock().unwrap().take().unwrap();
+    Ok(result)
 }
 
 /// Run the event loop until the given Future completes
@@ -253,7 +258,7 @@ where
 /// #
 /// fn main() {
 ///     Python::with_gil(|py| {
-///         pyo3_asyncio::generic::run::<MyCustomRuntime, _>(py, async move {
+///         pyo3_asyncio::generic::run::<MyCustomRuntime, _, _>(py, async move {
 ///             custom_sleep(Duration::from_secs(1)).await;
 ///             Ok(())
 ///         })
@@ -264,14 +269,15 @@ where
 ///     })
 /// }
 /// ```
-pub fn run<R, F>(py: Python, fut: F) -> PyResult<()>
+pub fn run<R, F, T>(py: Python, fut: F) -> PyResult<T>
 where
     R: Runtime + ContextExt,
-    F: Future<Output = PyResult<()>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: Send + Sync + 'static,
 {
     let event_loop = asyncio(py)?.call_method0("new_event_loop")?;
 
-    let result = run_until_complete::<R, F>(event_loop, fut);
+    let result = run_until_complete::<R, F, T>(event_loop, fut);
 
     close(event_loop)?;
 
@@ -485,20 +491,25 @@ where
 /// #[pyfunction]
 /// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 ///     let secs = secs.extract()?;
-///     pyo3_asyncio::generic::future_into_py_with_locals::<MyCustomRuntime, _>(
+///     pyo3_asyncio::generic::future_into_py_with_locals::<MyCustomRuntime, _, _>(
 ///         py,
 ///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
+///             Ok(())
 ///         }
 ///     )
 /// }
 /// ```
-pub fn future_into_py_with_locals<R, F>(py: Python, locals: TaskLocals, fut: F) -> PyResult<&PyAny>
+pub fn future_into_py_with_locals<R, F, T>(
+    py: Python,
+    locals: TaskLocals,
+    fut: F,
+) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt,
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: IntoPy<PyObject>,
 {
     let (cancel_tx, cancel_rx) = oneshot::channel();
 
@@ -531,8 +542,12 @@ where
                     return;
                 }
 
-                let _ = set_result(locals2.event_loop.as_ref(py), future_tx1.as_ref(py), result)
-                    .map_err(dump_err(py));
+                let _ = set_result(
+                    locals2.event_loop(py),
+                    future_tx1.as_ref(py),
+                    result.map(|val| val.into_py(py)),
+                )
+                .map_err(dump_err(py));
             });
         })
         .await
@@ -653,7 +668,11 @@ where
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
     let py = event_loop.py();
-    future_into_py_with_locals::<R, F>(py, TaskLocals::new(event_loop).copy_context(py)?, fut)
+    future_into_py_with_locals::<R, F, PyObject>(
+        py,
+        TaskLocals::new(event_loop).copy_context(py)?,
+        fut,
+    )
 }
 
 pin_project! {
@@ -681,11 +700,12 @@ impl<T> Cancellable<T> {
     }
 }
 
-impl<T> Future for Cancellable<T>
+impl<F, T> Future for Cancellable<F>
 where
-    T: Future<Output = PyResult<PyObject>>,
+    F: Future<Output = PyResult<T>>,
+    T: IntoPy<PyObject>,
 {
-    type Output = T::Output;
+    type Output = F::Output;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();
@@ -702,7 +722,9 @@ where
                     *this.poll_cancel_rx = false;
                     // The python future has already been cancelled, so this return value will never
                     // be used.
-                    Poll::Ready(Ok(Python::with_gil(|py| py.None())))
+                    Poll::Ready(Err(pyo3::exceptions::PyBaseException::new_err(
+                        "unreachable",
+                    )))
                 }
                 Poll::Ready(Err(_)) => {
                     *this.poll_cancel_rx = false;
@@ -913,18 +935,19 @@ where
 /// #[pyfunction]
 /// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 ///     let secs = secs.extract()?;
-///     pyo3_asyncio::generic::future_into_py::<MyCustomRuntime, _>(py, async move {
+///     pyo3_asyncio::generic::future_into_py::<MyCustomRuntime, _, _>(py, async move {
 ///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
+///         Ok(())
 ///     })
 /// }
 /// ```
-pub fn future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
+pub fn future_into_py<R, F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt,
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
+    F: Future<Output = PyResult<T>> + Send + 'static,
+    T: IntoPy<PyObject>,
 {
-    future_into_py_with_locals::<R, F>(py, get_current_locals::<R>(py)?, fut)
+    future_into_py_with_locals::<R, F, T>(py, get_current_locals::<R>(py)?, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
@@ -1023,7 +1046,7 @@ where
     R: Runtime + ContextExt,
     F: Future<Output = PyResult<PyObject>> + Send + 'static,
 {
-    future_into_py::<R, F>(py, fut)
+    future_into_py::<R, F, PyObject>(py, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
@@ -1120,24 +1143,25 @@ where
 ///     // Rc is !Send so it cannot be passed into pyo3_asyncio::generic::future_into_py
 ///     let secs = Rc::new(secs);
 ///
-///     pyo3_asyncio::generic::local_future_into_py_with_locals::<MyCustomRuntime, _>(
+///     pyo3_asyncio::generic::local_future_into_py_with_locals::<MyCustomRuntime, _, _>(
 ///         py,
 ///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
 ///         async move {
 ///             MyCustomRuntime::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
+///             Ok(())
 ///         }
 ///     )
 /// }
 /// ```
-pub fn local_future_into_py_with_locals<R, F>(
+pub fn local_future_into_py_with_locals<R, F, T>(
     py: Python,
     locals: TaskLocals,
     fut: F,
 ) -> PyResult<&PyAny>
 where
     R: Runtime + SpawnLocalExt + LocalContextExt,
-    F: Future<Output = PyResult<PyObject>> + 'static,
+    F: Future<Output = PyResult<T>> + 'static,
+    T: IntoPy<PyObject>,
 {
     let (cancel_tx, cancel_rx) = oneshot::channel();
 
@@ -1170,8 +1194,12 @@ where
                     return;
                 }
 
-                let _ = set_result(locals2.event_loop.as_ref(py), future_tx1.as_ref(py), result)
-                    .map_err(dump_err(py));
+                let _ = set_result(
+                    locals2.event_loop.as_ref(py),
+                    future_tx1.as_ref(py),
+                    result.map(|val| val.into_py(py)),
+                )
+                .map_err(dump_err(py));
             });
         })
         .await
@@ -1296,7 +1324,11 @@ where
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
     let py = event_loop.py();
-    local_future_into_py_with_locals::<R, F>(py, TaskLocals::new(event_loop).copy_context(py)?, fut)
+    local_future_into_py_with_locals::<R, F, PyObject>(
+        py,
+        TaskLocals::new(event_loop).copy_context(py)?,
+        fut,
+    )
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
@@ -1507,18 +1539,19 @@ where
 ///     // Rc is !Send so it cannot be passed into pyo3_asyncio::generic::future_into_py
 ///     let secs = Rc::new(secs);
 ///
-///     pyo3_asyncio::generic::local_future_into_py::<MyCustomRuntime, _>(py, async move {
+///     pyo3_asyncio::generic::local_future_into_py::<MyCustomRuntime, _, _>(py, async move {
 ///         MyCustomRuntime::sleep(Duration::from_secs(*secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
+///         Ok(())
 ///     })
 /// }
 /// ```
-pub fn local_future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
+pub fn local_future_into_py<R, F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt + SpawnLocalExt + LocalContextExt,
-    F: Future<Output = PyResult<PyObject>> + 'static,
+    F: Future<Output = PyResult<T>> + 'static,
+    T: IntoPy<PyObject>,
 {
-    local_future_into_py_with_locals::<R, F>(py, get_current_locals::<R>(py)?, fut)
+    local_future_into_py_with_locals::<R, F, T>(py, get_current_locals::<R>(py)?, fut)
 }
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
@@ -1640,5 +1673,5 @@ where
     R: Runtime + ContextExt + SpawnLocalExt + LocalContextExt,
     F: Future<Output = PyResult<PyObject>> + 'static,
 {
-    local_future_into_py::<R, F>(py, fut)
+    local_future_into_py::<R, F, PyObject>(py, fut)
 }

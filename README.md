@@ -142,7 +142,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 fn rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::async_std::future_into_py(py, async {
         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 
@@ -166,7 +166,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 fn rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 
@@ -283,7 +283,7 @@ async fn rust_sleep() {
 fn call_rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::async_std::future_into_py(py, async move {
         rust_sleep().await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 ```
@@ -433,7 +433,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 fn rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 

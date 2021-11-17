@@ -21,7 +21,7 @@ fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 
     pyo3_asyncio::async_std::future_into_py(py, async move {
         task::sleep(Duration::from_secs(secs)).await;
-        Python::with_gil(|py| Ok(py.None()))
+        Ok(())
     })
 }
 
@@ -92,9 +92,10 @@ async fn test_other_awaitables() -> PyResult<()> {
 #[pyo3_asyncio::async_std::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        pyo3_asyncio::async_std::into_future(pyo3_asyncio::async_std::future_into_py(py, async {
-            panic!("this panic was intentional!")
-        })?)
+        pyo3_asyncio::async_std::into_future(pyo3_asyncio::async_std::future_into_py::<_, ()>(
+            py,
+            async { panic!("this panic was intentional!") },
+        )?)
     })?;
 
     match fut.await {

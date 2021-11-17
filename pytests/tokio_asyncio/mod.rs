@@ -20,7 +20,7 @@ fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
 
     pyo3_asyncio::tokio::future_into_py(py, async move {
         tokio::time::sleep(Duration::from_secs(secs)).await;
-        Python::with_gil(|py| Ok(py.None()))
+        Ok(())
     })
 }
 
@@ -113,7 +113,7 @@ fn test_local_future_into_py(event_loop: PyObject) -> PyResult<()> {
 #[pyo3_asyncio::tokio::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        pyo3_asyncio::tokio::into_future(pyo3_asyncio::tokio::future_into_py(py, async {
+        pyo3_asyncio::tokio::into_future(pyo3_asyncio::tokio::future_into_py::<_, ()>(py, async {
             panic!("this panic was intentional!")
         })?)
     })?;
