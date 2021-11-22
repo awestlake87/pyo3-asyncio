@@ -319,9 +319,5 @@ fn test_contextvars() -> PyResult<()> {
 fn main() -> pyo3::PyResult<()> {
     pyo3::prepare_freethreaded_python();
 
-    Python::with_gil(|py| {
-        // into_coroutine requires the 0.13 API
-        pyo3_asyncio::try_init(py)?;
-        pyo3_asyncio::async_std::run(py, pyo3_asyncio::testing::main())
-    })
+    Python::with_gil(|py| pyo3_asyncio::async_std::run(py, pyo3_asyncio::testing::main()))
 }

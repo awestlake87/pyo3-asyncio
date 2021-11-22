@@ -356,9 +356,6 @@ static CONTEXTVARS: OnceCell<Option<PyObject>> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
-static CACHED_EVENT_LOOP: OnceCell<PyObject> = OnceCell::new();
-static EXECUTOR: OnceCell<PyObject> = OnceCell::new();
-
 fn ensure_future<'p>(py: Python<'p>, awaitable: &'p PyAny) -> PyResult<&'p PyAny> {
     ENSURE_FUTURE
         .get_or_try_init(|| -> PyResult<PyObject> {
@@ -391,38 +388,10 @@ fn close(event_loop: &PyAny) -> PyResult<()> {
     Ok(())
 }
 
-/// Attempt to initialize the Python and Rust event loops
-///
-/// - Must be called before any other pyo3-asyncio functions.
-/// - Calling `try_init` a second time returns `Ok(())` and does nothing.
-///   > In future versions this may return an `Err`.
-#[deprecated(
-    since = "0.14.0",
-    note = "see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details"
-)]
-pub fn try_init(py: Python) -> PyResult<()> {
-    CACHED_EVENT_LOOP.get_or_try_init(|| -> PyResult<PyObject> {
-        let event_loop = asyncio_get_event_loop(py)?;
-        let executor = py
-            .import("concurrent.futures.thread")?
-            .call_method0("ThreadPoolExecutor")?;
-        event_loop.call_method1("set_default_executor", (executor,))?;
-
-        EXECUTOR.set(executor.into()).unwrap();
-        Ok(event_loop.into())
-    })?;
-
-    Ok(())
-}
-
 fn asyncio(py: Python) -> PyResult<&PyAny> {
     ASYNCIO
         .get_or_try_init(|| Ok(py.import("asyncio")?.into()))
         .map(|asyncio| asyncio.as_ref(py))
-}
-
-fn asyncio_get_event_loop(py: Python) -> PyResult<&PyAny> {
-    asyncio(py)?.call_method0("get_event_loop")
 }
 
 /// Get a reference to the Python Event Loop from Rust

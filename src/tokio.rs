@@ -301,12 +301,9 @@ where
 
 /// Convert a Rust Future into a Python awaitable
 ///
-/// Unlike [`future_into_py_with_loop`], this function will stop the Rust future from running when
-/// the `asyncio.Future` is cancelled from Python.
-///
-/// __This function will be deprecated in favor of [`future_into_py_with_loop`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`future_into_py_with_loop`].__
+/// __This function was deprecated in favor of [`future_into_py_with_locals`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`future_into_py_with_locals`].__
 ///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
@@ -380,8 +377,8 @@ where
 /// Unlike [`future_into_py`], this function will stop the Rust future from running when
 /// the `asyncio.Future` is cancelled from Python.
 ///
-/// __This function will be deprecated in favor of [`future_into_py`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// __This function was deprecated in favor of [`future_into_py`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
 /// replaced with [`future_into_py`].__
 ///
 /// # Arguments
@@ -558,12 +555,9 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable
 ///
-/// Unlike [`local_future_into_py_with_loop`], this function will stop the Rust future from running when
-/// the `asyncio.Future` is cancelled from Python.
-///
-/// __This function will be deprecated in favor of [`local_future_into_py_with_loop`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`local_future_into_py_with_loop`].__
+/// __This function was deprecated in favor of [`local_future_into_py_with_locals`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`local_future_into_py_with_locals`].__
 ///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
@@ -701,8 +695,8 @@ where
 /// Unlike [`local_future_into_py`], this function will stop the Rust future from running when
 /// the `asyncio.Future` is cancelled from Python.
 ///
-/// __This function will be deprecated in favor of [`local_future_into_py`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// __This function was deprecated in favor of [`local_future_into_py`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
 /// replaced with [`local_future_into_py`].__
 ///
 /// # Arguments

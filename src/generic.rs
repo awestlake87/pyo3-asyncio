@@ -44,7 +44,7 @@ pub trait SpawnLocalExt: Runtime {
 
 /// Exposes the utilities necessary for using task-local data in the Runtime
 pub trait ContextExt: Runtime {
-    /// Set the task local event loop for the given future
+    /// Set the task locals for the given future
     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
     where
         F: Future<Output = R> + Send + 'static;
@@ -55,7 +55,7 @@ pub trait ContextExt: Runtime {
 
 /// Adds the ability to scope task-local data for !Send futures
 pub trait LocalContextExt: Runtime {
-    /// Set the task local event loop for the given !Send future
+    /// Set the task locals for the given !Send future
     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
     where
         F: Future<Output = R> + 'static;
@@ -310,9 +310,9 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 
 /// Convert a Python `awaitable` into a Rust Future
 ///
-/// This function simply forwards the future and the  `event_loop` returned by [`get_current_loop`]
-/// to [`into_future_with_loop`](`crate::into_future_with_loop`). See
-/// [`into_future_with_loop`](`crate::into_future_with_loop`) for more details.
+/// This function simply forwards the future and the task locals returned by [`get_current_locals`]
+/// to [`into_future_with_locals`](`crate::into_future_with_locals`). See
+/// [`into_future_with_locals`](`crate::into_future_with_locals`) for more details.
 ///
 /// # Arguments
 /// * `awaitable` - The Python `awaitable` to be converted
@@ -422,6 +422,7 @@ where
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
 /// # Arguments
+/// * `py` - PyO3 GIL guard
 /// * `locals` - The task-local data for Python
 /// * `fut` - The Rust future to be converted
 ///
@@ -578,6 +579,8 @@ where
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
+///
+/// __
 ///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
@@ -760,12 +763,11 @@ impl PyDoneCallback {
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
-/// Unlike [`future_into_py_with_loop`], this function will stop the Rust future from running when
-/// the `asyncio.Future` is cancelled from Python.
+/// __This function was deprecated in favor of [`future_into_py_with_locals`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`future_into_py_with_locals`].__
 ///
-/// __This function will be deprecated in favor of [`future_into_py_with_loop`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`future_into_py_with_loop`].__
+/// __In `v0.16` this function will be removed__
 ///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
@@ -954,12 +956,11 @@ where
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
-/// Unlike [`future_into_py`], this function will stop the Rust future from running when the
-/// `asyncio.Future` is cancelled from Python.
-///
-/// __This function will be deprecated in favor of [`future_into_py`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// __This function was deprecated in favor of [`future_into_py`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
 /// replaced with [`future_into_py`].__
+///
+/// __In `v0.16` this function will be removed__
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
@@ -1051,10 +1052,12 @@ where
     future_into_py::<R, F, PyObject>(py, fut)
 }
 
-/// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
+/// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime and manual
+/// specification of task locals.
 ///
 /// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `py` - PyO3 GIL guard
+/// * `locals` - The task locals for the future
 /// * `fut` - The Rust future to be converted
 ///
 /// # Examples
@@ -1231,6 +1234,8 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
 ///
+/// __In `v0.16` this function will be removed__
+///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
 /// * `fut` - The Rust future to be converted
@@ -1320,6 +1325,10 @@ where
 ///     )
 /// }
 /// ```
+#[deprecated(
+    since = "0.15.0",
+    note = "Use pyo3_asyncio::generic::local_future_into_py_with_locals instead"
+)]
 pub fn local_future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + SpawnLocalExt + LocalContextExt,
@@ -1335,12 +1344,9 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
 ///
-/// Unlike [`local_future_into_py_with_loop`], this function will stop the Rust future from running
-/// when the `asyncio.Future` is cancelled from Python.
-///
-/// __This function will be deprecated in favor of [`local_future_into_py_with_loop`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`local_future_into_py_with_loop`].__
+/// __This function was deprecated in favor of [`local_future_into_py_with_locals`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// replaced with [`local_future_into_py_with_locals`].__
 ///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
@@ -1435,6 +1441,7 @@ where
     since = "0.15.0",
     note = "Use pyo3_asyncio::generic::local_future_into_py_with_locals instead"
 )]
+#[allow(deprecated)]
 pub fn local_cancellable_future_into_py_with_loop<R, F>(
     event_loop: &PyAny,
     fut: F,
@@ -1560,8 +1567,8 @@ where
 /// Unlike [`local_future_into_py`], this function will stop the Rust future from running when the
 /// `asyncio.Future` is cancelled from Python.
 ///
-/// __This function will be deprecated in favor of [`local_future_into_py`] in `v0.15` because
-/// it will become the default behaviour. In `v0.15`, any calls to this function can be seamlessly
+/// __This function was deprecated in favor of [`local_future_into_py`] in `v0.15` because
+/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
 /// replaced with [`local_future_into_py`].__
 ///
 /// # Arguments
