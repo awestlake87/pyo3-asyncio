@@ -562,7 +562,7 @@ fn call_soon_threadsafe(
 /// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
 ///
 /// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
+/// * `locals` - The Python event loop and context to be used for the provided awaitable
 /// * `awaitable` - The Python `awaitable` to be converted
 ///
 /// # Examples
@@ -638,6 +638,8 @@ pub fn into_future_with_locals(
 /// completion handler sends the result of this Task through a
 /// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
 /// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
+///
+/// __This function will be removed in `v0.16`__
 ///
 /// # Arguments
 /// * `event_loop` - The Python event loop that the awaitable should be attached to
