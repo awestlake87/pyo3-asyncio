@@ -86,7 +86,7 @@ where
     if let Some(locals) = R::get_task_locals() {
         Ok(locals)
     } else {
-        Ok(TaskLocals::new(get_running_loop(py)?).copy_context(py)?)
+        Ok(TaskLocals::with_running_loop(py)?.copy_context(py)?)
     }
 }
 
