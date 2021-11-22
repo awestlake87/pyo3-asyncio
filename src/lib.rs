@@ -251,7 +251,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.13"
+//! version = "0.15"
 //! features = ["attributes"]
 //! ```
 //!
@@ -264,7 +264,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.13"
+//! version = "0.15"
 //! features = ["async-std-runtime"]
 //! ```
 //!
@@ -277,7 +277,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.13"
+//! version = "0.15"
 //! features = ["tokio-runtime"]
 //! ```
 //!
@@ -290,7 +290,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.13"
+//! version = "0.15"
 //! features = ["testing"]
 //! ```
 

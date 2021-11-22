@@ -92,8 +92,7 @@ where
 
 /// Run the event loop until the given Future completes
 ///
-/// After this function returns, the event loop can be resumed with either [`run_until_complete`] or
-/// [`run_forever`](`crate::run_forever`)
+/// After this function returns, the event loop can be resumed with [`run_until_complete`]
 ///
 /// # Arguments
 /// * `event_loop` - The Python event loop that should run the future
