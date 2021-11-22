@@ -421,6 +421,21 @@ where
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// > Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// >
+/// > As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
+///
 /// # Arguments
 /// * `py` - PyO3 GIL guard
 /// * `locals` - The task-local data for Python
@@ -867,6 +882,21 @@ where
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
 ///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// > Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// >
+/// > As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
+///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
 /// * `fut` - The Rust future to be converted
@@ -1054,6 +1084,21 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime and manual
 /// specification of task locals.
+///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// > Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// >
+/// > As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
 ///
 /// # Arguments
 /// * `py` - PyO3 GIL guard
@@ -1457,6 +1502,21 @@ where
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
+///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// > Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// >
+/// > As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
 ///
 /// # Arguments
 /// * `py` - The current PyO3 GIL guard
