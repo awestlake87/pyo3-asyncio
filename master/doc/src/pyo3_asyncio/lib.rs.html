@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../pyo3_asyncio/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -758,35 +758,7 @@
 <span id="758">758</span>
 <span id="759">759</span>
 <span id="760">760</span>
-<span id="761">761</span>
-<span id="762">762</span>
-<span id="763">763</span>
-<span id="764">764</span>
-<span id="765">765</span>
-<span id="766">766</span>
-<span id="767">767</span>
-<span id="768">768</span>
-<span id="769">769</span>
-<span id="770">770</span>
-<span id="771">771</span>
-<span id="772">772</span>
-<span id="773">773</span>
-<span id="774">774</span>
-<span id="775">775</span>
-<span id="776">776</span>
-<span id="777">777</span>
-<span id="778">778</span>
-<span id="779">779</span>
-<span id="780">780</span>
-<span id="781">781</span>
-<span id="782">782</span>
-<span id="783">783</span>
-<span id="784">784</span>
-<span id="785">785</span>
-<span id="786">786</span>
-<span id="787">787</span>
-</pre><pre class="rust">
-<span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
+</pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
 <span class="doccomment">//! Rust Bindings to the Python Asyncio Event Loop</span>
 <span class="doccomment">//!</span>
@@ -806,37 +778,69 @@
 <span class="doccomment">//! be run on the same loop.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! It&#39;s not immediately clear that this would provide worthwhile performance wins either, so in the</span>
-<span class="doccomment">//! interest of keeping things simple, this crate creates and manages the Python event loop and</span>
-<span class="doccomment">//! handles the communication between separate Rust event loops.</span>
+<span class="doccomment">//! interest of getting something simple out there to facilitate these conversions, this crate</span>
+<span class="doccomment">//! handles the communication between _separate_ Python and Rust event loops.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! ## Python&#39;s Event Loop</span>
+<span class="doccomment">//! ## Python&#39;s Event Loop and the Main Thread</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Python is very picky about the threads used by the `asyncio` executor. In particular, it needs</span>
 <span class="doccomment">//! to have control over the main thread in order to handle signals like CTRL-C correctly. This</span>
 <span class="doccomment">//! means that Cargo&#39;s default test harness will no longer work since it doesn&#39;t provide a method of</span>
 <span class="doccomment">//! overriding the main function to add our event loop initialization and finalization.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! ## Event Loop References</span>
+<span class="doccomment">//! ## Event Loop References and ContextVars</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! One problem that arises when interacting with Python&#39;s asyncio library is that the functions we use to get a reference to the Python event loop can only be called in certain contexts. Since PyO3 Asyncio needs to interact with Python&#39;s event loop during conversions, the context of these conversions can matter a lot.</span>
+<span class="doccomment">//! One problem that arises when interacting with Python&#39;s asyncio library is that the functions we</span>
+<span class="doccomment">//! use to get a reference to the Python event loop can only be called in certain contexts. Since</span>
+<span class="doccomment">//! PyO3 Asyncio needs to interact with Python&#39;s event loop during conversions, the context of these</span>
+<span class="doccomment">//! conversions can matter a lot.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! &gt; The core conversions we&#39;ve mentioned so far in this guide should insulate you from these concerns in most cases, but in the event that they don&#39;t, this section should provide you with the information you need to solve these problems.</span>
+<span class="doccomment">//! Likewise, Python&#39;s `contextvars` library can require some special treatment. Python functions</span>
+<span class="doccomment">//! and coroutines can rely on the context of outer coroutines to function correctly, so this</span>
+<span class="doccomment">//! library needs to be able to preserve `contextvars` during conversions.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! &gt; The core conversions we&#39;ve mentioned so far in the README should insulate you from these</span>
+<span class="doccomment">//! concerns in most cases. For the edge cases where they don&#39;t, this section should provide you</span>
+<span class="doccomment">//! with the information you need to solve these problems.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ### The Main Dilemma</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Python programs can have many independent event loop instances throughout the lifetime of the application (`asyncio.run` for example creates its own event loop each time it&#39;s called for instance), and they can even run concurrent with other event loops. For this reason, the most correct method of obtaining a reference to the Python event loop is via `asyncio.get_running_loop`.</span>
+<span class="doccomment">//! Python programs can have many independent event loop instances throughout the lifetime of the</span>
+<span class="doccomment">//! application (`asyncio.run` for example creates its own event loop each time it&#39;s called for</span>
+<span class="doccomment">//! instance), and they can even run concurrent with other event loops. For this reason, the most</span>
+<span class="doccomment">//! correct method of obtaining a reference to the Python event loop is via</span>
+<span class="doccomment">//! `asyncio.get_running_loop`.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! `asyncio.get_running_loop` returns the event loop associated with the current OS thread. It can be used inside Python coroutines to spawn concurrent tasks, interact with timers, or in our case signal between Rust and Python. This is all well and good when we are operating on a Python thread, but since Rust threads are not associated with a Python event loop, `asyncio.get_running_loop` will fail when called on a Rust runtime.</span>
+<span class="doccomment">//! `asyncio.get_running_loop` returns the event loop associated with the current OS thread. It can</span>
+<span class="doccomment">//! be used inside Python coroutines to spawn concurrent tasks, interact with timers, or in our case</span>
+<span class="doccomment">//! signal between Rust and Python. This is all well and good when we are operating on a Python</span>
+<span class="doccomment">//! thread, but since Rust threads are not associated with a Python event loop,</span>
+<span class="doccomment">//! `asyncio.get_running_loop` will fail when called on a Rust runtime.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! `contextvars` operates in a similar way, though the current context is not always associated</span>
+<span class="doccomment">//! with the current OS thread. Different contexts can be associated with different coroutines even</span>
+<span class="doccomment">//! if they run on the same OS thread.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ### The Solution</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! A really straightforward way of dealing with this problem is to pass a reference to the associated Python event loop for every conversion. That&#39;s why in `v0.14`, we introduced a new set of conversion functions that do just that:</span>
+<span class="doccomment">//! A really straightforward way of dealing with this problem is to pass references to the</span>
+<span class="doccomment">//! associated Python event loop and context for every conversion. That&#39;s why we have a structure</span>
+<span class="doccomment">//! called `TaskLocals` and a set of conversions that accept it.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! - `pyo3_asyncio::into_future_with_loop` - Convert a Python awaitable into a Rust future with the given asyncio event loop.</span>
-<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::future_into_py_with_loop` - Convert a Rust future into a Python awaitable with the given asyncio event loop.</span>
-<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::local_future_into_py_with_loop` - Convert a `!Send` Rust future into a Python awaitable with the given asyncio event loop.</span>
+<span class="doccomment">//! `TaskLocals` stores the current event loop, and allows the user to copy the current Python</span>
+<span class="doccomment">//! context if necessary. The following conversions will use these references to perform the</span>
+<span class="doccomment">//! necessary conversions and restore Python context when needed:</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! One clear disadvantage to this approach (aside from the verbose naming) is that the Rust application has to explicitly track its references to the Python event loop. In native libraries, we can&#39;t make any assumptions about the underlying event loop, so the only reliable way to make sure our conversions work properly is to store a reference to the current event loop at the callsite to use later on.</span>
+<span class="doccomment">//! - `pyo3_asyncio::into_future_with_locals` - Convert a Python awaitable into a Rust future.</span>
+<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::future_into_py_with_locals` - Convert a Rust future into a Python</span>
+<span class="doccomment">//! awaitable.</span>
+<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::local_future_into_py_with_locals` - Convert a `!Send` Rust future</span>
+<span class="doccomment">//! into a Python awaitable.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! One clear disadvantage to this approach is that the Rust application has to explicitly track</span>
+<span class="doccomment">//! these references. In native libraries, we can&#39;t make any assumptions about the underlying event</span>
+<span class="doccomment">//! loop, so the only reliable way to make sure our conversions work properly is to store these</span>
+<span class="doccomment">//! references at the callsite to use later on.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```rust</span>
 <span class="doccomment">//! use pyo3::{wrap_pyfunction, prelude::*};</span>
@@ -844,24 +848,24 @@
 <span class="doccomment">//! # #[cfg(feature = &quot;tokio-runtime&quot;)]</span>
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
-<span class="doccomment">//!     let current_loop = pyo3_asyncio::get_running_loop(py)?;</span>
-<span class="doccomment">//!     let loop_ref = PyObject::from(current_loop);</span>
+<span class="doccomment">//!     // Construct the task locals structure with the current running loop and context</span>
+<span class="doccomment">//!     let locals = pyo3_asyncio::TaskLocals::with_running_loop(py)?.copy_context(py)?;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!     // Convert the async move { } block to a Python awaitable</span>
-<span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py_with_loop(current_loop, async move {</span>
+<span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py_with_locals(py, locals.clone(), async move {</span>
 <span class="doccomment">//!         let py_sleep = Python::with_gil(|py| {</span>
 <span class="doccomment">//!             // Sometimes we need to call other async Python functions within</span>
 <span class="doccomment">//!             // this future. In order for this to work, we need to track the</span>
 <span class="doccomment">//!             // event loop from earlier.</span>
-<span class="doccomment">//!             pyo3_asyncio::into_future_with_loop(</span>
-<span class="doccomment">//!                 loop_ref.as_ref(py),</span>
+<span class="doccomment">//!             pyo3_asyncio::into_future_with_locals(</span>
+<span class="doccomment">//!                 &amp;locals,</span>
 <span class="doccomment">//!                 py.import(&quot;asyncio&quot;)?.call_method1(&quot;sleep&quot;, (1,))?</span>
 <span class="doccomment">//!             )</span>
 <span class="doccomment">//!         })?;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!         py_sleep.await?;</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//!         Ok(Python::with_gil(|py| py.None()))</span>
+<span class="doccomment">//!         Ok(())</span>
 <span class="doccomment">//!     })</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
@@ -873,18 +877,35 @@
 <span class="doccomment">//! }</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! &gt; A naive solution to this tracking problem would be to cache a global reference to the asyncio event loop that all PyO3 Asyncio conversions can use. In fact this is what we did in PyO3 Asyncio `v0.13`. This works well for applications, but it soon became clear that this is not so ideal for libraries. Libraries usually have no direct control over how the event loop is managed, they&#39;re just expected to work with any event loop at any point in the application. This problem is compounded further when multiple event loops are used in the application since the global reference will only point to one.</span>
+<span class="doccomment">//! &gt; A naive solution to this tracking problem would be to cache a global reference to the asyncio</span>
+<span class="doccomment">//! event loop that all PyO3 Asyncio conversions can use. In fact this is what we did in PyO3</span>
+<span class="doccomment">//! Asyncio `v0.13`. This works well for applications, but it soon became clear that this is not</span>
+<span class="doccomment">//! so ideal for libraries. Libraries usually have no direct control over how the event loop is</span>
+<span class="doccomment">//! managed, they&#39;re just expected to work with any event loop at any point in the application.</span>
+<span class="doccomment">//! This problem is compounded further when multiple event loops are used in the application since</span>
+<span class="doccomment">//! the global reference will only point to one.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Another disadvantage to this explicit approach that is less obvious is that we can no longer call our `#[pyfunction] fn sleep` on a Rust runtime since `asyncio.get_running_loop` only works on Python threads! It&#39;s clear that we need a slightly more flexible approach.</span>
+<span class="doccomment">//! Another disadvantage to this explicit approach that is less obvious is that we can no longer</span>
+<span class="doccomment">//! call our `#[pyfunction] fn sleep` on a Rust runtime since `asyncio.get_running_loop` only works</span>
+<span class="doccomment">//! on Python threads! It&#39;s clear that we need a slightly more flexible approach.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! In order to detect the Python event loop at the callsite, we need something like `asyncio.get_running_loop` that works for _both Python and Rust_. In Python, `asyncio.get_running_loop` uses thread-local data to retrieve the event loop associated with the current thread. What we need in Rust is something that can retrieve the Python event loop associated with the current _task_.</span>
+<span class="doccomment">//! In order to detect the Python event loop at the callsite, we need something like</span>
+<span class="doccomment">//! `asyncio.get_running_loop` and `contextvars.copy_context` that works for _both Python and Rust_.</span>
+<span class="doccomment">//! In Python, `asyncio.get_running_loop` uses thread-local data to retrieve the event loop</span>
+<span class="doccomment">//! associated with the current thread. What we need in Rust is something that can retrieve the</span>
+<span class="doccomment">//! Python event loop and contextvars associated with the current Rust _task_.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Enter `pyo3_asyncio::&lt;runtime&gt;::get_current_loop`. This function first checks task-local data for a Python event loop, then falls back on `asyncio.get_running_loop` if no task-local event loop is found. This way both bases are covered.</span>
+<span class="doccomment">//! Enter `pyo3_asyncio::&lt;runtime&gt;::get_current_locals`. This function first checks task-local data</span>
+<span class="doccomment">//! for the `TaskLocals`, then falls back on `asyncio.get_running_loop` and</span>
+<span class="doccomment">//! `contextvars.copy_context` if no task locals are found. This way both bases are</span>
+<span class="doccomment">//! covered.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Now, all we need is a way to store the event loop in task-local data. Since this is a runtime-specific feature, you can find the following functions in each runtime module:</span>
+<span class="doccomment">//! Now, all we need is a way to store the `TaskLocals` for the Rust future. Since this is a</span>
+<span class="doccomment">//! runtime-specific feature, you can find the following functions in each runtime module:</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::scope` - Store the event loop in task-local data when executing the given Future.</span>
-<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::scope_local` - Store the event loop in task-local data when executing the given `!Send` Future.</span>
+<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::scope` - Store the task-local data when executing the given Future.</span>
+<span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::scope_local` - Store the task-local data when executing the given</span>
+<span class="doccomment">//! `!Send` Future.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! With these new functions, we can make our previous example more correct:</span>
 <span class="doccomment">//!</span>
@@ -895,17 +916,18 @@
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">//!     // get the current event loop through task-local data</span>
-<span class="doccomment">//!     // OR `asyncio.get_running_loop`</span>
-<span class="doccomment">//!     let current_loop = pyo3_asyncio::tokio::get_current_loop(py)?;</span>
+<span class="doccomment">//!     // OR `asyncio.get_running_loop` and `contextvars.copy_context`</span>
+<span class="doccomment">//!     let locals = pyo3_asyncio::tokio::get_current_locals(py)?;</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py_with_loop(</span>
-<span class="doccomment">//!         current_loop,</span>
-<span class="doccomment">//!         // Store the current loop in task-local data</span>
-<span class="doccomment">//!         pyo3_asyncio::tokio::scope(current_loop.into(), async move {</span>
+<span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py_with_locals(</span>
+<span class="doccomment">//!         py,</span>
+<span class="doccomment">//!         locals.clone(),</span>
+<span class="doccomment">//!         // Store the current locals in task-local data</span>
+<span class="doccomment">//!         pyo3_asyncio::tokio::scope(locals.clone(), async move {</span>
 <span class="doccomment">//!             let py_sleep = Python::with_gil(|py| {</span>
-<span class="doccomment">//!                 pyo3_asyncio::into_future_with_loop(</span>
-<span class="doccomment">//!                     // Now we can get the current loop through task-local data</span>
-<span class="doccomment">//!                     pyo3_asyncio::tokio::get_current_loop(py)?,</span>
+<span class="doccomment">//!                 pyo3_asyncio::into_future_with_locals(</span>
+<span class="doccomment">//!                     // Now we can get the current locals through task-local data</span>
+<span class="doccomment">//!                     &amp;pyo3_asyncio::tokio::get_current_locals(py)?,</span>
 <span class="doccomment">//!                     py.import(&quot;asyncio&quot;)?.call_method1(&quot;sleep&quot;, (1,))?</span>
 <span class="doccomment">//!                 )</span>
 <span class="doccomment">//!             })?;</span>
@@ -921,18 +943,19 @@
 <span class="doccomment">//! #[pyfunction]</span>
 <span class="doccomment">//! fn wrap_sleep(py: Python) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
 <span class="doccomment">//!     // get the current event loop through task-local data</span>
-<span class="doccomment">//!     // OR `asyncio.get_running_loop`</span>
-<span class="doccomment">//!     let current_loop = pyo3_asyncio::tokio::get_current_loop(py)?;</span>
+<span class="doccomment">//!     // OR `asyncio.get_running_loop` and `contextvars.copy_context`</span>
+<span class="doccomment">//!     let locals = pyo3_asyncio::tokio::get_current_locals(py)?;</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py_with_loop(</span>
-<span class="doccomment">//!         current_loop,</span>
-<span class="doccomment">//!         // Store the current loop in task-local data</span>
-<span class="doccomment">//!         pyo3_asyncio::tokio::scope(current_loop.into(), async move {</span>
+<span class="doccomment">//!     pyo3_asyncio::tokio::future_into_py_with_locals(</span>
+<span class="doccomment">//!         py,</span>
+<span class="doccomment">//!         locals.clone(),</span>
+<span class="doccomment">//!         // Store the current locals in task-local data</span>
+<span class="doccomment">//!         pyo3_asyncio::tokio::scope(locals.clone(), async move {</span>
 <span class="doccomment">//!             let py_sleep = Python::with_gil(|py| {</span>
-<span class="doccomment">//!                 pyo3_asyncio::into_future_with_loop(</span>
-<span class="doccomment">//!                     pyo3_asyncio::tokio::get_current_loop(py)?,</span>
+<span class="doccomment">//!                 pyo3_asyncio::into_future_with_locals(</span>
+<span class="doccomment">//!                     &amp;pyo3_asyncio::tokio::get_current_locals(py)?,</span>
 <span class="doccomment">//!                     // We can also call sleep within a Rust task since the</span>
-<span class="doccomment">//!                     // event loop is stored in task local data</span>
+<span class="doccomment">//!                     // locals are stored in task local data</span>
 <span class="doccomment">//!                     sleep(py)?</span>
 <span class="doccomment">//!                 )</span>
 <span class="doccomment">//!             })?;</span>
@@ -953,16 +976,23 @@
 <span class="doccomment">//! }</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Even though this is more correct, it&#39;s clearly not more ergonomic. That&#39;s why we introduced a new set of functions with this functionality baked in:</span>
+<span class="doccomment">//! Even though this is more correct, it&#39;s clearly not more ergonomic. That&#39;s why we introduced a</span>
+<span class="doccomment">//! set of functions with this functionality baked in:</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::into_future`</span>
-<span class="doccomment">//!   &gt; Convert a Python awaitable into a Rust future (using `pyo3_asyncio::&lt;runtime&gt;::get_current_loop`)</span>
+<span class="doccomment">//!   &gt; Convert a Python awaitable into a Rust future (using</span>
+<span class="doccomment">//!   `pyo3_asyncio::&lt;runtime&gt;::get_current_locals`)</span>
 <span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::future_into_py`</span>
-<span class="doccomment">//!   &gt; Convert a Rust future into a Python awaitable (using `pyo3_asyncio::&lt;runtime&gt;::get_current_loop` and `pyo3_asyncio::&lt;runtime&gt;::scope` to set the task-local event loop for the given Rust future)</span>
+<span class="doccomment">//!   &gt; Convert a Rust future into a Python awaitable (using</span>
+<span class="doccomment">//!   `pyo3_asyncio::&lt;runtime&gt;::get_current_locals` and `pyo3_asyncio::&lt;runtime&gt;::scope` to set the</span>
+<span class="doccomment">//!   task-local event loop for the given Rust future)</span>
 <span class="doccomment">//! - `pyo3_asyncio::&lt;runtime&gt;::local_future_into_py`</span>
-<span class="doccomment">//!   &gt; Convert a `!Send` Rust future into a Python awaitable (using `pyo3_asyncio::&lt;runtime&gt;::get_current_loop` and `pyo3_asyncio::&lt;runtime&gt;::scope_local` to set the task-local event loop for the given Rust future).</span>
+<span class="doccomment">//!   &gt; Convert a `!Send` Rust future into a Python awaitable (using</span>
+<span class="doccomment">//!   `pyo3_asyncio::&lt;runtime&gt;::get_current_locals` and `pyo3_asyncio::&lt;runtime&gt;::scope_local` to</span>
+<span class="doccomment">//!   set the task-local event loop for the given Rust future).</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! __These are the functions that we recommend using__. With these functions, the previous example can be rewritten to be more compact:</span>
+<span class="doccomment">//! __These are the functions that we recommend using__. With these functions, the previous example</span>
+<span class="doccomment">//! can be rewritten to be more compact:</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```rust</span>
 <span class="doccomment">//! use pyo3::prelude::*;</span>
@@ -1006,25 +1036,17 @@
 <span class="doccomment">//! }</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! ## A Note for `v0.13` Users</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Hey guys, I realize that these are pretty major changes for `v0.14`, and I apologize in advance for having to modify the public API so much. I hope</span>
-<span class="doccomment">//! the explanation above gives some much needed context and justification for all the breaking changes.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Part of the reason why it&#39;s taken so long to push out a `v0.14` release is because I wanted to make sure we got this release right. There were a lot of issues with the `v0.13` release that I hadn&#39;t anticipated, and it&#39;s thanks to your feedback and patience that we&#39;ve worked through these issues to get a more correct, more flexible version out there!</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This new release should address most the core issues that users have reported in the `v0.13` release, so I think we can expect more stability going forward.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Also, a special thanks to [@ShadowJonathan](https://github.com/ShadowJonathan) for helping with the design and review</span>
-<span class="doccomment">//! of these changes!</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - [@awestlake87](https://github.com/awestlake87)</span>
+<span class="doccomment">//! &gt; A special thanks to [@ShadowJonathan](https://github.com/ShadowJonathan) for helping with the</span>
+<span class="doccomment">//! design and review of these changes!</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Rust&#39;s Event Loop</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Currently only the async-std and Tokio runtimes are supported by this crate.</span>
+<span class="doccomment">//! Currently only the Async-Std and Tokio runtimes are supported by this crate. If you need support</span>
+<span class="doccomment">//! for another runtime, feel free to make a request on GitHub (or attempt to add support yourself</span>
+<span class="doccomment">//! with the [`generic`] module)!</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! &gt; _In the future, more runtimes may be supported for Rust._</span>
+<span class="doccomment">//! &gt; _In the future, we may implement first class support for more Rust runtimes. Contributions are</span>
+<span class="doccomment">//! welcome as well!_</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Features</span>
 <span class="doccomment">//!</span>
@@ -1037,7 +1059,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [dependencies.pyo3-asyncio]</span>
-<span class="doccomment">//! version = &quot;0.13&quot;</span>
+<span class="doccomment">//! version = &quot;0.15&quot;</span>
 <span class="doccomment">//! features = [&quot;attributes&quot;]</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -1050,7 +1072,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [dependencies.pyo3-asyncio]</span>
-<span class="doccomment">//! version = &quot;0.13&quot;</span>
+<span class="doccomment">//! version = &quot;0.15&quot;</span>
 <span class="doccomment">//! features = [&quot;async-std-runtime&quot;]</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -1063,7 +1085,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [dependencies.pyo3-asyncio]</span>
-<span class="doccomment">//! version = &quot;0.13&quot;</span>
+<span class="doccomment">//! version = &quot;0.15&quot;</span>
 <span class="doccomment">//! features = [&quot;tokio-runtime&quot;]</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -1076,9 +1098,13 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [dependencies.pyo3-asyncio]</span>
-<span class="doccomment">//! version = &quot;0.13&quot;</span>
+<span class="doccomment">//! version = &quot;0.15&quot;</span>
 <span class="doccomment">//! features = [&quot;testing&quot;]</span>
 <span class="doccomment">//! ```</span>
+
+<span class="doccomment">/// Re-exported for #[test] attributes</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">inventory</span>;
 
 <span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;testing&lt;/code&gt;&lt;/span&gt; Utilities for writing PyO3 Asyncio tests</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>)]</span>
@@ -1097,16 +1123,6 @@
 
 <span class="doccomment">/// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">generic</span>;
-
-<span class="kw">use</span> <span class="ident">std::future::Future</span>;
-
-<span class="kw">use</span> <span class="ident">futures::channel::oneshot</span>;
-<span class="kw">use</span> <span class="ident">once_cell::sync::OnceCell</span>;
-<span class="kw">use</span> <span class="ident">pyo3</span>::{<span class="ident">exceptions::PyKeyboardInterrupt</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">types::PyTuple</span>, <span class="ident">PyNativeType</span>};
-
-<span class="doccomment">/// Re-exported for #[test] attributes</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">inventory</span>;
 
 <span class="doccomment">/// Test README</span>
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
@@ -1134,13 +1150,19 @@
     <span class="macro">doctest!</span>(<span class="string">&quot;../README.md&quot;</span>, <span class="ident">readme_md</span>);
 }
 
+<span class="kw">use</span> <span class="ident">std::future::Future</span>;
+
+<span class="kw">use</span> <span class="ident">futures::channel::oneshot</span>;
+<span class="kw">use</span> <span class="ident">once_cell::sync::OnceCell</span>;
+<span class="kw">use</span> <span class="ident">pyo3</span>::{
+    <span class="ident">prelude</span>::<span class="kw-2">*</span>,
+    <span class="ident">types</span>::{<span class="ident">PyDict</span>, <span class="ident">PyTuple</span>},
+};
+
 <span class="kw">static</span> <span class="ident">ASYNCIO</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell::new</span>();
+<span class="kw">static</span> <span class="ident">CONTEXTVARS</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell::new</span>();
 <span class="kw">static</span> <span class="ident">ENSURE_FUTURE</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell::new</span>();
 <span class="kw">static</span> <span class="ident">GET_RUNNING_LOOP</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell::new</span>();
-
-<span class="kw">const</span> <span class="ident">EXPECT_INIT</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;PyO3 Asyncio has not been initialized&quot;</span>;
-<span class="kw">static</span> <span class="ident">CACHED_EVENT_LOOP</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell::new</span>();
-<span class="kw">static</span> <span class="ident">EXECUTOR</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell::new</span>();
 
 <span class="kw">fn</span> <span class="ident">ensure_future</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>, <span class="ident">awaitable</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span><span class="op">&gt;</span> {
     <span class="ident">ENSURE_FUTURE</span>
@@ -1153,54 +1175,6 @@
 
 <span class="kw">fn</span> <span class="ident">create_future</span>(<span class="ident">event_loop</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
     <span class="ident">event_loop</span>.<span class="ident">call_method0</span>(<span class="string">&quot;create_future&quot;</span>)
-}
-
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::needless_doctest_main</span>)]</span>
-<span class="doccomment">/// Wraps the provided function with the initialization and finalization for PyO3 Asyncio</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This function **_MUST_** be called from the main thread.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
-<span class="doccomment">/// * `f` - The function to call in between intialization and finalization</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// fn main() {</span>
-<span class="doccomment">///     // Call this function or use pyo3&#39;s &quot;auto-initialize&quot; feature</span>
-<span class="doccomment">///     pyo3::prepare_freethreaded_python();</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     Python::with_gil(|py| {</span>
-<span class="doccomment">///         pyo3_asyncio::with_runtime(py, || {</span>
-<span class="doccomment">///             println!(&quot;PyO3 Asyncio Initialized!&quot;);</span>
-<span class="doccomment">///             Ok(())</span>
-<span class="doccomment">///         })</span>
-<span class="doccomment">///         .map_err(|e| {</span>
-<span class="doccomment">///             e.print_and_set_sys_last_vars(py);  </span>
-<span class="doccomment">///         })</span>
-<span class="doccomment">///         .unwrap();</span>
-<span class="doccomment">///     })</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">deprecated</span>(
-    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Use the pyo3_asyncio::async_std::run or pyo3_asyncio::tokio::run instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)&quot;</span>
-)]</span>
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_runtime</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">f</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
-{
-    <span class="ident">try_init</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;
-
-    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> (<span class="ident">f</span>)()<span class="question-mark">?</span>;
-
-    <span class="ident">try_close</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;
-
-    <span class="prelude-val">Ok</span>(<span class="ident">result</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">close</span>(<span class="ident">event_loop</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -1222,38 +1196,10 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="doccomment">/// Attempt to initialize the Python and Rust event loops</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// - Must be called before any other pyo3-asyncio functions.</span>
-<span class="doccomment">/// - Calling `try_init` a second time returns `Ok(())` and does nothing.</span>
-<span class="doccomment">///   &gt; In future versions this may return an `Err`.</span>
-<span class="attribute">#[<span class="ident">deprecated</span>(
-    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details&quot;</span>
-)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_init</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="ident">CACHED_EVENT_LOOP</span>.<span class="ident">get_or_try_init</span>(<span class="op">|</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">event_loop</span> <span class="op">=</span> <span class="ident">asyncio_get_event_loop</span>(<span class="ident">py</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">py</span>
-            .<span class="ident">import</span>(<span class="string">&quot;concurrent.futures.thread&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">call_method0</span>(<span class="string">&quot;ThreadPoolExecutor&quot;</span>)<span class="question-mark">?</span>;
-        <span class="ident">event_loop</span>.<span class="ident">call_method1</span>(<span class="string">&quot;set_default_executor&quot;</span>, (<span class="ident">executor</span>,))<span class="question-mark">?</span>;
-
-        <span class="ident">EXECUTOR</span>.<span class="ident">set</span>(<span class="ident">executor</span>.<span class="ident">into</span>()).<span class="ident">unwrap</span>();
-        <span class="prelude-val">Ok</span>(<span class="ident">event_loop</span>.<span class="ident">into</span>())
-    })<span class="question-mark">?</span>;
-
-    <span class="prelude-val">Ok</span>(())
-}
-
 <span class="kw">fn</span> <span class="ident">asyncio</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
     <span class="ident">ASYNCIO</span>
         .<span class="ident">get_or_try_init</span>(<span class="op">|</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;asyncio&quot;</span>)<span class="question-mark">?</span>.<span class="ident">into</span>()))
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">asyncio</span><span class="op">|</span> <span class="ident">asyncio</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))
-}
-
-<span class="kw">fn</span> <span class="ident">asyncio_get_event_loop</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
-    <span class="ident">asyncio</span>(<span class="ident">py</span>)<span class="question-mark">?</span>.<span class="ident">call_method0</span>(<span class="string">&quot;get_event_loop&quot;</span>)
 }
 
 <span class="doccomment">/// Get a reference to the Python Event Loop from Rust</span>
@@ -1281,99 +1227,76 @@
         .<span class="ident">call0</span>()
 }
 
-<span class="doccomment">/// Get a reference to the Python event loop cached by `try_init` (0.13 behaviour)</span>
-<span class="attribute">#[<span class="ident">deprecated</span>(
-    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details&quot;</span>
-)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_event_loop</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">PyAny</span> {
-    <span class="ident">CACHED_EVENT_LOOP</span>.<span class="ident">get</span>().<span class="ident">expect</span>(<span class="ident">EXPECT_INIT</span>).<span class="ident">as_ref</span>(<span class="ident">py</span>)
+<span class="doccomment">/// Returns None only if contextvars cannot be imported (Python 3.6 fallback)</span>
+<span class="kw">fn</span> <span class="ident">contextvars</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
+    <span class="ident">CONTEXTVARS</span>
+        .<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">py</span>.<span class="ident">import</span>(<span class="string">&quot;contextvars&quot;</span>) {
+            <span class="prelude-val">Ok</span>(<span class="ident">contextvars</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">contextvars</span>.<span class="ident">into</span>()),
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+        })
+        .<span class="ident">as_ref</span>()
+        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">contextvars</span><span class="op">|</span> <span class="ident">contextvars</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))
 }
 
-<span class="doccomment">/// Run the event loop forever</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This can be called instead of `run_until_complete` to run the event loop</span>
-<span class="doccomment">/// until `stop` is called rather than driving a future to completion.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// After this function returns, the event loop can be resumed with either `run_until_complete` or</span>
-<span class="doccomment">/// [`crate::run_forever`]</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// # #[cfg(feature = &quot;async-std-runtime&quot;)]</span>
-<span class="doccomment">/// fn main() -&gt; pyo3::PyResult&lt;()&gt; {</span>
-<span class="doccomment">///     use std::time::Duration;</span>
-<span class="doccomment">///     use pyo3::prelude::*;</span>
-<span class="doccomment">///     </span>
-<span class="doccomment">///     // call this or use pyo3 0.14 &quot;auto-initialize&quot; feature</span>
-<span class="doccomment">///     pyo3::prepare_freethreaded_python();</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     Python::with_gil(|py| {</span>
-<span class="doccomment">///         pyo3_asyncio::with_runtime(py, || {</span>
-<span class="doccomment">///             let event_loop_hdl = PyObject::from(pyo3_asyncio::get_event_loop(py));</span>
-<span class="doccomment">///             // Wait 1 second, then stop the event loop</span>
-<span class="doccomment">///             async_std::task::spawn(async move {</span>
-<span class="doccomment">///                 async_std::task::sleep(Duration::from_secs(1)).await;</span>
-<span class="doccomment">///                 Python::with_gil(|py| {</span>
-<span class="doccomment">///                     event_loop_hdl</span>
-<span class="doccomment">///                         .as_ref(py)</span>
-<span class="doccomment">///                         .call_method1(</span>
-<span class="doccomment">///                             &quot;call_soon_threadsafe&quot;,</span>
-<span class="doccomment">///                             (event_loop_hdl</span>
-<span class="doccomment">///                                 .as_ref(py)</span>
-<span class="doccomment">///                                 .getattr(&quot;stop&quot;)</span>
-<span class="doccomment">///                                 .map_err(|e| e.print_and_set_sys_last_vars(py))</span>
-<span class="doccomment">///                                 .unwrap(),),</span>
-<span class="doccomment">///                             )</span>
-<span class="doccomment">///                             .unwrap();</span>
-<span class="doccomment">///                 })</span>
-<span class="doccomment">///             });</span>
-<span class="doccomment">///     </span>
-<span class="doccomment">///             pyo3_asyncio::run_forever(py)?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///             Ok(())</span>
-<span class="doccomment">///         })</span>
-<span class="doccomment">///     })</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// # #[cfg(not(feature = &quot;async-std-runtime&quot;))]</span>
-<span class="doccomment">/// # fn main() {}</span>
-<span class="attribute">#[<span class="ident">deprecated</span>(
-    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details&quot;</span>
-)]</span>
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_forever</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">get_event_loop</span>(<span class="ident">py</span>).<span class="ident">call_method0</span>(<span class="string">&quot;run_forever&quot;</span>) {
-        <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">is_instance</span>::<span class="op">&lt;</span><span class="ident">PyKeyboardInterrupt</span><span class="op">&gt;</span>(<span class="ident">py</span>) {
-            <span class="prelude-val">Ok</span>(())
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>)
-        }
+<span class="doccomment">/// Returns Ok(None) only if contextvars cannot be imported (Python 3.6 fallback)</span>
+<span class="kw">fn</span> <span class="ident">copy_context</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">contextvars</span>) <span class="op">=</span> <span class="ident">contextvars</span>(<span class="ident">py</span>) {
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">contextvars</span>.<span class="ident">call_method0</span>(<span class="string">&quot;copy_context&quot;</span>)<span class="question-mark">?</span>))
     } <span class="kw">else</span> {
-        <span class="prelude-val">Ok</span>(())
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
     }
 }
 
-<span class="doccomment">/// Shutdown the event loops and perform any necessary cleanup</span>
-<span class="attribute">#[<span class="ident">deprecated</span>(
-    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details&quot;</span>
-)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_close</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">exec</span>) <span class="op">=</span> <span class="ident">EXECUTOR</span>.<span class="ident">get</span>() {
-        <span class="comment">// Shutdown the executor and wait until all threads are cleaned up</span>
-        <span class="ident">exec</span>.<span class="ident">call_method0</span>(<span class="ident">py</span>, <span class="string">&quot;shutdown&quot;</span>)<span class="question-mark">?</span>;
+<span class="doccomment">/// Task-local data to store for Python conversions.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TaskLocals</span> {
+    <span class="doccomment">/// Track the event loop of the Python task</span>
+    <span class="ident">event_loop</span>: <span class="ident">PyObject</span>,
+    <span class="doccomment">/// Track the contextvars of the Python task</span>
+    <span class="ident">context</span>: <span class="ident">PyObject</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">TaskLocals</span> {
+    <span class="doccomment">/// At a minimum, TaskLocals must store the event loop.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">event_loop</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">event_loop</span>: <span class="ident">event_loop</span>.<span class="ident">into</span>(),
+            <span class="ident">context</span>: <span class="ident">event_loop</span>.<span class="ident">py</span>().<span class="prelude-val">None</span>(),
+        }
     }
 
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">event_loop</span>) <span class="op">=</span> <span class="ident">CACHED_EVENT_LOOP</span>.<span class="ident">get</span>() {
-        <span class="ident">close</span>(<span class="ident">event_loop</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))<span class="question-mark">?</span>;
+    <span class="doccomment">/// Construct TaskLocals with the event loop returned by `get_running_loop`</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_running_loop</span>(<span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">get_running_loop</span>(<span class="ident">py</span>)<span class="question-mark">?</span>))
     }
 
-    <span class="prelude-val">Ok</span>(())
+    <span class="doccomment">/// Manually provide the contextvars for the current task.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_context</span>(<span class="self">self</span>, <span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">context</span>: <span class="ident">context</span>.<span class="ident">into</span>(),
+            ..<span class="self">self</span>
+        }
+    }
+
+    <span class="doccomment">/// Capture the current task&#39;s contextvars</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_context</span>(<span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="comment">// No-op if context cannot be copied (Python 3.6 fallback)</span>
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">cx</span>) <span class="op">=</span> <span class="ident">copy_context</span>(<span class="ident">py</span>)<span class="question-mark">?</span> {
+            <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">with_context</span>(<span class="ident">cx</span>))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Ok</span>(<span class="self">self</span>)
+        }
+    }
+
+    <span class="doccomment">/// Get a reference to the event loop</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">event_loop</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span> {
+        <span class="self">self</span>.<span class="ident">event_loop</span>.<span class="ident">clone</span>().<span class="ident">into_ref</span>(<span class="ident">py</span>)
+    }
+
+    <span class="doccomment">/// Get a reference to the python context</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">context</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span> {
+        <span class="self">self</span>.<span class="ident">context</span>.<span class="ident">clone</span>().<span class="ident">into_ref</span>(<span class="ident">py</span>)
+    }
 }
 
 <span class="attribute">#[<span class="ident">pyclass</span>]</span>
@@ -1383,7 +1306,6 @@
 
 <span class="attribute">#[<span class="ident">pymethods</span>]</span>
 <span class="kw">impl</span> <span class="ident">PyTaskCompleter</span> {
-    <span class="attribute">#[<span class="ident">call</span>]</span>
     <span class="attribute">#[<span class="ident">args</span>(<span class="ident">task</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">__call__</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">task</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">debug_assert!</span>(<span class="ident">task</span>.<span class="ident">call_method0</span>(<span class="string">&quot;done&quot;</span>)<span class="question-mark">?</span>.<span class="ident">extract</span>()<span class="question-mark">?</span>);
@@ -1415,7 +1337,6 @@
 
 <span class="attribute">#[<span class="ident">pymethods</span>]</span>
 <span class="kw">impl</span> <span class="ident">PyEnsureFuture</span> {
-    <span class="attribute">#[<span class="ident">call</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">__call__</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">task</span> <span class="op">=</span> <span class="ident">ensure_future</span>(<span class="ident">py</span>, <span class="self">self</span>.<span class="ident">awaitable</span>.<span class="ident">as_ref</span>(<span class="ident">py</span>))<span class="question-mark">?</span>;
@@ -1427,8 +1348,22 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">call_soon_threadsafe</span>(<span class="ident">event_loop</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>, <span class="ident">args</span>: <span class="kw">impl</span> <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyTuple</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="ident">event_loop</span>.<span class="ident">call_method1</span>(<span class="string">&quot;call_soon_threadsafe&quot;</span>, <span class="ident">args</span>)<span class="question-mark">?</span>;
+<span class="kw">fn</span> <span class="ident">call_soon_threadsafe</span>(
+    <span class="ident">event_loop</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>,
+    <span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>,
+    <span class="ident">args</span>: <span class="kw">impl</span> <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">Py</span><span class="op">&lt;</span><span class="ident">PyTuple</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">event_loop</span>.<span class="ident">py</span>();
+
+    <span class="kw">let</span> <span class="ident">kwargs</span> <span class="op">=</span> <span class="ident">PyDict::new</span>(<span class="ident">py</span>);
+
+    <span class="comment">// Accommodate for the Python 3.6 fallback</span>
+    <span class="comment">// (call_soon_threadsafe does not support the context kwarg in 3.6)</span>
+    <span class="kw">if</span> <span class="op">!</span><span class="ident">context</span>.<span class="ident">is_none</span>() {
+        <span class="ident">kwargs</span>.<span class="ident">set_item</span>(<span class="string">&quot;context&quot;</span>, <span class="ident">context</span>)<span class="question-mark">?</span>;
+    }
+
+    <span class="ident">event_loop</span>.<span class="ident">call_method</span>(<span class="string">&quot;call_soon_threadsafe&quot;</span>, <span class="ident">args</span>, <span class="prelude-val">Some</span>(<span class="ident">kwargs</span>))<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
 }
 
@@ -1438,6 +1373,86 @@
 <span class="doccomment">/// completion handler sends the result of this Task through a</span>
 <span class="doccomment">/// `futures::channel::oneshot::Sender&lt;PyResult&lt;PyObject&gt;&gt;` and the future returned by this function</span>
 <span class="doccomment">/// simply awaits the result through the `futures::channel::oneshot::Receiver&lt;PyResult&lt;PyObject&gt;&gt;`.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Arguments</span>
+<span class="doccomment">/// * `locals` - The Python event loop and context to be used for the provided awaitable</span>
+<span class="doccomment">/// * `awaitable` - The Python `awaitable` to be converted</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Examples</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```</span>
+<span class="doccomment">/// use std::time::Duration;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// use pyo3::prelude::*;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// const PYTHON_CODE: &amp;&#39;static str = r#&quot;</span>
+<span class="doccomment">/// import asyncio</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// async def py_sleep(duration):</span>
+<span class="doccomment">///     await asyncio.sleep(duration)</span>
+<span class="doccomment">/// &quot;#;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// async fn py_sleep(seconds: f32) -&gt; PyResult&lt;()&gt; {</span>
+<span class="doccomment">///     let test_mod = Python::with_gil(|py| -&gt; PyResult&lt;PyObject&gt; {</span>
+<span class="doccomment">///         Ok(</span>
+<span class="doccomment">///             PyModule::from_code(</span>
+<span class="doccomment">///                 py,</span>
+<span class="doccomment">///                 PYTHON_CODE,</span>
+<span class="doccomment">///                 &quot;test_into_future/test_mod.py&quot;,</span>
+<span class="doccomment">///                 &quot;test_mod&quot;</span>
+<span class="doccomment">///             )?</span>
+<span class="doccomment">///             .into()</span>
+<span class="doccomment">///         )</span>
+<span class="doccomment">///     })?;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     Python::with_gil(|py| {</span>
+<span class="doccomment">///         pyo3_asyncio::into_future_with_loop(</span>
+<span class="doccomment">///             pyo3_asyncio::get_running_loop(py)?,</span>
+<span class="doccomment">///             test_mod</span>
+<span class="doccomment">///                 .call_method1(py, &quot;py_sleep&quot;, (seconds.into_py(py),))?</span>
+<span class="doccomment">///                 .as_ref(py),</span>
+<span class="doccomment">///         )</span>
+<span class="doccomment">///     })?</span>
+<span class="doccomment">///     .await?;</span>
+<span class="doccomment">///     Ok(())    </span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">/// ```</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_future_with_locals</span>(
+    <span class="ident">locals</span>: <span class="kw-2">&amp;</span><span class="ident">TaskLocals</span>,
+    <span class="ident">awaitable</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">awaitable</span>.<span class="ident">py</span>();
+    <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">oneshot::channel</span>();
+
+    <span class="ident">call_soon_threadsafe</span>(
+        <span class="ident">locals</span>.<span class="ident">event_loop</span>(<span class="ident">py</span>),
+        <span class="ident">locals</span>.<span class="ident">context</span>(<span class="ident">py</span>),
+        (<span class="ident">PyEnsureFuture</span> {
+            <span class="ident">awaitable</span>: <span class="ident">awaitable</span>.<span class="ident">into</span>(),
+            <span class="ident">tx</span>: <span class="prelude-val">Some</span>(<span class="ident">tx</span>),
+        },),
+    )<span class="question-mark">?</span>;
+
+    <span class="prelude-val">Ok</span>(<span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">match</span> <span class="ident">rx</span>.<span class="kw">await</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">item</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">item</span>,
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
+                <span class="prelude-val">Err</span>(<span class="ident">PyErr::from_instance</span>(
+                    <span class="ident">asyncio</span>(<span class="ident">py</span>)<span class="question-mark">?</span>.<span class="ident">call_method0</span>(<span class="string">&quot;CancelledError&quot;</span>)<span class="question-mark">?</span>,
+                ))
+            }),
+        }
+    })
+}
+
+<span class="doccomment">/// Convert a Python `awaitable` into a Rust Future</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A</span>
+<span class="doccomment">/// completion handler sends the result of this Task through a</span>
+<span class="doccomment">/// `futures::channel::oneshot::Sender&lt;PyResult&lt;PyObject&gt;&gt;` and the future returned by this function</span>
+<span class="doccomment">/// simply awaits the result through the `futures::channel::oneshot::Receiver&lt;PyResult&lt;PyObject&gt;&gt;`.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// __This function will be removed in `v0.16`__</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">/// * `event_loop` - The Python event loop that the awaitable should be attached to</span>
@@ -1482,88 +1497,18 @@
 <span class="doccomment">///     Ok(())    </span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">/// ```</span>
+<span class="attribute">#[<span class="ident">deprecated</span>(
+    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.15.0&quot;</span>,
+    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Use pyo3_asyncio::into_future_with_locals instead&quot;</span>
+)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_future_with_loop</span>(
     <span class="ident">event_loop</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>,
     <span class="ident">awaitable</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">oneshot::channel</span>();
-
-    <span class="ident">call_soon_threadsafe</span>(
-        <span class="ident">event_loop</span>,
-        (<span class="ident">PyEnsureFuture</span> {
-            <span class="ident">awaitable</span>: <span class="ident">awaitable</span>.<span class="ident">into</span>(),
-            <span class="ident">tx</span>: <span class="prelude-val">Some</span>(<span class="ident">tx</span>),
-        },),
-    )<span class="question-mark">?</span>;
-
-    <span class="prelude-val">Ok</span>(<span class="kw">async</span> <span class="kw">move</span> {
-        <span class="kw">match</span> <span class="ident">rx</span>.<span class="kw">await</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">item</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">item</span>,
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Python::with_gil</span>(<span class="op">|</span><span class="ident">py</span><span class="op">|</span> {
-                <span class="prelude-val">Err</span>(<span class="ident">PyErr::from_instance</span>(
-                    <span class="ident">asyncio</span>(<span class="ident">py</span>)<span class="question-mark">?</span>.<span class="ident">call_method0</span>(<span class="string">&quot;CancelledError&quot;</span>)<span class="question-mark">?</span>,
-                ))
-            }),
-        }
-    })
-}
-
-<span class="doccomment">/// Convert a Python `awaitable` into a Rust Future</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A</span>
-<span class="doccomment">/// completion handler sends the result of this Task through a</span>
-<span class="doccomment">/// `futures::channel::oneshot::Sender&lt;PyResult&lt;PyObject&gt;&gt;` and the future returned by this function</span>
-<span class="doccomment">/// simply awaits the result through the `futures::channel::oneshot::Receiver&lt;PyResult&lt;PyObject&gt;&gt;`.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `awaitable` - The Python `awaitable` to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use std::time::Duration;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// const PYTHON_CODE: &amp;&#39;static str = r#&quot;</span>
-<span class="doccomment">/// import asyncio</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async def py_sleep(duration):</span>
-<span class="doccomment">///     await asyncio.sleep(duration)</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async fn py_sleep(seconds: f32) -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">///     let test_mod = Python::with_gil(|py| -&gt; PyResult&lt;PyObject&gt; {</span>
-<span class="doccomment">///         Ok(</span>
-<span class="doccomment">///             PyModule::from_code(</span>
-<span class="doccomment">///                 py,</span>
-<span class="doccomment">///                 PYTHON_CODE,</span>
-<span class="doccomment">///                 &quot;test_into_future/test_mod.py&quot;,</span>
-<span class="doccomment">///                 &quot;test_mod&quot;</span>
-<span class="doccomment">///             )?</span>
-<span class="doccomment">///             .into()</span>
-<span class="doccomment">///         )</span>
-<span class="doccomment">///     })?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     Python::with_gil(|py| {</span>
-<span class="doccomment">///         // Only works with cached event loop</span>
-<span class="doccomment">///         pyo3_asyncio::into_future(</span>
-<span class="doccomment">///             test_mod</span>
-<span class="doccomment">///                 .call_method1(py, &quot;py_sleep&quot;, (seconds.into_py(py),))?</span>
-<span class="doccomment">///                 .as_ref(py),</span>
-<span class="doccomment">///         )</span>
-<span class="doccomment">///     })?</span>
-<span class="doccomment">///     .await?;</span>
-<span class="doccomment">///     Ok(())    </span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">deprecated</span>(
-    <span class="ident">since</span> <span class="op">=</span> <span class="string">&quot;0.14.0&quot;</span>,
-    <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Use pyo3_asyncio::async_std::into_future or pyo3_asyncio::tokio::into_future instead\n    (see the [migration guide](https://github.com/awestlake87/pyo3-asyncio/#migrating-from-013-to-014) for more details)&quot;</span>
-)]</span>
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_future</span>(<span class="ident">awaitable</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span> {
-    <span class="ident">into_future_with_loop</span>(<span class="ident">get_event_loop</span>(<span class="ident">awaitable</span>.<span class="ident">py</span>()), <span class="ident">awaitable</span>)
+    <span class="ident">into_future_with_locals</span>(
+        <span class="kw-2">&amp;</span><span class="ident">TaskLocals::new</span>(<span class="ident">event_loop</span>).<span class="ident">copy_context</span>(<span class="ident">event_loop</span>.<span class="ident">py</span>())<span class="question-mark">?</span>,
+        <span class="ident">awaitable</span>,
+    )
 }
 
 <span class="kw">fn</span> <span class="ident">dump_err</span>(<span class="ident">py</span>: <span class="ident">Python</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">PyErr</span>) <span class="op">+</span> <span class="lifetime">&#39;_</span> {
@@ -1573,7 +1518,7 @@
         <span class="ident">e</span>.<span class="ident">print_and_set_sys_last_vars</span>(<span class="ident">py</span>);
     }
 }
-</pre></div>
+</code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
     <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script>
 </body></html>
