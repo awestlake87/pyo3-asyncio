@@ -17,7 +17,7 @@
 
 > PyO3 Asyncio is a _brand new_ part of the broader PyO3 ecosystem. Feel free to open any issues for feature requests or bugfixes for this crate.
 
-__If you're a new-comer, the best way to get started is to read through the primer below! For `v0.13` users I highly recommend reading through the [migration section](#migrating-from-013-to-014) to get a general idea of what's changed in `v0.14`.__
+__If you're a new-comer, the best way to get started is to read through the primer below! For `v0.13` and `v0.14` users I highly recommend reading through the [migration section](#migration-guide) to get a general idea of what's changed in `v0.14` and `v0.15`.__
 
 ## PyO3 Asyncio Primer
 
@@ -142,7 +142,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 fn rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::async_std::future_into_py(py, async {
         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 
@@ -166,7 +166,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 fn rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 
@@ -283,7 +283,7 @@ async fn rust_sleep() {
 fn call_rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::async_std::future_into_py(py, async move {
         rust_sleep().await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 ```
@@ -433,7 +433,7 @@ use pyo3::{prelude::*, wrap_pyfunction};
 fn rust_sleep(py: Python) -> PyResult<&PyAny> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        Ok(Python::with_gil(|py| py.None()))
+        Ok(())
     })
 }
 
@@ -521,7 +521,8 @@ fn main() -> PyResult<()> {
 - Managing event loop references can be tricky with pyo3-asyncio. See [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references) in the API docs to get a better intuition for how event loop references are managed in this library.
 - Testing pyo3-asyncio libraries and applications requires a custom test harness since Python requires control over the main thread. You can find a testing guide in the [API docs for the `testing` module](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/testing)
 
-## Migrating from 0.13 to 0.14
+## Migration Guide
+### Migrating from 0.13 to 0.14
 
 So what's changed from `v0.13` to `v0.14`? 
 
@@ -615,7 +616,42 @@ __Before you get started, I personally recommend taking a look at [Event Loop Re
     - Replace `pyo3_asyncio::get_event_loop` with `pyo3_asyncio::<runtime>::get_current_loop`
 5. After all conversions have been replaced with their `v0.14` counterparts, `pyo3_asyncio::try_init` can safely be removed.
 
-> The `v0.13` API will likely still be supported in version `v0.15`, but no solid guarantees after that point.
+> The `v0.13` API has been removed in version `v0.15`
+
+### Migrating from 0.14 to 0.15
+
+There have been a few changes to the API in order to support proper cancellation from Python and the `contextvars` module.
+
+- Any instance of `cancellable_future_into_py` and `local_cancellable_future_into_py` conversions can be replaced with their`future_into_py` and `local_future_into_py` counterparts. 
+  > Cancellation support became the default behaviour in 0.15.
+- Instances of `*_with_loop` conversions should be replaced with the newer `*_with_locals` conversions.
+  ```rust no_run
+  use pyo3::prelude::*;
+
+  Python::with_gil(|py| -> PyResult<()> {
+      let event_loop = pyo3_asyncio::get_running_loop(py)?;
+
+      // *_with_loop conversions in 0.14
+      let fut = pyo3_asyncio::tokio::future_into_py_with_loop(
+          event_loop, 
+          async move { Ok(Python::with_gil(|py| py.None())) }
+      )?;
+      // should be replaced with *_with_locals in 0.15
+      //
+      // contextvars can be copied with `copy_context` or supplied 
+      // manually via `with_context`
+      let fut = pyo3_asyncio::tokio::future_into_py_with_locals(
+          py, 
+          pyo3_asyncio::TaskLocals::new(event_loop).copy_context(py)?, 
+          async move { Ok(()) }
+      )?;
+
+      Ok(())
+  });
+  ```
+- `scope` and `scope_local` variants now accept `TaskLocals` instead of `event_loop`. You can usually just replace the `event_loop` with `pyo3_asyncio::TaskLocals::new(event_loop).copy_context(py)?`.
+- Return types for `future_into_py`, `future_into_py_with_locals` `local_future_into_py`, and `local_future_into_py_with_locals` are now constrained by the bound `IntoPy<PyObject>` instead of requiring the return type to be `PyObject`. This can make the return types for futures more flexible, but inference can also fail when the concrete type is ambiguous (for example when using `into()`). Sometimes the `into()` can just be removed, 
+- `run`, and `run_until_complete` can now return any `Send + 'static` value.
 
 ## Known Problems
 

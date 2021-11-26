@@ -8,9 +8,6 @@ fn main() -> pyo3::PyResult<()> {
     pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
-        // into_coroutine requires the 0.13 API
-        pyo3_asyncio::try_init(py)?;
-
         let mut builder = tokio::runtime::Builder::new_current_thread();
         builder.enable_all();
 
