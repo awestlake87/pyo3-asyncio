@@ -117,7 +117,7 @@ async fn test_local_future_into_py() -> PyResult<()> {
 
         let py_future = pyo3_asyncio::async_std::local_future_into_py(py, async move {
             async_std::task::sleep(Duration::from_secs(*non_send_secs)).await;
-            Ok(Python::with_gil(|py| py.None()))
+            Ok(())
         })?;
 
         pyo3_asyncio::async_std::into_future(py_future)
@@ -137,7 +137,7 @@ async fn test_cancel() -> PyResult<()> {
             async_std::task::sleep(Duration::from_secs(1)).await;
             *completed.lock().unwrap() = true;
 
-            Ok(Python::with_gil(|py| py.None()))
+            Ok(())
         })?
         .into())
     })?;
@@ -183,7 +183,7 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
                 async_std::task::sleep(Duration::from_secs(1)).await;
                 *completed.lock().unwrap() = true;
 
-                Ok(Python::with_gil(|py| py.None()))
+                Ok(())
             })?
             .into())
         })?;
@@ -224,7 +224,7 @@ fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     fn sleep(py: Python) -> PyResult<&PyAny> {
         pyo3_asyncio::async_std::future_into_py(py, async move {
             async_std::task::sleep(Duration::from_millis(500)).await;
-            Ok(Python::with_gil(|py| py.None()))
+            Ok(())
         })
     }
 
@@ -273,7 +273,7 @@ fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
             })?
             .await?;
 
-            Ok(Python::with_gil(|py| py.None()))
+            Ok(())
         })
     }
 

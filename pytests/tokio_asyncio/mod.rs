@@ -95,7 +95,7 @@ fn test_local_future_into_py(event_loop: PyObject) -> PyResult<()> {
                 TaskLocals::new(event_loop.as_ref(py)),
                 async move {
                     tokio::time::sleep(Duration::from_secs(*non_send_secs)).await;
-                    Ok(Python::with_gil(|py| py.None()))
+                    Ok(())
                 },
             )?;
 
@@ -140,7 +140,7 @@ async fn test_cancel() -> PyResult<()> {
             tokio::time::sleep(Duration::from_secs(1)).await;
             *completed.lock().unwrap() = true;
 
-            Ok(Python::with_gil(|py| py.None()))
+            Ok(())
         })?
         .into())
     })?;
@@ -187,7 +187,7 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
                 Ok(pyo3_asyncio::tokio::local_future_into_py(py, async move {
                     tokio::time::sleep(Duration::from_secs(1)).await;
                     *completed.lock().unwrap() = true;
-                    Ok(Python::with_gil(|py| py.None()))
+                    Ok(())
                 })?
                 .into())
             })?;
@@ -230,7 +230,7 @@ fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     fn sleep(py: Python) -> PyResult<&PyAny> {
         pyo3_asyncio::tokio::future_into_py(py, async move {
             tokio::time::sleep(Duration::from_millis(500)).await;
-            Ok(Python::with_gil(|py| py.None()))
+            Ok(())
         })
     }
 
@@ -277,7 +277,7 @@ fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
             Python::with_gil(|py| pyo3_asyncio::tokio::into_future(callback.as_ref(py).call0()?))?
                 .await?;
 
-            Ok(Python::with_gil(|py| py.None()))
+            Ok(())
         })
     }
 
