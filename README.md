@@ -518,7 +518,7 @@ fn main() -> PyResult<()> {
 ```
 
 ### Additional Information
-- Managing event loop references can be tricky with pyo3-asyncio. See [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references) in the API docs to get a better intuition for how event loop references are managed in this library.
+- Managing event loop references can be tricky with pyo3-asyncio. See [Event Loop References and ContextVars](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references-and-contextvars) in the API docs to get a better intuition for how event loop references are managed in this library.
 - Testing pyo3-asyncio libraries and applications requires a custom test harness since Python requires control over the main thread. You can find a testing guide in the [API docs for the `testing` module](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/testing)
 
 ## Migration Guide
@@ -530,7 +530,7 @@ Well, a lot actually. There were some pretty major flaws in the initialization b
 
 To make things a bit easier, I decided to keep most of the old API alongside the new one (with some deprecation warnings to encourage users to move away from it). It should be possible to use the `v0.13` API alongside the newer `v0.14` API, which should allow you to upgrade your application piecemeal rather than all at once.
 
-__Before you get started, I personally recommend taking a look at [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references) in order to get a better grasp on the motivation behind these changes and the nuance involved in using the new conversions.__
+__Before you get started, I personally recommend taking a look at [Event Loop References and ContextVars](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references-and-contextvars) in order to get a better grasp on the motivation behind these changes and the nuance involved in using the new conversions.__
 
 ### 0.14 Highlights
 - Tokio initialization is now lazy.
@@ -610,7 +610,7 @@ __Before you get started, I personally recommend taking a look at [Event Loop Re
     }
     ```
 4. Replace conversions with their newer counterparts.
-    > You may encounter some issues regarding the usage of `get_running_loop` vs `get_event_loop`. For more details on these newer conversions and how they should be used see [Event Loop References](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references).
+    > You may encounter some issues regarding the usage of `get_running_loop` vs `get_event_loop`. For more details on these newer conversions and how they should be used see [Event Loop References and ContextVars](https://awestlake87.github.io/pyo3-asyncio/master/doc/pyo3_asyncio/#event-loop-references-and-contextvars).
     - Replace `pyo3_asyncio::into_future` with `pyo3_asyncio::<runtime>::into_future`
     - Replace `pyo3_asyncio::<runtime>::into_coroutine` with `pyo3_asyncio::<runtime>::future_into_py`
     - Replace `pyo3_asyncio::get_event_loop` with `pyo3_asyncio::<runtime>::get_current_loop`
