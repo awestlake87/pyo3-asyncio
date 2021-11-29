@@ -297,7 +297,7 @@ async def main():
 asyncio.run(main())
 "#;
 
-#[pyo3_asyncio::async_std::test]
+#[pyo3_asyncio::tokio::test]
 fn test_contextvars() -> PyResult<()> {
     Python::with_gil(|py| {
         let contextvars = match py.import("contextvars") {
