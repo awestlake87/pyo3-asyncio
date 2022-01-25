@@ -18,45 +18,40 @@
 //! overriding the default test harness can be quite different from what you're used to doing for
 //! integration tests, so these next sections will walk you through this process.
 //!
-//! ### Main Test File
+//! ## Main Test File
 //! First, we need to create the test's main file. Although these tests are considered integration
 //! tests, we cannot put them in the `tests` directory since that is a special directory owned by
-//! Cargo. Instead, we put our tests in a `pytests` directory, although the name `pytests` is just
-//! a convention.
+//! Cargo. Instead, we put our tests in a `pytests` directory.
 //!
-//! We'll also want to provide the test's main function. Most of the functionality that the test
-//! harness needs is packed in this module's [`main`](crate::testing::main) function. It will parse
-//! the test's CLI arguments, collect and pass the functions marked with
-//! [`#[pyo3_asyncio::async_std::test]`](crate::async_std::test) or
-//! [`#[pyo3_asyncio::tokio::test]`](crate::tokio::test) and pass them into the test harness for
-//! running and filtering.
+//! > The name `pytests` is just a convention. You can name this folder anything you want in your own
+//! > projects.
+//!
+//! We'll also want to provide the test's main function. Most of the functionality that the test harness needs is packed in the [`pyo3_asyncio::testing::main`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/testing/fn.main.html) function. This function will parse the test's CLI arguments, collect and pass the functions marked with [`#[pyo3_asyncio::async_std::test]`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/async_std/attr.test.html) or [`#[pyo3_asyncio::tokio::test]`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/tokio/attr.test.html) and pass them into the test harness for running and filtering.
 //!
 //! `pytests/test_example.rs` for the `tokio` runtime:
-//! ```
+//! ```rust
 //! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 //! #[pyo3_asyncio::tokio::main]
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
-//! #
 //! # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 //! # fn main() {}
 //! ```
 //!
 //! `pytests/test_example.rs` for the `async-std` runtime:
-//! ```
+//! ```rust
 //! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 //! #[pyo3_asyncio::async_std::main]
 //! async fn main() -> pyo3::PyResult<()> {
 //!     pyo3_asyncio::testing::main().await
 //! }
-//! #
 //! # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 //! # fn main() {}
 //! ```
 //!
-//! ### Cargo Configuration
-//! Next, we need to add our test file to the Cargo manifest. Add the following section to your
+//! ## Cargo Configuration
+//! Next, we need to add our test file to the Cargo manifest by adding the following section to the
 //! `Cargo.toml`
 //!
 //! ```toml
@@ -66,34 +61,34 @@
 //! harness = false
 //! ```
 //!
-//! Also, add the `testing` and `attributes` features to `pyo3-asyncio` and select your preferred
-//! runtime:
+//! Also add the `testing` and `attributes` features to the `pyo3-asyncio` dependency and select your preferred runtime:
 //!
 //! ```toml
-//! [dependencies]
 //! pyo3-asyncio = { version = "0.13", features = ["testing", "attributes", "async-std-runtime"] }
 //! ```
 //!
-//! At this point you should be able to run the test via `cargo test`
+//! At this point, you should be able to run the test via `cargo test`
 //!
 //! ### Adding Tests to the PyO3 Asyncio Test Harness
 //!
 //! We can add tests anywhere in the test crate with the runtime's corresponding `#[test]` attribute:
 //!
-//! For `async-std` use the [`pyo3_asyncio::async_std::test`](crate::async_std::test) attribute:
-//! ```
+//! For `async-std` use the [`pyo3_asyncio::async_std::test`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/async_std/attr.test.html) attribute:
+//! ```rust
 //! # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
 //! mod tests {
 //!     use std::{time::Duration, thread};
 //!
 //!     use pyo3::prelude::*;
 //!
+//!     // tests can be async
 //!     #[pyo3_asyncio::async_std::test]
 //!     async fn test_async_sleep() -> PyResult<()> {
 //!         async_std::task::sleep(Duration::from_secs(1)).await;
 //!         Ok(())
 //!     }
 //!
+//!     // they can also be synchronous
 //!     #[pyo3_asyncio::async_std::test]
 //!     fn test_blocking_sleep() -> PyResult<()> {
 //!         thread::sleep(Duration::from_secs(1));
@@ -110,20 +105,22 @@
 //! # fn main() {}
 //! ```
 //!
-//! For `tokio` use the [`pyo3_asyncio::tokio::test`](crate::tokio::test) attribute:
-//! ```
+//! For `tokio` use the [`pyo3_asyncio::tokio::test`](https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/tokio/attr.test.html) attribute:
+//! ```rust
 //! # #[cfg(all(feature = "tokio-runtime", feature = "attributes"))]
 //! mod tests {
 //!     use std::{time::Duration, thread};
 //!
 //!     use pyo3::prelude::*;
 //!
+//!     // tests can be async
 //!     #[pyo3_asyncio::tokio::test]
 //!     async fn test_async_sleep() -> PyResult<()> {
 //!         tokio::time::sleep(Duration::from_secs(1)).await;
 //!         Ok(())
 //!     }
 //!
+//!     // they can also be synchronous
 //!     #[pyo3_asyncio::tokio::test]
 //!     fn test_blocking_sleep() -> PyResult<()> {
 //!         thread::sleep(Duration::from_secs(1));
@@ -140,12 +137,12 @@
 //! # fn main() {}
 //! ```
 //!
-//! ### Lib Tests
+//! ## Lib Tests
 //!
 //! Unfortunately, as we mentioned at the beginning, these utilities will only run in integration
 //! tests and doc tests. Running lib tests are out of the question since we need control over the
-//! main function. You can however perform compilation checks for lib tests. This is unfortunately
-//! much more useful in doc tests than it is for lib tests, but the option is there if you want it.
+//! main function. You can however perform compilation checks for lib tests. This is much more
+//! useful in doc tests than it is for lib tests, but the option is there if you want it.
 //!
 //! `my-crate/src/lib.rs`
 //! ```
@@ -155,7 +152,7 @@
 //! # ))]
 //! mod tests {
 //!     use pyo3::prelude::*;
-//!     
+//!
 //! #   #[cfg(feature = "async-std-runtime")]
 //!     #[pyo3_asyncio::async_std::test]
 //!     async fn test_async_std_async_test_compiles() -> PyResult<()> {
@@ -311,7 +308,7 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
 ///     pyo3_asyncio::testing::main().await
 /// }
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-/// fn main() { }
+/// # fn main() { }
 /// ```
 pub async fn main() -> PyResult<()> {
     let args = parse_args();

@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - master
-    pull_request:
+  pull_request:
+    branches:
+      - master
 
 env:
   CARGO_TERM_COLOR: always
@@ -92,10 +94,10 @@ jobs:
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
 
-      # Omit async-std-runtime feature for MSRV 1.45.0
+      # Omit async-std-runtime and testing features from MSRV 1.45.0 (See README for details)
       - if: matrix.rust == '1.45.0'
         name: Prepare 1.45.0 features
-        run: echo features=testing,attributes,tokio-runtime >> $GITHUB_ENV
+        run: echo features=attributes,tokio-runtime >> $GITHUB_ENV
 
       # Use all features for MSRV 1.46.0 and above
       - if: matrix.rust != '1.45.0'
@@ -105,21 +107,15 @@ jobs:
       - name: Build
         run: cargo build --features=${{env.features}} --verbose --target ${{ matrix.platform.rust-target }}
 
+      - if: matrix.platform.os != 'windows-latest' 
+        name: Install pyo3-asyncio test dependencies
+        run: |
+          python -m pip install -U uvloop
+
       # Run tests (except on PyPy, because no embedding API).
       - if: matrix.python-version != 'pypy-3.6'
         name: Test
         run: cargo test --features=${{env.features}} --target ${{ matrix.platform.rust-target }}
-
-      - name: Install python test dependencies
-        run: |
-          python -m pip install -U pip setuptools
-          pip install setuptools-rust pytest pytest-benchmark tox tox-venv
-      # - name: Test example extension modules
-      #   shell: bash
-      #   run: |
-      #     for example_dir in examples/*; do
-      #         tox --discover $(which python) -c $example_dir -e py
-      #     done
     env:
       RUST_BACKTRACE: 1
       RUSTFLAGS: "-D warnings"
@@ -137,14 +133,17 @@ jobs:
           toolchain: nightly
           override: true
           profile: minimal
+      - name: Install pyo3-asyncio test dependencies
+        run: |
+          python -m pip install -U uvloop
       - uses: actions-rs/cargo@v1
         with:
           command: test 
           args: --all-features
         env:
           CARGO_INCREMENTAL: 0
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off"
+          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off"
       - uses: actions-rs/grcov@v0.1
         id: coverage
       - uses: codecov/codecov-action@v1
