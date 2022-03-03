@@ -677,7 +677,7 @@ pub fn into_future_with_locals(
         match rx.await {
             Ok(item) => item,
             Err(_) => Python::with_gil(|py| {
-                Err(PyErr::from_instance(
+                Err(PyErr::from_value(
                     asyncio(py)?.call_method0("CancelledError")?,
                 ))
             }),
