@@ -465,7 +465,7 @@ fn contextvars(py: Python) -> PyResult<&PyAny> {
 }
 
 fn copy_context(py: Python) -> PyResult<&PyAny> {
-    Ok(contextvars(py)?.call_method0("copy_context")?)
+    contextvars(py)?.call_method0("copy_context")
 }
 
 /// Task-local data to store for Python conversions.

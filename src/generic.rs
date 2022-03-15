@@ -1,11 +1,16 @@
 use std::{
     future::Future,
+    marker::PhantomData,
     pin::Pin,
     sync::{Arc, Mutex},
     task::{Context, Poll},
 };
 
-use futures::channel::oneshot;
+use futures::{
+    channel::{mpsc, oneshot},
+    SinkExt,
+};
+use once_cell::sync::OnceCell;
 use pin_project_lite::pin_project;
 use pyo3::prelude::*;
 
@@ -22,7 +27,7 @@ pub trait JoinError {
 }
 
 /// Generic Rust async/await runtime
-pub trait Runtime {
+pub trait Runtime: Send + 'static {
     /// The error returned by a JoinHandle after being awaited
     type JoinError: JoinError + Send;
     /// A future that completes with the result of the spawned task
@@ -1095,4 +1100,240 @@ where
     T: IntoPy<PyObject>,
 {
     local_future_into_py_with_locals::<R, F, T>(py, get_current_locals::<R>(py)?, fut)
+}
+
+/// Convert an async generator into a Rust Stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v1<'p, R>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static>
+where
+    R: Runtime,
+{
+    let (tx, rx) = async_channel::bounded(1);
+    let anext = PyObject::from(gen.getattr("__anext__")?);
+
+    R::spawn(async move {
+        loop {
+            let fut = Python::with_gil(|py| -> PyResult<_> {
+                into_future_with_locals(&locals, anext.as_ref(py).call0()?)
+            });
+            let item = match fut {
+                Ok(fut) => match fut.await {
+                    Ok(item) => Ok(item),
+                    Err(e) => {
+                        let stop_iter = Python::with_gil(|py| {
+                            e.is_instance_of::<pyo3::exceptions::PyStopAsyncIteration>(py)
+                        });
+
+                        if stop_iter {
+                            // end the iteration
+                            break;
+                        } else {
+                            Err(e)
+                        }
+                    }
+                },
+                Err(e) => Err(e),
+            };
+
+            if tx.send(item).await.is_err() {
+                // receiving side was dropped
+                break;
+            }
+        }
+    });
+
+    Ok(rx)
+}
+
+/// Convert an async generator into a stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v1<'p, R>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static>
+where
+    R: Runtime + ContextExt,
+{
+    into_stream_with_locals_v1::<R>(get_current_locals::<R>(gen.py())?, gen)
+}
+
+fn py_true() -> PyObject {
+    static TRUE: OnceCell<PyObject> = OnceCell::new();
+    TRUE.get_or_init(|| Python::with_gil(|py| true.into_py(py)))
+        .clone()
+}
+fn py_false() -> PyObject {
+    static FALSE: OnceCell<PyObject> = OnceCell::new();
+    FALSE
+        .get_or_init(|| Python::with_gil(|py| false.into_py(py)))
+        .clone()
+}
+
+trait Sender: Send + 'static {
+    fn send(&mut self, locals: TaskLocals, item: PyObject) -> PyResult<PyObject>;
+    fn close(&mut self) -> PyResult<()>;
+}
+
+struct GenericSender<R>
+where
+    R: Runtime,
+{
+    runtime: PhantomData<R>,
+    tx: mpsc::Sender<PyObject>,
+}
+
+impl<R> Sender for GenericSender<R>
+where
+    R: Runtime + ContextExt,
+{
+    fn send(&mut self, locals: TaskLocals, item: PyObject) -> PyResult<PyObject> {
+        match self.tx.try_send(item.clone()) {
+            Ok(_) => Ok(py_true()),
+            Err(e) => {
+                if e.is_full() {
+                    let mut tx = self.tx.clone();
+                    Python::with_gil(move |py| {
+                        Ok(
+                            future_into_py_with_locals::<R, _, PyObject>(py, locals, async move {
+                                if tx.flush().await.is_err() {
+                                    // receiving side disconnected
+                                    return Ok(py_false());
+                                }
+                                if tx.send(item).await.is_err() {
+                                    // receiving side disconnected
+                                    return Ok(py_false());
+                                }
+                                Ok(py_true())
+                            })?
+                            .into(),
+                        )
+                    })
+                } else {
+                    Ok(py_false())
+                }
+            }
+        }
+    }
+    fn close(&mut self) -> PyResult<()> {
+        self.tx.close_channel();
+        Ok(())
+    }
+}
+
+#[pyclass]
+struct SenderGlue {
+    locals: TaskLocals,
+    tx: Box<dyn Sender>,
+}
+#[pymethods]
+impl SenderGlue {
+    pub fn send(&mut self, item: PyObject) -> PyResult<PyObject> {
+        self.tx.send(self.locals.clone(), item)
+    }
+    pub fn close(&mut self) -> PyResult<()> {
+        self.tx.close()
+    }
+}
+
+#[cfg(feature = "unstable-streams")]
+const STREAM_GLUE: &str = r#"
+import asyncio
+
+async def forward(gen, sender):
+    async for item in gen:
+        should_continue = sender.send(item)
+
+        if asyncio.iscoroutine(should_continue):
+            should_continue = await should_continue
+    
+        if should_continue:
+            continue
+        else:
+            break
+
+    sender.close()
+"#;
+
+/// Convert an async generator into a stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v2<'p, R>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static>
+where
+    R: Runtime + ContextExt,
+{
+    static GLUE_MOD: OnceCell<PyObject> = OnceCell::new();
+    let py = gen.py();
+    let glue = GLUE_MOD
+        .get_or_try_init(|| -> PyResult<PyObject> {
+            Ok(PyModule::from_code(
+                py,
+                STREAM_GLUE,
+                "pyo3_asyncio/pyo3_asyncio_glue.py",
+                "pyo3_asyncio_glue",
+            )?
+            .into())
+        })?
+        .as_ref(py);
+
+    let (tx, rx) = mpsc::channel(10);
+
+    locals.event_loop(py).call_method1(
+        "call_soon_threadsafe",
+        (
+            locals.event_loop(py).getattr("create_task")?,
+            glue.call_method1(
+                "forward",
+                (
+                    gen,
+                    SenderGlue {
+                        locals,
+                        tx: Box::new(GenericSender {
+                            runtime: PhantomData::<R>,
+                            tx,
+                        }),
+                    },
+                ),
+            )?,
+        ),
+    )?;
+    Ok(rx)
+}
+
+/// Convert an async generator into a stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v2<'p, R>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static>
+where
+    R: Runtime + ContextExt,
+{
+    into_stream_with_locals_v2::<R>(get_current_locals::<R>(gen.py())?, gen)
 }

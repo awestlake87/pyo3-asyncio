@@ -536,3 +536,61 @@ where
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
     generic::into_future::<TokioRuntime>(awaitable)
 }
+
+/// Convert async generator into a stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v1<'p>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static> {
+    generic::into_stream_with_locals_v1::<TokioRuntime>(locals, gen)
+}
+
+/// Convert async generator into a stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v1<'p>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static> {
+    generic::into_stream_v1::<TokioRuntime>(gen)
+}
+
+/// Convert async generator into a stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v2<'p>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static> {
+    generic::into_stream_with_locals_v2::<TokioRuntime>(locals, gen)
+}
+
+/// Convert async generator into a stream
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v2<'p>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static> {
+    generic::into_stream_v2::<TokioRuntime>(gen)
+}

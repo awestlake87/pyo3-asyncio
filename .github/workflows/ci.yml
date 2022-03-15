@@ -139,8 +139,8 @@ jobs:
       - name: Build
         run: cargo build --features=${{env.features}} --verbose --target ${{ matrix.platform.rust-target }}
 
-      # uvloop doesn't compile under Windows or Python 3.11-dev
-      - if: ${{ matrix.platform.os != 'windows-latest' && matrix.python-version != '3.11-dev' }}
+      # uvloop doesn't compile under Windows, Python 3.11-dev, and PyPy
+      - if: ${{ matrix.platform.os != 'windows-latest' && matrix.python-version != '3.11-dev' && !startsWith(matrix.python-version, 'pypy') }}
         name: Install pyo3-asyncio test dependencies
         run: |
           python -m pip install -U uvloop
