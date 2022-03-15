@@ -299,7 +299,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["attributes"]
 //! ```
 //!
@@ -312,7 +312,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["async-std-runtime"]
 //! ```
 //!
@@ -325,7 +325,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["tokio-runtime"]
 //! ```
 //!
@@ -338,7 +338,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["testing"]
 //! ```
 
@@ -361,7 +361,6 @@ pub mod tokio;
 /// Errors and exceptions related to PyO3 Asyncio
 pub mod err;
 
-/// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
 pub mod generic;
 
 /// Test README

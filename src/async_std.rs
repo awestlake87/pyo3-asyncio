@@ -489,7 +489,51 @@ pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<
     generic::into_future::<AsyncStdRuntime>(awaitable)
 }
 
-/// Convert async generator into a stream
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_v1(test_mod.call_method0("gen")?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
 ///
 /// # Availability
 ///
@@ -503,7 +547,55 @@ pub fn into_stream_v1<'p>(
     generic::into_stream_v1::<AsyncStdRuntime>(gen)
 }
 
-/// Convert async generator into a stream
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_with_locals_v1(
+///         pyo3_asyncio::async_std::get_current_locals(py)?,
+///         test_mod.call_method0("gen")?
+///     )
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
 ///
 /// # Availability
 ///
@@ -518,7 +610,55 @@ pub fn into_stream_with_locals_v1<'p>(
     generic::into_stream_with_locals_v1::<AsyncStdRuntime>(locals, gen)
 }
 
-/// Convert async generator into a stream
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_with_locals_v2(
+///         pyo3_asyncio::async_std::get_current_locals(py)?,
+///         test_mod.call_method0("gen")?
+///     )
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
 ///
 /// # Availability
 ///
@@ -533,9 +673,51 @@ pub fn into_stream_with_locals_v2<'p>(
     generic::into_stream_with_locals_v2::<AsyncStdRuntime>(locals, gen)
 }
 
-/// Convert async generator into a stream
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
 ///
-/// # Availability
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_v2(test_mod.call_method0("gen")?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
 ///
 /// **This API is marked as unstable** and is only available when the
 /// `unstable-streams` crate feature is enabled. This comes with no

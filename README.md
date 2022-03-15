@@ -52,8 +52,8 @@ Here we initialize the runtime, import Python's `asyncio` library and run the gi
 ```toml
 # Cargo.toml dependencies
 [dependencies]
-pyo3 = { version = "0.14" }
-pyo3-asyncio = { version = "0.14", features = ["attributes", "async-std-runtime"] }
+pyo3 = { version = "0.16" }
+pyo3-asyncio = { version = "0.16", features = ["attributes", "async-std-runtime"] }
 async-std = "1.9"
 ```
 
@@ -82,8 +82,8 @@ attribute.
 ```toml
 # Cargo.toml dependencies
 [dependencies]
-pyo3 = { version = "0.14" }
-pyo3-asyncio = { version = "0.14", features = ["attributes", "tokio-runtime"] }
+pyo3 = { version = "0.16" }
+pyo3-asyncio = { version = "0.16", features = ["attributes", "tokio-runtime"] }
 tokio = "1.9"
 ```
 
@@ -127,8 +127,8 @@ For `async-std`:
 
 ```toml
 [dependencies]
-pyo3 = { version = "0.14", features = ["extension-module"] }
-pyo3-asyncio = { version = "0.14", features = ["async-std-runtime"] }
+pyo3 = { version = "0.16", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.16", features = ["async-std-runtime"] }
 async-std = "1.9"
 ```
 
@@ -136,8 +136,8 @@ For `tokio`:
 
 ```toml
 [dependencies]
-pyo3 = { version = "0.14", features = ["extension-module"] }
-pyo3-asyncio = { version = "0.14", features = ["tokio-runtime"] }
+pyo3 = { version = "0.16", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.16", features = ["tokio-runtime"] }
 tokio = "1.9"
 ```
 
@@ -431,8 +431,8 @@ name = "my_async_module"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.14", features = ["extension-module"] }
-pyo3-asyncio = { version = "0.14", features = ["tokio-runtime"] }
+pyo3 = { version = "0.16", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.16", features = ["tokio-runtime"] }
 async-std = "1.9"
 tokio = "1.9"
 ```
@@ -491,8 +491,8 @@ event loop before we can install the `uvloop` policy.
 ```toml
 [dependencies]
 async-std = "1.9"
-pyo3 = "0.14"
-pyo3-asyncio = { version = "0.14", features = ["async-std-runtime"] }
+pyo3 = "0.16"
+pyo3-asyncio = { version = "0.16", features = ["async-std-runtime"] }
 ```
 
 ```rust no_run
@@ -641,7 +641,7 @@ To make things a bit easier, I decided to keep most of the old API alongside the
 
 > The `v0.13` API has been removed in version `v0.15`
 
-### Migrating from 0.14 to 0.15
+### Migrating from 0.14 to 0.15+
 
 There have been a few changes to the API in order to support proper cancellation from Python and the `contextvars` module.
 
@@ -653,22 +653,20 @@ There have been a few changes to the API in order to support proper cancellation
   use pyo3::prelude::*;
 
   Python::with_gil(|py| -> PyResult<()> {
-      let event_loop = pyo3_asyncio::get_running_loop(py)?;
 
       // *_with_loop conversions in 0.14
+      //
+      // let event_loop = pyo3_asyncio::get_running_loop(py)?;
       //
       // let fut = pyo3_asyncio::tokio::future_into_py_with_loop(
       //     event_loop,
       //     async move { Ok(Python::with_gil(|py| py.None())) }
       // )?;
       //
-      // should be replaced with *_with_locals in 0.15
-      //
-      // contextvars can be copied with `copy_context` or supplied
-      // manually via `with_context`
+      // should be replaced with *_with_locals in 0.15+
       let fut = pyo3_asyncio::tokio::future_into_py_with_locals(
           py,
-          pyo3_asyncio::TaskLocals::new(event_loop).copy_context(py)?,
+          pyo3_asyncio::tokio::get_current_locals(py)?,
           async move { Ok(()) }
       )?;
 
@@ -679,3 +677,27 @@ There have been a few changes to the API in order to support proper cancellation
 - `scope` and `scope_local` variants now accept `TaskLocals` instead of `event_loop`. You can usually just replace the `event_loop` with `pyo3_asyncio::TaskLocals::new(event_loop).copy_context(py)?`.
 - Return types for `future_into_py`, `future_into_py_with_locals` `local_future_into_py`, and `local_future_into_py_with_locals` are now constrained by the bound `IntoPy<PyObject>` instead of requiring the return type to be `PyObject`. This can make the return types for futures more flexible, but inference can also fail when the concrete type is ambiguous (for example when using `into()`). Sometimes the `into()` can just be removed,
 - `run`, and `run_until_complete` can now return any `Send + 'static` value.
+
+### Migrating from 0.15 to 0.16
+
+Actually, not much has changed in the API. I'm happy to say that the PyO3 Asyncio is reaching a
+pretty stable point in 0.16. For the most part, 0.16 has been about cleanup and removing deprecated
+functions from the API.
+
+PyO3 0.16 comes with a few API changes of its own, but one of the changes that most impacted PyO3
+Asyncio was it's decision to drop support for Python 3.6. PyO3 Asyncio has been using a few
+workarounds / hacks to support the pre-3.7 version of Python's asyncio library that are no longer
+necessary. PyO3 Asyncio's underlying implementation is now a bit cleaner because of this.
+
+PyO3 Asyncio 0.15 included some important fixes to the API in order to add support for proper task
+cancellation and allow for the preservation / use of contextvars in Python coroutines. This led to
+the deprecation of some 0.14 functions that were used for edge cases in favor of some more correct
+versions, and those deprecated functions are now removed from the API in 0.16.
+
+In addition, with PyO3 Asyncio 0.16, the library now has experimental support for conversions from
+Python's async generators into a Rust `Stream`. There are currently two versions `v1` and `v2` with
+slightly different performance and type signatures, so I'm hoping to get some feedback on which one
+works best for downstream users. Just enable the `unstable-streams` feature and you're good to go!
+
+> The inverse conversion, Rust `Stream` to Python async generator, may come in a later release if
+> requested!
