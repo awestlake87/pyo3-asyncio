@@ -121,7 +121,7 @@ async fn test_panic() -> PyResult<()> {
     match fut.await {
         Ok(_) => panic!("coroutine should panic"),
         Err(e) => Python::with_gil(|py| {
-            if e.is_instance::<pyo3_asyncio::err::RustPanic>(py) {
+            if e.is_instance_of::<pyo3_asyncio::err::RustPanic>(py) {
                 Ok(())
             } else {
                 panic!("expected RustPanic err")
@@ -226,13 +226,15 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
 #[pymodule]
 fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     #![allow(deprecated)]
-    #[pyfn(m, "sleep")]
+    #[pyfunction]
     fn sleep(py: Python) -> PyResult<&PyAny> {
         pyo3_asyncio::tokio::future_into_py(py, async move {
             tokio::time::sleep(Duration::from_millis(500)).await;
             Ok(())
         })
     }
+
+    m.add_function(wrap_pyfunction!(sleep, m)?)?;
 
     Ok(())
 }
@@ -271,7 +273,7 @@ fn test_multiple_asyncio_run() -> PyResult<()> {
 #[pymodule]
 fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     #![allow(deprecated)]
-    #[pyfn(m, "async_callback")]
+    #[pyfunction]
     fn async_callback(py: Python, callback: PyObject) -> PyResult<&PyAny> {
         pyo3_asyncio::tokio::future_into_py(py, async move {
             Python::with_gil(|py| pyo3_asyncio::tokio::into_future(callback.as_ref(py).call0()?))?
@@ -280,6 +282,8 @@ fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
             Ok(())
         })
     }
+
+    m.add_function(wrap_pyfunction!(async_callback, m)?)?;
 
     Ok(())
 }

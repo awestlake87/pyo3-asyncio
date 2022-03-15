@@ -188,11 +188,9 @@ pub fn async_std_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #fn_impl
 
         pyo3_asyncio::inventory::submit! {
-            #![crate = pyo3_asyncio] {
-                pyo3_asyncio::testing::Test {
-                    name: format!("{}::{}", std::module_path!(), stringify!(#name)),
-                    test_fn: &#name
-                }
+            pyo3_asyncio::testing::Test {
+                name: concat!(std::module_path!(), "::", stringify!(#name)),
+                test_fn: &#name
             }
         }
     };
@@ -299,11 +297,9 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #fn_impl
 
         pyo3_asyncio::inventory::submit! {
-            #![crate = pyo3_asyncio] {
-                pyo3_asyncio::testing::Test {
-                    name: format!("{}::{}", std::module_path!(), stringify!(#name)),
-                    test_fn: &#name
-                }
+            pyo3_asyncio::testing::Test {
+                name: concat!(std::module_path!(), "::", stringify!(#name)),
+                test_fn: &#name
             }
         }
     };
