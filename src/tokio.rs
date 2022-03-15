@@ -1,3 +1,18 @@
+//! <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>tokio-runtime</code></span> PyO3 Asyncio functions specific to the tokio runtime
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>unstable-streams</code></span>
+//! are only available when the `unstable-streams` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.16"
+//! features = ["unstable-streams"]
+//! ```
+
 use std::{future::Future, pin::Pin, sync::Mutex};
 
 use ::tokio::{
@@ -539,6 +554,10 @@ pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
 ///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+///
 /// # Arguments
 /// * `locals` - The current task locals
 /// * `gen` - The Python async generator to be converted
@@ -586,12 +605,6 @@ pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<
 /// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-///
-/// # Availability
-///
-/// **This API is marked as unstable** and is only available when the
-/// `unstable-streams` crate feature is enabled. This comes with no
-/// stability guarantees, and could be changed or removed at any time.
 #[cfg(feature = "unstable-streams")]
 pub fn into_stream_with_locals_v1<'p>(
     locals: TaskLocals,
@@ -601,6 +614,10 @@ pub fn into_stream_with_locals_v1<'p>(
 }
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
 ///
 /// # Arguments
 /// * `gen` - The Python async generator to be converted
@@ -645,12 +662,6 @@ pub fn into_stream_with_locals_v1<'p>(
 /// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-///
-/// # Availability
-///
-/// **This API is marked as unstable** and is only available when the
-/// `unstable-streams` crate feature is enabled. This comes with no
-/// stability guarantees, and could be changed or removed at any time.
 #[cfg(feature = "unstable-streams")]
 pub fn into_stream_v1<'p>(
     gen: &'p PyAny,
@@ -659,6 +670,10 @@ pub fn into_stream_v1<'p>(
 }
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
 ///
 /// # Arguments
 /// * `locals` - The current task locals
@@ -707,12 +722,6 @@ pub fn into_stream_v1<'p>(
 /// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-///
-/// # Availability
-///
-/// **This API is marked as unstable** and is only available when the
-/// `unstable-streams` crate feature is enabled. This comes with no
-/// stability guarantees, and could be changed or removed at any time.
 #[cfg(feature = "unstable-streams")]
 pub fn into_stream_with_locals_v2<'p>(
     locals: TaskLocals,
@@ -722,6 +731,10 @@ pub fn into_stream_with_locals_v2<'p>(
 }
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
 ///
 /// # Arguments
 /// * `gen` - The Python async generator to be converted
@@ -766,10 +779,6 @@ pub fn into_stream_with_locals_v2<'p>(
 /// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
 /// # fn main() {}
 /// ```
-///
-/// **This API is marked as unstable** and is only available when the
-/// `unstable-streams` crate feature is enabled. This comes with no
-/// stability guarantees, and could be changed or removed at any time.
 #[cfg(feature = "unstable-streams")]
 pub fn into_stream_v2<'p>(
     gen: &'p PyAny,

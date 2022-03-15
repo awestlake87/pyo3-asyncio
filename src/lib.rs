@@ -350,11 +350,9 @@ pub use inventory;
 #[cfg(feature = "testing")]
 pub mod testing;
 
-/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>async-std-runtime</code></span> PyO3 Asyncio functions specific to the async-std runtime
 #[cfg(feature = "async-std")]
 pub mod async_std;
 
-/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>tokio-runtime</code></span> PyO3 Asyncio functions specific to the tokio runtime
 #[cfg(feature = "tokio-runtime")]
 pub mod tokio;
 
