@@ -663,8 +663,6 @@
 <span id="661">661</span>
 <span id="662">662</span>
 <span id="663">663</span>
-<span id="664">664</span>
-<span id="665">665</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
 <span class="doccomment">//! Rust Bindings to the Python Asyncio Event Loop</span>
@@ -1017,11 +1015,9 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">testing</span>;
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;async-std-runtime&lt;/code&gt;&lt;/span&gt; PyO3 Asyncio functions specific to the async-std runtime</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;async-std&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">async_std</span>;
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;tokio-runtime&lt;/code&gt;&lt;/span&gt; PyO3 Asyncio functions specific to the tokio runtime</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;tokio-runtime&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">tokio</span>;
 

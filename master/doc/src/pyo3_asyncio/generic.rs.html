@@ -1718,14 +1718,6 @@
 <span id="1716">1716</span>
 <span id="1717">1717</span>
 <span id="1718">1718</span>
-<span id="1719">1719</span>
-<span id="1720">1720</span>
-<span id="1721">1721</span>
-<span id="1722">1722</span>
-<span id="1723">1723</span>
-<span id="1724">1724</span>
-<span id="1725">1725</span>
-<span id="1726">1726</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Items marked with</span>
@@ -2847,6 +2839,10 @@
 
 <span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
 <span class="doccomment">///</span>
+<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
+<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
+<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">/// * `locals` - The current task locals</span>
 <span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
@@ -2941,12 +2937,6 @@
 <span class="doccomment">/// Ok(())</span>
 <span class="doccomment">/// # }</span>
 <span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Availability</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_with_locals_v1</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span>, <span class="ident">R</span><span class="op">&gt;</span>(
     <span class="ident">locals</span>: <span class="ident">TaskLocals</span>,
@@ -2993,6 +2983,10 @@
 }
 
 <span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
+<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
+<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
@@ -3084,12 +3078,6 @@
 <span class="doccomment">/// Ok(())</span>
 <span class="doccomment">/// # }</span>
 <span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Availability</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_v1</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span>, <span class="ident">R</span><span class="op">&gt;</span>(
     <span class="ident">gen</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span>,
@@ -3199,6 +3187,10 @@ async def forward(gen, sender):
 
 <span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
 <span class="doccomment">///</span>
+<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
+<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
+<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">/// * `locals` - The current task locals</span>
 <span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
@@ -3293,12 +3285,6 @@ async def forward(gen, sender):
 <span class="doccomment">/// Ok(())</span>
 <span class="doccomment">/// # }</span>
 <span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Availability</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_with_locals_v2</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span>, <span class="ident">R</span><span class="op">&gt;</span>(
     <span class="ident">locals</span>: <span class="ident">TaskLocals</span>,
@@ -3346,6 +3332,10 @@ async def forward(gen, sender):
 }
 
 <span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
+<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
+<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
@@ -3437,12 +3427,6 @@ async def forward(gen, sender):
 <span class="doccomment">/// Ok(())</span>
 <span class="doccomment">/// # }</span>
 <span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Availability</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_v2</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span>, <span class="ident">R</span><span class="op">&gt;</span>(
     <span class="ident">gen</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span>,
