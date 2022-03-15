@@ -81,10 +81,18 @@ jobs:
               rust-target: "i686-pc-windows-msvc",
             },
           ]
+        exclude:
+          # PyPy doesn't release 32-bit Windows builds any more
+          - python-version: pypy-3.7
+            platform: { os: "windows-latest", python-architecture: "x86" }
+          - python-version: pypy-3.8
+            platform: { os: "windows-latest", python-architecture: "x86" }
+          - python-version: pypy-3.9
+            platform: { os: "windows-latest", python-architecture: "x86" }
         include:
-          # Test minimal supported Rust version (no async-std)
-          - rust: 1.45.0
-            python-version: 3.9
+          # Test minimal supported Rust version
+          - rust: 1.48.0
+            python-version: "3.10"
             platform:
               {
                 os: "ubuntu-latest",
@@ -92,16 +100,17 @@ jobs:
                 rust-target: "x86_64-unknown-linux-gnu",
               }
             msrv: "MSRV"
-          # Test minimal supported Rust version (with async-std)
-          - rust: 1.46.0
-            python-version: 3.9
+
+          # Test the `nightly` feature
+          - rust: nightly
+            python-version: "3.10"
             platform:
               {
                 os: "ubuntu-latest",
                 python-architecture: "x64",
                 rust-target: "x86_64-unknown-linux-gnu",
               }
-            msrv: "MSRV"
+            extra_features: "nightly"
 
     steps:
       - uses: actions/checkout@v2
@@ -127,16 +136,6 @@ jobs:
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
 
-      # Omit async-std-runtime and testing features from MSRV 1.45.0 (See README for details)
-      - if: matrix.rust == '1.45.0'
-        name: Prepare 1.45.0 features
-        run: echo features=attributes,tokio-runtime >> $GITHUB_ENV
-
-      # Use all features for MSRV 1.46.0 and above
-      - if: matrix.rust != '1.45.0'
-        name: Prepare all features
-        run: echo features=testing,attributes,tokio-runtime,async-std-runtime >> $GITHUB_ENV
-
       - name: Build
         run: cargo build --features=${{env.features}} --verbose --target ${{ matrix.platform.rust-target }}
 
@@ -145,10 +144,6 @@ jobs:
         run: |
           python -m pip install -U uvloop
 
-      # Run tests (except on PyPy, because no embedding API).
-      - if: matrix.python-version != 'pypy-3.6'
-        name: Test
-        run: cargo test --features=${{env.features}} --target ${{ matrix.platform.rust-target }}
     env:
       RUST_BACKTRACE: 1
       RUSTFLAGS: "-D warnings"
