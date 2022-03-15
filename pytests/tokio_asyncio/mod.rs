@@ -304,15 +304,9 @@ asyncio.run(main())
 #[pyo3_asyncio::tokio::test]
 fn test_contextvars() -> PyResult<()> {
     Python::with_gil(|py| {
-        let contextvars = match py.import("contextvars") {
-            Ok(contextvars) => contextvars,
-            // Python 3.6 does not support contextvars, so early-out here
-            Err(_) => return Ok(()),
-        };
-
         let d = [
             ("asyncio", py.import("asyncio")?.into()),
-            ("contextvars", contextvars.into()),
+            ("contextvars", py.import("contextvars")?.into()),
             ("cvars_mod", wrap_pymodule!(cvars_mod)(py)),
         ]
         .into_py_dict(py);

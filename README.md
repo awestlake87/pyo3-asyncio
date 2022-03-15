@@ -656,10 +656,12 @@ There have been a few changes to the API in order to support proper cancellation
       let event_loop = pyo3_asyncio::get_running_loop(py)?;
 
       // *_with_loop conversions in 0.14
-      let fut = pyo3_asyncio::tokio::future_into_py_with_loop(
-          event_loop,
-          async move { Ok(Python::with_gil(|py| py.None())) }
-      )?;
+      //
+      // let fut = pyo3_asyncio::tokio::future_into_py_with_loop(
+      //     event_loop,
+      //     async move { Ok(Python::with_gil(|py| py.None())) }
+      // )?;
+      //
       // should be replaced with *_with_locals in 0.15
       //
       // contextvars can be copied with `copy_context` or supplied
