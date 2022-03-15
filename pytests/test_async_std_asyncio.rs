@@ -149,12 +149,12 @@ async fn test_cancel() -> PyResult<()> {
     .await
     {
         Python::with_gil(|py| -> PyResult<()> {
-            assert!(py
-                .import("asyncio")?
-                .getattr("CancelledError")?
-                .downcast::<PyType>()
-                .unwrap()
-                .is_instance(e.pvalue(py))?);
+            assert!(e.value(py).is_instance(
+                py.import("asyncio")?
+                    .getattr("CancelledError")?
+                    .downcast::<PyType>()
+                    .unwrap()
+            )?);
             Ok(())
         })?;
     } else {
@@ -195,12 +195,12 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
         .await
         {
             Python::with_gil(|py| -> PyResult<()> {
-                assert!(py
-                    .import("asyncio")?
-                    .getattr("CancelledError")?
-                    .downcast::<PyType>()
-                    .unwrap()
-                    .is_instance(e.pvalue(py))?);
+                assert!(e.value(py).is_instance(
+                    py.import("asyncio")?
+                        .getattr("CancelledError")?
+                        .downcast::<PyType>()
+                        .unwrap()
+                )?);
                 Ok(())
             })?;
         } else {
@@ -319,7 +319,6 @@ fn test_contextvars() -> PyResult<()> {
     })
 }
 
-#[allow(deprecated)]
 fn main() -> pyo3::PyResult<()> {
     pyo3::prepare_freethreaded_python();
 
