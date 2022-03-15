@@ -27,7 +27,7 @@ jobs:
         run: black --check .
       - name: Check rust formatting (rustfmt)
         run: cargo fmt --all -- --check
-  
+
   clippy:
     runs-on: ubuntu-latest
     steps:
@@ -38,37 +38,79 @@ jobs:
           profile: minimal
           components: clippy
       - run: make clippy
-  
+
   build:
     needs: [fmt] # don't wait for clippy as fails rarely and takes longer
     name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }} ${{ matrix.msrv }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
-      fail-fast: false  # If one platform fails, allow the rest to keep testing.
+      fail-fast: false # If one platform fails, allow the rest to keep testing.
       matrix:
         rust: [stable]
-        python-version: [3.6, 3.7, 3.8, 3.9, 3.10-dev, pypy-3.6]
-        platform: [
-          { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
-          { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
-          { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
-          { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
-        ]
+        python-version:
+          [
+            "3.7",
+            "3.8",
+            "3.9",
+            "3.10",
+            "3.11-dev",
+            "pypy-3.7",
+            "pypy-3.8",
+            "pypy-3.9",
+          ]
+        platform:
+          [
+            {
+              os: "macOS-latest",
+              python-architecture: "x64",
+              rust-target: "x86_64-apple-darwin",
+            },
+            {
+              os: "ubuntu-latest",
+              python-architecture: "x64",
+              rust-target: "x86_64-unknown-linux-gnu",
+            },
+            {
+              os: "windows-latest",
+              python-architecture: "x64",
+              rust-target: "x86_64-pc-windows-msvc",
+            },
+            {
+              os: "windows-latest",
+              python-architecture: "x86",
+              rust-target: "i686-pc-windows-msvc",
+            },
+          ]
         exclude:
-          # There is no 64-bit pypy on windows
-          - python-version: pypy-3.6
-            platform: { os: "windows-latest", python-architecture: "x64" }
+          # PyPy doesn't release 32-bit Windows builds any more
+          - python-version: pypy-3.7
+            platform: { os: "windows-latest", python-architecture: "x86" }
+          - python-version: pypy-3.8
+            platform: { os: "windows-latest", python-architecture: "x86" }
+          - python-version: pypy-3.9
+            platform: { os: "windows-latest", python-architecture: "x86" }
         include:
-          # Test minimal supported Rust version (no async-std)
-          - rust: 1.45.0
-            python-version: 3.9
-            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+          # Test minimal supported Rust version
+          - rust: 1.48.0
+            python-version: "3.10"
+            platform:
+              {
+                os: "ubuntu-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
             msrv: "MSRV"
-          # Test minimal supported Rust version (with async-std)
-          - rust: 1.46.0
-            python-version: 3.9
-            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
-            msrv: "MSRV"
+
+          # Test the `nightly` feature
+          - rust: nightly
+            python-version: "3.10"
+            platform:
+              {
+                os: "ubuntu-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-unknown-linux-gnu",
+              }
+            extra_features: "nightly"
 
     steps:
       - uses: actions/checkout@v2
@@ -94,28 +136,15 @@ jobs:
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
 
-      # Omit async-std-runtime and testing features from MSRV 1.45.0 (See README for details)
-      - if: matrix.rust == '1.45.0'
-        name: Prepare 1.45.0 features
-        run: echo features=attributes,tokio-runtime >> $GITHUB_ENV
-
-      # Use all features for MSRV 1.46.0 and above
-      - if: matrix.rust != '1.45.0'
-        name: Prepare all features
-        run: echo features=testing,attributes,tokio-runtime,async-std-runtime >> $GITHUB_ENV
-
       - name: Build
         run: cargo build --features=${{env.features}} --verbose --target ${{ matrix.platform.rust-target }}
 
-      - if: matrix.platform.os != 'windows-latest' 
+      # uvloop doesn't compile under Windows, Python 3.11-dev, and PyPy
+      - if: ${{ matrix.platform.os != 'windows-latest' && matrix.python-version != '3.11-dev' && !startsWith(matrix.python-version, 'pypy') }}
         name: Install pyo3-asyncio test dependencies
         run: |
           python -m pip install -U uvloop
 
-      # Run tests (except on PyPy, because no embedding API).
-      - if: matrix.python-version != 'pypy-3.6'
-        name: Test
-        run: cargo test --features=${{env.features}} --target ${{ matrix.platform.rust-target }}
     env:
       RUST_BACKTRACE: 1
       RUSTFLAGS: "-D warnings"
@@ -138,7 +167,7 @@ jobs:
           python -m pip install -U uvloop
       - uses: actions-rs/cargo@v1
         with:
-          command: test 
+          command: test
           args: --all-features
         env:
           CARGO_INCREMENTAL: 0

@@ -1,7 +1,7 @@
 use std::{any::Any, cell::RefCell, future::Future, panic::AssertUnwindSafe, pin::Pin};
 
 use async_std::task;
-use futures::prelude::*;
+use futures::FutureExt;
 use pyo3::prelude::*;
 
 use crate::{
@@ -211,46 +211,6 @@ where
 
 /// Convert a Rust Future into a Python awaitable
 ///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
-///     let secs = secs.extract()?;
-///     pyo3_asyncio::async_std::future_into_py_with_loop(
-///         pyo3_asyncio::async_std::get_current_loop(py)?,
-///         async move {
-///             async_std::task::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::async_std::future_into_py_with_locals instead"
-)]
-#[allow(deprecated)]
-pub fn future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    generic::future_into_py_with_loop::<AsyncStdRuntime, F>(event_loop, fut)
-}
-
-/// Convert a Rust Future into a Python awaitable
-///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
 /// the Rust future will be cancelled as well (new behaviour in `v0.15`).
 ///
@@ -302,50 +262,6 @@ where
 
 /// Convert a Rust Future into a Python awaitable
 ///
-/// __This function was deprecated in favor of [`future_into_py_with_locals`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function should be replaced with
-/// [`future_into_py_with_locals`]__
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
-///     let secs = secs.extract()?;
-///     pyo3_asyncio::async_std::cancellable_future_into_py_with_loop(
-///         pyo3_asyncio::async_std::get_current_loop(py)?,
-///         async move {
-///             async_std::task::sleep(Duration::from_secs(secs)).await;
-///             Ok(Python::with_gil(|py| py.None()))
-///         }
-///     )
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::async_std::future_into_py_with_locals instead"
-)]
-#[allow(deprecated)]
-pub fn cancellable_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    generic::cancellable_future_into_py_with_loop::<AsyncStdRuntime, F>(event_loop, fut)
-}
-
-/// Convert a Rust Future into a Python awaitable
-///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
 /// the Rust future will be cancelled as well (new behaviour in `v0.15`).
 ///
@@ -388,102 +304,6 @@ where
     T: IntoPy<PyObject>,
 {
     generic::future_into_py::<AsyncStdRuntime, _, T>(py, fut)
-}
-
-/// Convert a Rust Future into a Python awaitable
-///
-/// __This function was deprecated in favor of [`future_into_py`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`future_into_py`].__
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
-///     let secs = secs.extract()?;
-///     pyo3_asyncio::async_std::cancellable_future_into_py(py, async move {
-///         async_std::task::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
-///     })
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::async_std::future_into_py instead"
-)]
-#[allow(deprecated)]
-pub fn cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    generic::cancellable_future_into_py::<AsyncStdRuntime, _>(py, fut)
-}
-
-/// Convert a `!Send` Rust Future into a Python awaitable
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::{rc::Rc, time::Duration};
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable non-send sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::future_into_py
-///     let secs = Rc::new(secs);
-///     Ok(pyo3_asyncio::async_std::local_future_into_py_with_loop(
-///         pyo3_asyncio::async_std::get_current_loop(py)?,
-///         async move {
-///             async_std::task::sleep(Duration::from_secs(*secs)).await;
-///             Ok(Python::with_gil(|py| py.None()))
-///         }
-///     )?.into())
-/// }
-///
-/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     Python::with_gil(|py| {
-///         let py_future = sleep_for(py, 1)?;
-///         pyo3_asyncio::async_std::into_future(py_future)
-///     })?
-///     .await?;
-///
-///     Ok(())
-/// }
-/// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-/// # fn main() {}
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::async_std::local_future_into_py_with_locals instead"
-)]
-#[allow(deprecated)]
-pub fn local_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<PyObject>> + 'static,
-{
-    generic::local_future_into_py_with_loop::<AsyncStdRuntime, _>(event_loop, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable
@@ -558,65 +378,6 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable
 ///
-/// __This function was deprecated in favor of [`local_future_into_py_with_locals`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function should be
-/// replaced with [`local_future_into_py_with_locals`].__
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::{rc::Rc, time::Duration};
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable non-send sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::future_into_py
-///     let secs = Rc::new(secs);
-///     Ok(pyo3_asyncio::async_std::local_cancellable_future_into_py_with_loop(
-///         pyo3_asyncio::async_std::get_current_loop(py)?,
-///         async move {
-///             async_std::task::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )?.into())
-/// }
-///
-/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     Python::with_gil(|py| {
-///         let py_future = sleep_for(py, 1)?;
-///         pyo3_asyncio::async_std::into_future(py_future)
-///     })?
-///     .await?;
-///
-///     Ok(())
-/// }
-/// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-/// # fn main() {}
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::async_std::local_future_into_py_with_locals instead"
-)]
-#[allow(deprecated)]
-pub fn local_cancellable_future_into_py_with_loop<F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<PyObject>> + 'static,
-{
-    generic::local_cancellable_future_into_py_with_loop::<AsyncStdRuntime, _>(event_loop, fut)
-}
-
-/// Convert a `!Send` Rust Future into a Python awaitable
-///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
 /// the Rust future will be cancelled as well (new behaviour in `v0.15`).
 ///
@@ -676,62 +437,6 @@ where
     generic::local_future_into_py::<AsyncStdRuntime, _, T>(py, fut)
 }
 
-/// Convert a `!Send` Rust Future into a Python awaitable
-///
-/// __This function was deprecated in favor of [`local_future_into_py`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`local_future_into_py`].__
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::{rc::Rc, time::Duration};
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable non-send sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::future_into_py
-///     let secs = Rc::new(secs);
-///     pyo3_asyncio::async_std::local_cancellable_future_into_py(py, async move {
-///         async_std::task::sleep(Duration::from_secs(*secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
-///     })
-/// }
-///
-/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     Python::with_gil(|py| {
-///         let py_future = sleep_for(py, 1)?;
-///         pyo3_asyncio::async_std::into_future(py_future)
-///     })?
-///     .await?;
-///
-///     Ok(())
-/// }
-/// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-/// # fn main() {}
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::async_std::local_future_into_py instead"
-)]
-#[allow(deprecated)]
-pub fn local_cancellable_future_into_py<F>(py: Python, fut: F) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<PyObject>> + 'static,
-{
-    generic::local_cancellable_future_into_py::<AsyncStdRuntime, _>(py, fut)
-}
-
 /// Convert a Python `awaitable` into a Rust Future
 ///
 /// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
@@ -782,4 +487,244 @@ where
 /// ```
 pub fn into_future(awaitable: &PyAny) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
     generic::into_future::<AsyncStdRuntime>(awaitable)
+}
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_v1(test_mod.call_method0("gen")?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v1<'p>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static> {
+    generic::into_stream_v1::<AsyncStdRuntime>(gen)
+}
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_with_locals_v1(
+///         pyo3_asyncio::async_std::get_current_locals(py)?,
+///         test_mod.call_method0("gen")?
+///     )
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v1<'p>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static> {
+    generic::into_stream_with_locals_v1::<AsyncStdRuntime>(locals, gen)
+}
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_with_locals_v2(
+///         pyo3_asyncio::async_std::get_current_locals(py)?,
+///         test_mod.call_method0("gen")?
+///     )
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v2<'p>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static> {
+    generic::into_stream_with_locals_v2::<AsyncStdRuntime>(locals, gen)
+}
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # #[cfg(all(feature = "unstable-streams", feature = "attributes"))]
+/// # #[pyo3_asyncio::async_std::main]
+/// # async fn main() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::async_std::into_stream_v2(test_mod.call_method0("gen")?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = "unstable-streams", feature = "attributes")))]
+/// # fn main() {}
+/// ```
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v2<'p>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static> {
+    generic::into_stream_v2::<AsyncStdRuntime>(gen)
 }

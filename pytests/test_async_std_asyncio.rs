@@ -15,6 +15,9 @@ use pyo3::{
 };
 use pyo3_asyncio::TaskLocals;
 
+#[cfg(feature = "unstable-streams")]
+use futures::{StreamExt, TryStreamExt};
+
 #[pyfunction]
 fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
     let secs = secs.extract()?;
@@ -101,7 +104,7 @@ async fn test_panic() -> PyResult<()> {
     match fut.await {
         Ok(_) => panic!("coroutine should panic"),
         Err(e) => Python::with_gil(|py| {
-            if e.is_instance::<pyo3_asyncio::err::RustPanic>(py) {
+            if e.is_instance_of::<pyo3_asyncio::err::RustPanic>(py) {
                 Ok(())
             } else {
                 panic!("expected RustPanic err")
@@ -149,12 +152,12 @@ async fn test_cancel() -> PyResult<()> {
     .await
     {
         Python::with_gil(|py| -> PyResult<()> {
-            assert!(py
-                .import("asyncio")?
-                .getattr("CancelledError")?
-                .downcast::<PyType>()
-                .unwrap()
-                .is_instance(e.pvalue(py))?);
+            assert!(e.value(py).is_instance(
+                py.import("asyncio")?
+                    .getattr("CancelledError")?
+                    .downcast::<PyType>()
+                    .unwrap()
+            )?);
             Ok(())
         })?;
     } else {
@@ -165,6 +168,40 @@ async fn test_cancel() -> PyResult<()> {
     if *completed.lock().unwrap() {
         panic!("future still completed")
     }
+
+    Ok(())
+}
+
+#[cfg(feature = "unstable-streams")]
+const ASYNC_STD_TEST_MOD: &str = r#"
+import asyncio 
+
+async def gen():
+    for i in range(10):
+        await asyncio.sleep(0.1)
+        yield i        
+"#;
+
+#[cfg(feature = "unstable-streams")]
+#[pyo3_asyncio::async_std::test]
+async fn test_async_gen_v1() -> PyResult<()> {
+    let stream = Python::with_gil(|py| {
+        let test_mod = PyModule::from_code(
+            py,
+            ASYNC_STD_TEST_MOD,
+            "test_rust_coroutine/async_std_test_mod.py",
+            "async_std_test_mod",
+        )?;
+
+        pyo3_asyncio::async_std::into_stream_v1(test_mod.call_method0("gen")?)
+    })?;
+
+    let vals = stream
+        .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+        .try_collect::<Vec<i32>>()
+        .await?;
+
+    assert_eq!((0..10).collect::<Vec<i32>>(), vals);
 
     Ok(())
 }
@@ -195,12 +232,12 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
         .await
         {
             Python::with_gil(|py| -> PyResult<()> {
-                assert!(py
-                    .import("asyncio")?
-                    .getattr("CancelledError")?
-                    .downcast::<PyType>()
-                    .unwrap()
-                    .is_instance(e.pvalue(py))?);
+                assert!(e.value(py).is_instance(
+                    py.import("asyncio")?
+                        .getattr("CancelledError")?
+                        .downcast::<PyType>()
+                        .unwrap()
+                )?);
                 Ok(())
             })?;
         } else {
@@ -220,13 +257,15 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
 #[pymodule]
 fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     #![allow(deprecated)]
-    #[pyfn(m, "sleep")]
+    #[pyfunction]
     fn sleep(py: Python) -> PyResult<&PyAny> {
         pyo3_asyncio::async_std::future_into_py(py, async move {
             async_std::task::sleep(Duration::from_millis(500)).await;
             Ok(())
         })
     }
+
+    m.add_function(wrap_pyfunction!(sleep, m)?)?;
 
     Ok(())
 }
@@ -265,8 +304,8 @@ fn test_multiple_asyncio_run() -> PyResult<()> {
 #[pymodule]
 fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     #![allow(deprecated)]
-    #[pyfn(m, "async_callback")]
-    fn async_callback(py: Python, callback: PyObject) -> PyResult<&PyAny> {
+    #[pyfunction]
+    pub(crate) fn async_callback(py: Python, callback: PyObject) -> PyResult<&PyAny> {
         pyo3_asyncio::async_std::future_into_py(py, async move {
             Python::with_gil(|py| {
                 pyo3_asyncio::async_std::into_future(callback.as_ref(py).call0()?)
@@ -276,6 +315,32 @@ fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
             Ok(())
         })
     }
+
+    m.add_function(wrap_pyfunction!(async_callback, m)?)?;
+
+    Ok(())
+}
+
+#[cfg(feature = "unstable-streams")]
+#[pyo3_asyncio::async_std::test]
+async fn test_async_gen_v2() -> PyResult<()> {
+    let stream = Python::with_gil(|py| {
+        let test_mod = PyModule::from_code(
+            py,
+            ASYNC_STD_TEST_MOD,
+            "test_rust_coroutine/async_std_test_mod.py",
+            "async_std_test_mod",
+        )?;
+
+        pyo3_asyncio::async_std::into_stream_v2(test_mod.call_method0("gen")?)
+    })?;
+
+    let vals = stream
+        .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+        .try_collect::<Vec<i32>>()
+        .await?;
+
+    assert_eq!((0..10).collect::<Vec<i32>>(), vals);
 
     Ok(())
 }
@@ -296,15 +361,9 @@ asyncio.run(main())
 #[pyo3_asyncio::async_std::test]
 fn test_contextvars() -> PyResult<()> {
     Python::with_gil(|py| {
-        let contextvars = match py.import("contextvars") {
-            Ok(contextvars) => contextvars,
-            // Python 3.6 does not support contextvars, so early-out here
-            Err(_) => return Ok(()),
-        };
-
         let d = [
             ("asyncio", py.import("asyncio")?.into()),
-            ("contextvars", contextvars.into()),
+            ("contextvars", py.import("contextvars")?.into()),
             ("cvars_mod", wrap_pymodule!(cvars_mod)(py)),
         ]
         .into_py_dict(py);
@@ -315,7 +374,6 @@ fn test_contextvars() -> PyResult<()> {
     })
 }
 
-#[allow(deprecated)]
 fn main() -> pyo3::PyResult<()> {
     pyo3::prepare_freethreaded_python();
 

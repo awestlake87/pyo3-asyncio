@@ -299,7 +299,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["attributes"]
 //! ```
 //!
@@ -312,7 +312,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["async-std-runtime"]
 //! ```
 //!
@@ -325,7 +325,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["tokio-runtime"]
 //! ```
 //!
@@ -338,7 +338,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.15"
+//! version = "0.16"
 //! features = ["testing"]
 //! ```
 
@@ -361,7 +361,6 @@ pub mod tokio;
 /// Errors and exceptions related to PyO3 Asyncio
 pub mod err;
 
-/// Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
 pub mod generic;
 
 /// Test README
@@ -400,7 +399,7 @@ use pyo3::{
 };
 
 static ASYNCIO: OnceCell<PyObject> = OnceCell::new();
-static CONTEXTVARS: OnceCell<Option<PyObject>> = OnceCell::new();
+static CONTEXTVARS: OnceCell<PyObject> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
@@ -445,9 +444,6 @@ fn asyncio(py: Python) -> PyResult<&PyAny> {
 /// Get a reference to the Python Event Loop from Rust
 ///
 /// Equivalent to `asyncio.get_running_loop()` in Python 3.7+.
-/// > For Python 3.6, this function falls back to `asyncio.get_event_loop()` which has slightly
-/// different behaviour. See the [`asyncio.get_event_loop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.get_event_loop)
-/// docs to better understand the differences.
 pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
     // Ideally should call get_running_loop, but calls get_event_loop for compatibility when
     // get_running_loop is not available.
@@ -455,36 +451,20 @@ pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
         .get_or_try_init(|| -> PyResult<PyObject> {
             let asyncio = asyncio(py)?;
 
-            if asyncio.hasattr("get_running_loop")? {
-                // correct behaviour with Python 3.7+
-                Ok(asyncio.getattr("get_running_loop")?.into())
-            } else {
-                // Python 3.6 compatibility mode
-                Ok(asyncio.getattr("get_event_loop")?.into())
-            }
+            Ok(asyncio.getattr("get_running_loop")?.into())
         })?
         .as_ref(py)
         .call0()
 }
 
-/// Returns None only if contextvars cannot be imported (Python 3.6 fallback)
-fn contextvars(py: Python) -> Option<&PyAny> {
-    CONTEXTVARS
-        .get_or_init(|| match py.import("contextvars") {
-            Ok(contextvars) => Some(contextvars.into()),
-            Err(_) => None,
-        })
-        .as_ref()
-        .map(|contextvars| contextvars.as_ref(py))
+fn contextvars(py: Python) -> PyResult<&PyAny> {
+    Ok(CONTEXTVARS
+        .get_or_try_init(|| py.import("contextvars").map(|m| m.into()))?
+        .as_ref(py))
 }
 
-/// Returns Ok(None) only if contextvars cannot be imported (Python 3.6 fallback)
-fn copy_context(py: Python) -> PyResult<Option<&PyAny>> {
-    if let Some(contextvars) = contextvars(py) {
-        Ok(Some(contextvars.call_method0("copy_context")?))
-    } else {
-        Ok(None)
-    }
+fn copy_context(py: Python) -> PyResult<&PyAny> {
+    contextvars(py)?.call_method0("copy_context")
 }
 
 /// Task-local data to store for Python conversions.
@@ -520,12 +500,7 @@ impl TaskLocals {
 
     /// Capture the current task's contextvars
     pub fn copy_context(self, py: Python) -> PyResult<Self> {
-        // No-op if context cannot be copied (Python 3.6 fallback)
-        if let Some(cx) = copy_context(py)? {
-            Ok(self.with_context(cx))
-        } else {
-            Ok(self)
-        }
+        Ok(self.with_context(copy_context(py)?))
     }
 
     /// Get a reference to the event loop
@@ -596,12 +571,7 @@ fn call_soon_threadsafe(
     let py = event_loop.py();
 
     let kwargs = PyDict::new(py);
-
-    // Accommodate for the Python 3.6 fallback
-    // (call_soon_threadsafe does not support the context kwarg in 3.6)
-    if !context.is_none() {
-        kwargs.set_item("context", context)?;
-    }
+    kwargs.set_item("context", context)?;
 
     event_loop.call_method("call_soon_threadsafe", args, Some(kwargs))?;
     Ok(())
@@ -632,6 +602,7 @@ fn call_soon_threadsafe(
 ///     await asyncio.sleep(duration)
 /// "#;
 ///
+/// # #[cfg(feature = "tokio-runtime")]
 /// async fn py_sleep(seconds: f32) -> PyResult<()> {
 ///     let test_mod = Python::with_gil(|py| -> PyResult<PyObject> {
 ///         Ok(
@@ -646,8 +617,8 @@ fn call_soon_threadsafe(
 ///     })?;
 ///
 ///     Python::with_gil(|py| {
-///         pyo3_asyncio::into_future_with_loop(
-///             pyo3_asyncio::get_running_loop(py)?,
+///         pyo3_asyncio::into_future_with_locals(
+///             &pyo3_asyncio::tokio::get_current_locals(py)?,
 ///             test_mod
 ///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
 ///                 .as_ref(py),
@@ -677,78 +648,12 @@ pub fn into_future_with_locals(
         match rx.await {
             Ok(item) => item,
             Err(_) => Python::with_gil(|py| {
-                Err(PyErr::from_instance(
+                Err(PyErr::from_value(
                     asyncio(py)?.call_method0("CancelledError")?,
                 ))
             }),
         }
     })
-}
-
-/// Convert a Python `awaitable` into a Rust Future
-///
-/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
-/// completion handler sends the result of this Task through a
-/// `futures::channel::oneshot::Sender<PyResult<PyObject>>` and the future returned by this function
-/// simply awaits the result through the `futures::channel::oneshot::Receiver<PyResult<PyObject>>`.
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `awaitable` - The Python `awaitable` to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// const PYTHON_CODE: &'static str = r#"
-/// import asyncio
-///
-/// async def py_sleep(duration):
-///     await asyncio.sleep(duration)
-/// "#;
-///
-/// async fn py_sleep(seconds: f32) -> PyResult<()> {
-///     let test_mod = Python::with_gil(|py| -> PyResult<PyObject> {
-///         Ok(
-///             PyModule::from_code(
-///                 py,
-///                 PYTHON_CODE,
-///                 "test_into_future/test_mod.py",
-///                 "test_mod"
-///             )?
-///             .into()
-///         )
-///     })?;
-///
-///     Python::with_gil(|py| {
-///         pyo3_asyncio::into_future_with_loop(
-///             pyo3_asyncio::get_running_loop(py)?,
-///             test_mod
-///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
-///                 .as_ref(py),
-///         )
-///     })?
-///     .await?;
-///     Ok(())    
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::into_future_with_locals instead"
-)]
-pub fn into_future_with_loop(
-    event_loop: &PyAny,
-    awaitable: &PyAny,
-) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
-    into_future_with_locals(
-        &TaskLocals::new(event_loop).copy_context(event_loop.py())?,
-        awaitable,
-    )
 }
 
 fn dump_err(py: Python<'_>) -> impl FnOnce(PyErr) + '_ {

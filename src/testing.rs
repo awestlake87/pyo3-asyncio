@@ -181,7 +181,7 @@
 
 use std::{future::Future, pin::Pin};
 
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use futures::stream::{self, StreamExt};
 use pyo3::prelude::*;
 
@@ -232,9 +232,9 @@ impl Default for Args {
 /// <TESTNAME>    If specified, only run tests containing this string in their names
 /// ```
 pub fn parse_args() -> Args {
-    let matches = App::new("PyO3 Asyncio Test Suite")
+    let matches = Command::new("PyO3 Asyncio Test Suite")
         .arg(
-            Arg::with_name("TESTNAME")
+            Arg::new("TESTNAME")
                 .help("If specified, only run tests containing this string in their names"),
         )
         .get_matches();
@@ -250,7 +250,7 @@ type TestFn = dyn Fn() -> Pin<Box<dyn Future<Output = PyResult<()>> + Send>> + S
 #[derive(Clone)]
 pub struct Test {
     /// The fully qualified name of the test
-    pub name: String,
+    pub name: &'static str,
     /// The function used to create the task that runs the test.
     pub test_fn: &'static TestFn,
 }

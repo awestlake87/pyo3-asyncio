@@ -1,11 +1,31 @@
+//! Generic implementations of PyO3 Asyncio utilities that can be used for any Rust runtime
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>unstable-streams</code></span>
+//! are only available when the `unstable-streams` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = "0.16"
+//! features = ["unstable-streams"]
+//! ```
+
 use std::{
     future::Future,
+    marker::PhantomData,
     pin::Pin,
     sync::{Arc, Mutex},
     task::{Context, Poll},
 };
 
-use futures::channel::oneshot;
+use futures::{
+    channel::{mpsc, oneshot},
+    SinkExt,
+};
+use once_cell::sync::OnceCell;
 use pin_project_lite::pin_project;
 use pyo3::prelude::*;
 
@@ -22,7 +42,7 @@ pub trait JoinError {
 }
 
 /// Generic Rust async/await runtime
-pub trait Runtime {
+pub trait Runtime: Send + 'static {
     /// The error returned by a JoinHandle after being awaited
     type JoinError: JoinError + Send;
     /// A future that completes with the result of the spawned task
@@ -593,108 +613,6 @@ where
     Ok(py_fut)
 }
 
-/// Convert a Rust Future into a Python awaitable with a generic runtime
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
-/// #
-/// # use pyo3_asyncio::{
-/// #     TaskLocals,
-/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
-/// # };
-/// #
-/// # struct MyCustomJoinError;
-/// #
-/// # impl JoinError for MyCustomJoinError {
-/// #     fn is_panic(&self) -> bool {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomJoinHandle;
-/// #
-/// # impl Future for MyCustomJoinHandle {
-/// #     type Output = Result<(), MyCustomJoinError>;
-/// #
-/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomRuntime;
-/// #
-/// # impl MyCustomRuntime {
-/// #     async fn sleep(_: Duration) {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl Runtime for MyCustomRuntime {
-/// #     type JoinError = MyCustomJoinError;
-/// #     type JoinHandle = MyCustomJoinHandle;
-/// #
-/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl ContextExt for MyCustomRuntime {    
-/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_locals() -> Option<TaskLocals> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
-///     let secs = secs.extract()?;
-///     pyo3_asyncio::generic::future_into_py_with_loop::<MyCustomRuntime, _>(
-///         pyo3_asyncio::generic::get_current_loop::<MyCustomRuntime>(py)?,
-///         async move {
-///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::generic::future_into_py_with_locals instead"
-)]
-pub fn future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
-where
-    R: Runtime + ContextExt,
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    let py = event_loop.py();
-    future_into_py_with_locals::<R, F, PyObject>(
-        py,
-        TaskLocals::new(event_loop).copy_context(py)?,
-        fut,
-    )
-}
-
 pin_project! {
     /// Future returned by [`timeout`](timeout) and [`timeout_at`](timeout_at).
     #[must_use = "futures do nothing unless you `.await` or poll them"]
@@ -774,110 +692,6 @@ impl PyDoneCallback {
 
         Ok(())
     }
-}
-
-/// Convert a Rust Future into a Python awaitable with a generic runtime
-///
-/// __This function was deprecated in favor of [`future_into_py_with_locals`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function should be
-/// replaced with [`future_into_py_with_locals`].__
-///
-/// __In `v0.16` this function will be removed__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
-/// #
-/// # use pyo3_asyncio::{
-/// #     TaskLocals,
-/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
-/// # };
-/// #
-/// # struct MyCustomJoinError;
-/// #
-/// # impl JoinError for MyCustomJoinError {
-/// #     fn is_panic(&self) -> bool {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomJoinHandle;
-/// #
-/// # impl Future for MyCustomJoinHandle {
-/// #     type Output = Result<(), MyCustomJoinError>;
-/// #
-/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomRuntime;
-/// #
-/// # impl MyCustomRuntime {
-/// #     async fn sleep(_: Duration) {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl Runtime for MyCustomRuntime {
-/// #     type JoinError = MyCustomJoinError;
-/// #     type JoinHandle = MyCustomJoinHandle;
-/// #
-/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl ContextExt for MyCustomRuntime {    
-/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_locals() -> Option<TaskLocals> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
-///     let secs = secs.extract()?;
-///     pyo3_asyncio::generic::cancellable_future_into_py_with_loop::<MyCustomRuntime, _>(
-///         pyo3_asyncio::generic::get_current_loop::<MyCustomRuntime>(py)?,
-///         async move {
-///             MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )
-/// }
-/// ```
-
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::generic::future_into_py_with_locals instead"
-)]
-#[allow(deprecated)]
-pub fn cancellable_future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
-where
-    R: Runtime + ContextExt,
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    // cancellable futures became the default behaviour in 0.15
-    future_into_py_with_loop::<R, _>(event_loop, fut)
 }
 
 /// Convert a Rust Future into a Python awaitable with a generic runtime
@@ -982,104 +796,6 @@ where
     T: IntoPy<PyObject>,
 {
     future_into_py_with_locals::<R, F, T>(py, get_current_locals::<R>(py)?, fut)
-}
-
-/// Convert a Rust Future into a Python awaitable with a generic runtime
-///
-/// __This function was deprecated in favor of [`future_into_py`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`future_into_py`].__
-///
-/// __In `v0.16` this function will be removed__
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
-/// #
-/// # use pyo3_asyncio::{
-/// #     TaskLocals,
-/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
-/// # };
-/// #
-/// # struct MyCustomJoinError;
-/// #
-/// # impl JoinError for MyCustomJoinError {
-/// #     fn is_panic(&self) -> bool {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomJoinHandle;
-/// #
-/// # impl Future for MyCustomJoinHandle {
-/// #     type Output = Result<(), MyCustomJoinError>;
-/// #
-/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomRuntime;
-/// #
-/// # impl MyCustomRuntime {
-/// #     async fn sleep(_: Duration) {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl Runtime for MyCustomRuntime {
-/// #     type JoinError = MyCustomJoinError;
-/// #     type JoinHandle = MyCustomJoinHandle;
-/// #
-/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl ContextExt for MyCustomRuntime {    
-/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
-/// #     where
-/// #         F: Future<Output = R> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// #     fn get_task_locals() -> Option<TaskLocals> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// use std::time::Duration;
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
-///     let secs = secs.extract()?;
-///     pyo3_asyncio::generic::cancellable_future_into_py::<MyCustomRuntime, _>(py, async move {
-///         MyCustomRuntime::sleep(Duration::from_secs(secs)).await;
-///         Python::with_gil(|py| Ok(py.None()))
-///     })
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::generic::future_into_py instead"
-)]
-pub fn cancellable_future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
-where
-    R: Runtime + ContextExt,
-    F: Future<Output = PyResult<PyObject>> + Send + 'static,
-{
-    future_into_py::<R, F, PyObject>(py, fut)
 }
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime and manual
@@ -1279,230 +995,6 @@ where
 
 /// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
 ///
-/// __In `v0.16` this function will be removed__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
-/// #
-/// # use pyo3_asyncio::{
-/// #     TaskLocals,
-/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
-/// # };
-/// #
-/// # struct MyCustomJoinError;
-/// #
-/// # impl JoinError for MyCustomJoinError {
-/// #     fn is_panic(&self) -> bool {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomJoinHandle;
-/// #
-/// # impl Future for MyCustomJoinHandle {
-/// #     type Output = Result<(), MyCustomJoinError>;
-/// #
-/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomRuntime;
-/// #
-/// # impl MyCustomRuntime {
-/// #     async fn sleep(_: Duration) {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl Runtime for MyCustomRuntime {
-/// #     type JoinError = MyCustomJoinError;
-/// #     type JoinHandle = MyCustomJoinHandle;
-/// #
-/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl LocalContextExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
-/// #     where
-/// #         F: Future<Output = R> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// use std::{rc::Rc, time::Duration};
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is !Send so it cannot be passed into pyo3_asyncio::generic::future_into_py
-///     let secs = Rc::new(secs);
-///
-///     pyo3_asyncio::generic::local_future_into_py_with_loop::<MyCustomRuntime, _>(
-///         pyo3_asyncio::get_running_loop(py)?,
-///         async move {
-///             MyCustomRuntime::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::generic::local_future_into_py_with_locals instead"
-)]
-pub fn local_future_into_py_with_loop<R, F>(event_loop: &PyAny, fut: F) -> PyResult<&PyAny>
-where
-    R: Runtime + SpawnLocalExt + LocalContextExt,
-    F: Future<Output = PyResult<PyObject>> + 'static,
-{
-    let py = event_loop.py();
-    local_future_into_py_with_locals::<R, F, PyObject>(
-        py,
-        TaskLocals::new(event_loop).copy_context(py)?,
-        fut,
-    )
-}
-
-/// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
-///
-/// __This function was deprecated in favor of [`local_future_into_py_with_locals`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function should be
-/// replaced with [`local_future_into_py_with_locals`].__
-///
-/// __This function will be removed in `v0.16`__
-///
-/// # Arguments
-/// * `event_loop` - The Python event loop that the awaitable should be attached to
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
-/// #
-/// # use pyo3_asyncio::{
-/// #     TaskLocals,
-/// #     generic::{JoinError, SpawnLocalExt, LocalContextExt, Runtime}
-/// # };
-/// #
-/// # struct MyCustomJoinError;
-/// #
-/// # impl JoinError for MyCustomJoinError {
-/// #     fn is_panic(&self) -> bool {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomJoinHandle;
-/// #
-/// # impl Future for MyCustomJoinHandle {
-/// #     type Output = Result<(), MyCustomJoinError>;
-/// #
-/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # struct MyCustomRuntime;
-/// #
-/// # impl MyCustomRuntime {
-/// #     async fn sleep(_: Duration) {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl Runtime for MyCustomRuntime {
-/// #     type JoinError = MyCustomJoinError;
-/// #     type JoinHandle = MyCustomJoinHandle;
-/// #
-/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + Send + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl LocalContextExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
-/// #     where
-/// #         F: Future<Output = R> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// use std::{rc::Rc, time::Duration};
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for<'p>(py: Python<'p>, secs: u64) -> PyResult<&'p PyAny> {
-///     // Rc is !Send so it cannot be passed into pyo3_asyncio::generic::future_into_py
-///     let secs = Rc::new(secs);
-///
-///     pyo3_asyncio::generic::local_cancellable_future_into_py_with_loop::<MyCustomRuntime, _>(
-///         pyo3_asyncio::get_running_loop(py)?,
-///         async move {
-///             MyCustomRuntime::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )
-/// }
-/// ```
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::generic::local_future_into_py_with_locals instead"
-)]
-#[allow(deprecated)]
-pub fn local_cancellable_future_into_py_with_loop<R, F>(
-    event_loop: &PyAny,
-    fut: F,
-) -> PyResult<&PyAny>
-where
-    R: Runtime + SpawnLocalExt + LocalContextExt,
-    F: Future<Output = PyResult<PyObject>> + 'static,
-{
-    // cancellable futures became the default in 0.15
-    local_future_into_py_with_loop::<R, F>(event_loop, fut)
-}
-
-/// Convert a `!Send` Rust Future into a Python awaitable with a generic runtime
-///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
 /// the Rust future will be cancelled as well (new behaviour in `v0.15`).
 ///
@@ -1624,26 +1116,20 @@ where
 {
     local_future_into_py_with_locals::<R, F, T>(py, get_current_locals::<R>(py)?, fut)
 }
-/// Convert a Rust Future into a Python awaitable with a generic runtime
-///
-/// __This function was deprecated in favor of [`local_future_into_py`] in `v0.15` because
-/// it became the default behaviour. In `v0.15`, any calls to this function can be seamlessly
-/// replaced with [`local_future_into_py`].__
-///
-/// __This function will be removed in `v0.16`__
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
 ///
 /// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The Rust future to be converted
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
 ///
 /// # Examples
-///
 /// ```no_run
 /// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
-/// #     generic::{JoinError, SpawnLocalExt, ContextExt, LocalContextExt, Runtime}
+/// #     generic::{JoinError, ContextExt, Runtime}
 /// # };
 /// #
 /// # struct MyCustomJoinError;
@@ -1665,12 +1151,6 @@ where
 /// # }
 /// #
 /// # struct MyCustomRuntime;
-/// #
-/// # impl MyCustomRuntime {
-/// #     async fn sleep(_: Duration) {
-/// #         unreachable!()
-/// #     }
-/// # }
 /// #
 /// # impl Runtime for MyCustomRuntime {
 /// #     type JoinError = MyCustomJoinError;
@@ -1695,53 +1175,552 @@ where
 /// #         unreachable!()
 /// #     }
 /// # }
-/// #
-/// # impl SpawnLocalExt for MyCustomRuntime {
-/// #     fn spawn_local<F>(fut: F) -> Self::JoinHandle
-/// #     where
-/// #         F: Future<Output = ()> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// # impl LocalContextExt for MyCustomRuntime {
-/// #     fn scope_local<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R>>>
-/// #     where
-/// #         F: Future<Output = R> + 'static
-/// #     {
-/// #         unreachable!()
-/// #     }
-/// # }
-/// #
-/// use std::{rc::Rc, time::Duration};
 ///
 /// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
 ///
-/// /// Awaitable sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is !Send so it cannot be passed into pyo3_asyncio::generic::future_into_py
-///     let secs = Rc::new(secs);
+/// const TEST_MOD: &str = r#"
+/// import asyncio
 ///
-///     pyo3_asyncio::generic::local_cancellable_future_into_py::<MyCustomRuntime, _>(
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # async fn test_async_gen() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
 ///         py,
-///         async move {
-///             MyCustomRuntime::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::generic::into_stream_with_locals_v1::<MyCustomRuntime>(
+///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
+///         test_mod.call_method0("gen")?
 ///     )
-/// }
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
 /// ```
 ///
-#[deprecated(
-    since = "0.15.0",
-    note = "Use pyo3_asyncio::generic::local_future_into_py instead"
-)]
-pub fn local_cancellable_future_into_py<R, F>(py: Python, fut: F) -> PyResult<&PyAny>
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v1<'p, R>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static>
 where
-    R: Runtime + ContextExt + SpawnLocalExt + LocalContextExt,
-    F: Future<Output = PyResult<PyObject>> + 'static,
+    R: Runtime,
 {
-    local_future_into_py::<R, F, PyObject>(py, fut)
+    let (tx, rx) = async_channel::bounded(1);
+    let anext = PyObject::from(gen.getattr("__anext__")?);
+
+    R::spawn(async move {
+        loop {
+            let fut = Python::with_gil(|py| -> PyResult<_> {
+                into_future_with_locals(&locals, anext.as_ref(py).call0()?)
+            });
+            let item = match fut {
+                Ok(fut) => match fut.await {
+                    Ok(item) => Ok(item),
+                    Err(e) => {
+                        let stop_iter = Python::with_gil(|py| {
+                            e.is_instance_of::<pyo3::exceptions::PyStopAsyncIteration>(py)
+                        });
+
+                        if stop_iter {
+                            // end the iteration
+                            break;
+                        } else {
+                            Err(e)
+                        }
+                    }
+                },
+                Err(e) => Err(e),
+            };
+
+            if tx.send(item).await.is_err() {
+                // receiving side was dropped
+                break;
+            }
+        }
+    });
+
+    Ok(rx)
+}
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, ContextExt, Runtime}
+/// # };
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
+/// #         unreachable!()
+/// #     }
+/// # }
+///
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # async fn test_async_gen() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::generic::into_stream_v1::<MyCustomRuntime>(test_mod.call_method0("gen")?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// ```
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v1<'p, R>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyResult<PyObject>> + 'static>
+where
+    R: Runtime + ContextExt,
+{
+    into_stream_with_locals_v1::<R>(get_current_locals::<R>(gen.py())?, gen)
+}
+
+fn py_true() -> PyObject {
+    static TRUE: OnceCell<PyObject> = OnceCell::new();
+    TRUE.get_or_init(|| Python::with_gil(|py| true.into_py(py)))
+        .clone()
+}
+fn py_false() -> PyObject {
+    static FALSE: OnceCell<PyObject> = OnceCell::new();
+    FALSE
+        .get_or_init(|| Python::with_gil(|py| false.into_py(py)))
+        .clone()
+}
+
+trait Sender: Send + 'static {
+    fn send(&mut self, locals: TaskLocals, item: PyObject) -> PyResult<PyObject>;
+    fn close(&mut self) -> PyResult<()>;
+}
+
+struct GenericSender<R>
+where
+    R: Runtime,
+{
+    runtime: PhantomData<R>,
+    tx: mpsc::Sender<PyObject>,
+}
+
+impl<R> Sender for GenericSender<R>
+where
+    R: Runtime + ContextExt,
+{
+    fn send(&mut self, locals: TaskLocals, item: PyObject) -> PyResult<PyObject> {
+        match self.tx.try_send(item.clone()) {
+            Ok(_) => Ok(py_true()),
+            Err(e) => {
+                if e.is_full() {
+                    let mut tx = self.tx.clone();
+                    Python::with_gil(move |py| {
+                        Ok(
+                            future_into_py_with_locals::<R, _, PyObject>(py, locals, async move {
+                                if tx.flush().await.is_err() {
+                                    // receiving side disconnected
+                                    return Ok(py_false());
+                                }
+                                if tx.send(item).await.is_err() {
+                                    // receiving side disconnected
+                                    return Ok(py_false());
+                                }
+                                Ok(py_true())
+                            })?
+                            .into(),
+                        )
+                    })
+                } else {
+                    Ok(py_false())
+                }
+            }
+        }
+    }
+    fn close(&mut self) -> PyResult<()> {
+        self.tx.close_channel();
+        Ok(())
+    }
+}
+
+#[pyclass]
+struct SenderGlue {
+    locals: TaskLocals,
+    tx: Box<dyn Sender>,
+}
+#[pymethods]
+impl SenderGlue {
+    pub fn send(&mut self, item: PyObject) -> PyResult<PyObject> {
+        self.tx.send(self.locals.clone(), item)
+    }
+    pub fn close(&mut self) -> PyResult<()> {
+        self.tx.close()
+    }
+}
+
+#[cfg(feature = "unstable-streams")]
+const STREAM_GLUE: &str = r#"
+import asyncio
+
+async def forward(gen, sender):
+    async for item in gen:
+        should_continue = sender.send(item)
+
+        if asyncio.iscoroutine(should_continue):
+            should_continue = await should_continue
+    
+        if should_continue:
+            continue
+        else:
+            break
+
+    sender.close()
+"#;
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, ContextExt, Runtime}
+/// # };
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
+/// #         unreachable!()
+/// #     }
+/// # }
+///
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # async fn test_async_gen() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::generic::into_stream_with_locals_v2::<MyCustomRuntime>(
+///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
+///         test_mod.call_method0("gen")?
+///     )
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// ```
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_with_locals_v2<'p, R>(
+    locals: TaskLocals,
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static>
+where
+    R: Runtime + ContextExt,
+{
+    static GLUE_MOD: OnceCell<PyObject> = OnceCell::new();
+    let py = gen.py();
+    let glue = GLUE_MOD
+        .get_or_try_init(|| -> PyResult<PyObject> {
+            Ok(PyModule::from_code(
+                py,
+                STREAM_GLUE,
+                "pyo3_asyncio/pyo3_asyncio_glue.py",
+                "pyo3_asyncio_glue",
+            )?
+            .into())
+        })?
+        .as_ref(py);
+
+    let (tx, rx) = mpsc::channel(10);
+
+    locals.event_loop(py).call_method1(
+        "call_soon_threadsafe",
+        (
+            locals.event_loop(py).getattr("create_task")?,
+            glue.call_method1(
+                "forward",
+                (
+                    gen,
+                    SenderGlue {
+                        locals,
+                        tx: Box::new(GenericSender {
+                            runtime: PhantomData::<R>,
+                            tx,
+                        }),
+                    },
+                ),
+            )?,
+        ),
+    )?;
+    Ok(rx)
+}
+
+/// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
+///
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```no_run
+/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// #
+/// # use pyo3_asyncio::{
+/// #     TaskLocals,
+/// #     generic::{JoinError, ContextExt, Runtime}
+/// # };
+/// #
+/// # struct MyCustomJoinError;
+/// #
+/// # impl JoinError for MyCustomJoinError {
+/// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomJoinHandle;
+/// #
+/// # impl Future for MyCustomJoinHandle {
+/// #     type Output = Result<(), MyCustomJoinError>;
+/// #
+/// #     fn poll(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Self::Output> {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # struct MyCustomRuntime;
+/// #
+/// # impl Runtime for MyCustomRuntime {
+/// #     type JoinError = MyCustomJoinError;
+/// #     type JoinHandle = MyCustomJoinHandle;
+/// #
+/// #     fn spawn<F>(fut: F) -> Self::JoinHandle
+/// #     where
+/// #         F: Future<Output = ()> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// # }
+/// #
+/// # impl ContextExt for MyCustomRuntime {    
+/// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
+/// #     where
+/// #         F: Future<Output = R> + Send + 'static
+/// #     {
+/// #         unreachable!()
+/// #     }
+/// #     fn get_task_locals() -> Option<TaskLocals> {
+/// #         unreachable!()
+/// #     }
+/// # }
+///
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &str = r#"
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i        
+/// "#;
+///
+/// # async fn test_async_gen() -> PyResult<()> {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         "test_rust_coroutine/test_mod.py",
+///         "test_mod",
+///     )?;
+///   
+///     pyo3_asyncio::generic::into_stream_v2::<MyCustomRuntime>(test_mod.call_method0("gen")?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -> PyResult<i32> { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::<Vec<i32>>()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::<Vec<i32>>(), vals);
+///
+/// Ok(())
+/// # }
+/// ```
+///
+/// # Availability
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+#[cfg(feature = "unstable-streams")]
+pub fn into_stream_v2<'p, R>(
+    gen: &'p PyAny,
+) -> PyResult<impl futures::Stream<Item = PyObject> + 'static>
+where
+    R: Runtime + ContextExt,
+{
+    into_stream_with_locals_v2::<R>(get_current_locals::<R>(gen.py())?, gen)
 }
