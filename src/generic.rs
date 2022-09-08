@@ -160,7 +160,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -261,7 +261,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -285,7 +285,7 @@ where
 ///             Ok(())
 ///         })
 ///         .map_err(|e| {
-///             e.print_and_set_sys_last_vars(py);  
+///             e.print_and_set_sys_last_vars(py);
 ///         })
 ///         .unwrap();
 ///     })
@@ -387,7 +387,7 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -427,7 +427,7 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 ///         )
 ///     })?
 ///     .await?;
-///     Ok(())    
+///     Ok(())
 /// }
 /// ```
 pub fn into_future<R>(
@@ -509,7 +509,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -763,7 +763,7 @@ impl PyDoneCallback {
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -869,7 +869,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -1062,7 +1062,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -1168,7 +1168,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -1189,7 +1189,7 @@ where
 /// async def gen():
 ///     for i in range(10):
 ///         await asyncio.sleep(0.1)
-///         yield i        
+///         yield i
 /// "#;
 ///
 /// # async fn test_async_gen() -> PyResult<()> {
@@ -1200,7 +1200,7 @@ where
 ///         "test_rust_coroutine/test_mod.py",
 ///         "test_mod",
 ///     )?;
-///   
+///
 ///     pyo3_asyncio::generic::into_stream_with_locals_v1::<MyCustomRuntime>(
 ///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
 ///         test_mod.call_method0("gen")?
@@ -1312,7 +1312,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -1333,7 +1333,7 @@ where
 /// async def gen():
 ///     for i in range(10):
 ///         await asyncio.sleep(0.1)
-///         yield i        
+///         yield i
 /// "#;
 ///
 /// # async fn test_async_gen() -> PyResult<()> {
@@ -1344,7 +1344,7 @@ where
 ///         "test_rust_coroutine/test_mod.py",
 ///         "test_mod",
 ///     )?;
-///   
+///
 ///     pyo3_asyncio::generic::into_stream_v1::<MyCustomRuntime>(test_mod.call_method0("gen")?)
 /// })?;
 ///
@@ -1456,7 +1456,7 @@ async def forward(gen, sender):
 
         if asyncio.iscoroutine(should_continue):
             should_continue = await should_continue
-    
+
         if should_continue:
             continue
         else:
@@ -1516,7 +1516,7 @@ async def forward(gen, sender):
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -1537,7 +1537,7 @@ async def forward(gen, sender):
 /// async def gen():
 ///     for i in range(10):
 ///         await asyncio.sleep(0.1)
-///         yield i        
+///         yield i
 /// "#;
 ///
 /// # async fn test_async_gen() -> PyResult<()> {
@@ -1548,7 +1548,7 @@ async def forward(gen, sender):
 ///         "test_rust_coroutine/test_mod.py",
 ///         "test_mod",
 ///     )?;
-///   
+///
 ///     pyo3_asyncio::generic::into_stream_with_locals_v2::<MyCustomRuntime>(
 ///         pyo3_asyncio::generic::get_current_locals::<MyCustomRuntime>(py)?,
 ///         test_mod.call_method0("gen")?
@@ -1661,7 +1661,7 @@ where
 /// #     }
 /// # }
 /// #
-/// # impl ContextExt for MyCustomRuntime {    
+/// # impl ContextExt for MyCustomRuntime {
 /// #     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
 /// #     where
 /// #         F: Future<Output = R> + Send + 'static
@@ -1682,7 +1682,7 @@ where
 /// async def gen():
 ///     for i in range(10):
 ///         await asyncio.sleep(0.1)
-///         yield i        
+///         yield i
 /// "#;
 ///
 /// # async fn test_async_gen() -> PyResult<()> {
@@ -1693,7 +1693,7 @@ where
 ///         "test_rust_coroutine/test_mod.py",
 ///         "test_mod",
 ///     )?;
-///   
+///
 ///     pyo3_asyncio::generic::into_stream_v2::<MyCustomRuntime>(test_mod.call_method0("gen")?)
 /// })?;
 ///

@@ -522,7 +522,6 @@ impl PyTaskCompleter {
     #[args(task)]
     pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
         debug_assert!(task.call_method0("done")?.extract()?);
-
         let result = match task.call_method0("result") {
             Ok(val) => Ok(val.into()),
             Err(e) => Err(e),
@@ -623,7 +622,7 @@ fn call_soon_threadsafe(
 ///         )
 ///     })?
 ///     .await?;
-///     Ok(())    
+///     Ok(())
 /// }
 /// ```
 pub fn into_future_with_locals(
