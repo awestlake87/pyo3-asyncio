@@ -155,13 +155,13 @@ jobs:
         run: |
           python -m pip install -U uvloop
 
-      - if: matrix.msrv != 'MSRV'
+      - if: ${{ matrix.msrv != 'MSRV' && matrix.python-version != '3.11-dev' && !startsWith(matrix.python-version, 'pypy') }}
         name: Test
-        run: cargo test --all-features
+        run: cargo test --all-features --target ${{ matrix.platform.rust-target }}
 
-      - if: matrix.msrv == 'MSRV'
+      - if: ${{ matrix.msrv == 'MSRV' && matrix.python-version != '3.11-dev' && !startsWith(matrix.python-version, 'pypy') }}
         name: Test (MSRV, --no-default-features)
-        run: cargo test --no-default-features --features tokio,async-std-runtime,unstable-streams
+        run: cargo test --no-default-features --features tokio,async-std-runtime,unstable-streams --target ${{ matrix.platform.rust-target }}
 
     env:
       RUST_BACKTRACE: 1
