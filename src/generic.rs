@@ -310,19 +310,54 @@ fn cancelled(future: &PyAny) -> PyResult<bool> {
     future.getattr("cancelled")?.call0()?.is_true()
 }
 
+fn done(future: &PyAny) -> PyResult<bool> {
+    future.getattr("done")?.call0()?.is_true()
+}
+
+#[pyclass]
+struct CheckedSetResult();
+
+#[pymethods]
+impl CheckedSetResult {
+    fn __call__(&self, future: &PyAny, value: PyObject) -> PyResult<()> {
+        if done(future)? {
+            return Ok(());
+        }
+
+        let set_result = future.getattr("set_result")?;
+        set_result.call1((value,))?;
+
+        Ok(())
+    }
+}
+
+#[pyclass]
+struct CheckedSetException();
+
+#[pymethods]
+impl CheckedSetException {
+    fn __call__(&self, future: &PyAny, exception: PyObject) -> PyResult<()> {
+        if done(future)? {
+            return Ok(());
+        }
+
+        let set_exception = future.getattr("set_exception")?;
+        set_exception.call1((exception,))?;
+
+        Ok(())
+    }
+}
+
 fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
     let py = event_loop.py();
     let none = py.None().into_ref(py);
 
+    let checked_set_result = CheckedSetResult().into_py(py).into_ref(py);
+    let checked_set_exception = CheckedSetException().into_py(py).into_ref(py);
+
     match result {
-        Ok(val) => {
-            let set_result = future.getattr("set_result")?;
-            call_soon_threadsafe(event_loop, none, (set_result, val))?;
-        }
-        Err(err) => {
-            let set_exception = future.getattr("set_exception")?;
-            call_soon_threadsafe(event_loop, none, (set_exception, err))?;
-        }
+        Ok(val) => call_soon_threadsafe(event_loop, none, (checked_set_result, future, val))?,
+        Err(err) => call_soon_threadsafe(event_loop, none, (checked_set_exception, future, err))?,
     }
 
     Ok(())
