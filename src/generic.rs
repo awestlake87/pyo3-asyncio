@@ -311,21 +311,42 @@ fn cancelled(future: &PyAny) -> PyResult<bool> {
 }
 
 fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) -> PyResult<()> {
-    let py = event_loop.py();
-    let none = py.None().into_ref(py);
-
-    match result {
-        Ok(val) => {
-            let set_result = future.getattr("set_result")?;
-            call_soon_threadsafe(event_loop, none, (set_result, val))?;
-        }
-        Err(err) => {
-            let set_exception = future.getattr("set_exception")?;
-            call_soon_threadsafe(event_loop, none, (set_exception, err))?;
-        }
+    // early cancellation check to avoid unnecessary work.
+    if cancelled(future)? {
+        return Ok(());
     }
 
+    let py = event_loop.py();
+    let none = py.None().into_ref(py);
+    call_soon_threadsafe(event_loop, none, (PySetResultCallback { result }, future))?;
+
     Ok(())
+}
+
+#[pyclass]
+struct PySetResultCallback {
+    result: PyResult<PyObject>,
+}
+
+#[pymethods]
+impl PySetResultCallback {
+    pub fn __call__(&mut self, fut: &PyAny) -> PyResult<()> {
+        // the future might have been cancelled between the time we checked in `set_result` and now.
+        if cancelled(fut)? {
+            return Ok(());
+        }
+
+        match &self.result {
+            Ok(val) => {
+                fut.getattr("set_result")?.call1((val,))?;
+            }
+            Err(err) => {
+                fut.getattr("set_exception")?.call1((err,))?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 /// Convert a Python `awaitable` into a Rust Future
@@ -573,13 +594,6 @@ where
             .await;
 
             Python::with_gil(move |py| {
-                if cancelled(future_tx1.as_ref(py))
-                    .map_err(dump_err(py))
-                    .unwrap_or(false)
-                {
-                    return;
-                }
-
                 let _ = set_result(
                     locals2.event_loop(py),
                     future_tx1.as_ref(py),
@@ -592,13 +606,6 @@ where
         {
             if e.is_panic() {
                 Python::with_gil(move |py| {
-                    if cancelled(future_tx2.as_ref(py))
-                        .map_err(dump_err(py))
-                        .unwrap_or(false)
-                    {
-                        return;
-                    }
-
                     let _ = set_result(
                         locals.event_loop.as_ref(py),
                         future_tx2.as_ref(py),
