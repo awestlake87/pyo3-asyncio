@@ -102,6 +102,13 @@ path = "pytests/test_tokio_multi_thread_uvloop.rs"
 harness = false
 required-features = ["tokio-runtime", "testing"]
 
+
+[[test]]
+name = "test_race_condition_regression"
+path = "pytests/test_race_condition_regression.rs"
+harness = false
+required-features = ["async-std-runtime", "testing"]
+
 [dependencies]
 async-channel = { version = "1.6", optional = true }
 clap = { version = "3.1.5", optional = true }
