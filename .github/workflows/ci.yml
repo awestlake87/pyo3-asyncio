@@ -161,7 +161,7 @@ jobs:
 
       - if: ${{ matrix.msrv == 'MSRV' && matrix.python-version != '3.11-dev' && !startsWith(matrix.python-version, 'pypy') }}
         name: Test (MSRV, --no-default-features)
-        run: cargo test --no-default-features --features tokio,async-std-runtime,unstable-streams --target ${{ matrix.platform.rust-target }}
+        run: cargo test --no-default-features --features tokio-runtime,async-std-runtime,attributes,unstable-streams --target ${{ matrix.platform.rust-target }}
 
     env:
       RUST_BACKTRACE: 1
