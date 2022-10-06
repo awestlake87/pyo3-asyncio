@@ -142,6 +142,7 @@ jobs:
           cargo update -p indexmap --precise 1.6.2
           cargo update -p parking_lot:0.12.1 --precise 0.11.2
           cargo update -p async-global-executor --precise 2.2.0
+          cargo update -p once_cell --precise 1.14.0
 
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}

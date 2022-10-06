@@ -240,7 +240,7 @@ pub fn parse_args() -> Args {
         .get_matches();
 
     Args {
-        filter: matches.value_of("TESTNAME").map(|name| name.to_string()),
+        filter: matches.get_one::<String>("TESTNAME").map(|name| name.clone()),
     }
 }
 

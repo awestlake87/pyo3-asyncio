@@ -310,17 +310,13 @@ fn cancelled(future: &PyAny) -> PyResult<bool> {
     future.getattr("cancelled")?.call0()?.is_true()
 }
 
-fn done(future: &PyAny) -> PyResult<bool> {
-    future.getattr("done")?.call0()?.is_true()
-}
-
 #[pyclass]
 struct CheckedCompletor;
 
 #[pymethods]
 impl CheckedCompletor {
     fn __call__(&self, future: &PyAny, complete: &PyAny, value: &PyAny) -> PyResult<()> {
-        if done(future)? {
+        if cancelled(future)? {
             return Ok(());
         }
 
