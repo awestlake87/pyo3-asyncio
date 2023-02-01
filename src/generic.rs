@@ -29,7 +29,6 @@ use once_cell::sync::OnceCell;
 use pin_project_lite::pin_project;
 use pyo3::prelude::*;
 
-#[allow(deprecated)]
 use crate::{
     asyncio, call_soon_threadsafe, close, create_future, dump_err, err::RustPanic,
     get_running_loop, into_future_with_locals, TaskLocals,

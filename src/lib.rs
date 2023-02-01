@@ -520,7 +520,7 @@ struct PyTaskCompleter {
 
 #[pymethods]
 impl PyTaskCompleter {
-    #[args(task)]
+    #[pyo3(signature = (task))]
     pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
         debug_assert!(task.call_method0("done")?.extract()?);
         let result = match task.call_method0("result") {
