@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/tokio.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>tokio.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pyo3_asyncio/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pyo3_asyncio/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pyo3_asyncio/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/tokio.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>tokio.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../pyo3_asyncio/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -785,792 +785,862 @@
 <span id="785">785</span>
 <span id="786">786</span>
 <span id="787">787</span>
-</pre><pre class="rust"><code><span class="doccomment">//! &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;tokio-runtime&lt;/code&gt;&lt;/span&gt; PyO3 Asyncio functions specific to the tokio runtime</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Items marked with</span>
-<span class="doccomment">//! &lt;span</span>
-<span class="doccomment">//!   class=&quot;module-item stab portability&quot;</span>
-<span class="doccomment">//!   style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;</span>
-<span class="doccomment">//! &gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt;</span>
-<span class="doccomment">//! are only available when the `unstable-streams` Cargo feature is enabled:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [dependencies.pyo3-asyncio]</span>
-<span class="doccomment">//! version = &quot;0.17&quot;</span>
-<span class="doccomment">//! features = [&quot;unstable-streams&quot;]</span>
-<span class="doccomment">//! ```</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+<span id="815">815</span>
+<span id="816">816</span>
+<span id="817">817</span>
+<span id="818">818</span>
+<span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
+<span id="822">822</span>
+</pre><pre class="rust"><code><span class="doccomment">//! &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;tokio-runtime&lt;/code&gt;&lt;/span&gt; PyO3 Asyncio functions specific to the tokio runtime
+//!
+//! Items marked with
+//! &lt;span
+//!   class=&quot;module-item stab portability&quot;
+//!   style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;
+//! &gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt;
+//! are only available when the `unstable-streams` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.pyo3-asyncio]
+//! version = &quot;0.18&quot;
+//! features = [&quot;unstable-streams&quot;]
+//! ```
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">future::Future</span>, <span class="ident">pin::Pin</span>, <span class="ident">sync::Mutex</span>};
+</span><span class="kw">use </span>std::ops::Deref;
+<span class="kw">use </span>std::{future::Future, pin::Pin, sync::Mutex};
 
-<span class="kw">use</span> <span class="ident">::tokio</span>::{
-    <span class="ident">runtime</span>::{<span class="ident">Builder</span>, <span class="ident">Runtime</span>},
-    <span class="ident">task</span>,
+<span class="kw">use </span>::tokio::{
+    runtime::{Builder, Runtime},
+    task,
 };
-<span class="kw">use</span> <span class="ident">once_cell</span>::{
-    <span class="ident">sync</span>::{<span class="ident">Lazy</span>, <span class="ident">OnceCell</span>},
-    <span class="ident">unsync::OnceCell</span> <span class="kw">as</span> <span class="ident">UnsyncOnceCell</span>,
+<span class="kw">use </span>once_cell::{
+    sync::{Lazy, OnceCell},
+    unsync::OnceCell <span class="kw">as </span>UnsyncOnceCell,
 };
-<span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span>pyo3::prelude::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">generic</span>::{<span class="self">self</span>, <span class="ident">ContextExt</span>, <span class="ident">LocalContextExt</span>, <span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">GenericRuntime</span>, <span class="ident">SpawnLocalExt</span>},
-    <span class="ident">TaskLocals</span>,
+<span class="kw">use crate</span>::{
+    generic::{<span class="self">self</span>, ContextExt, LocalContextExt, Runtime <span class="kw">as </span>GenericRuntime, SpawnLocalExt},
+    TaskLocals,
 };
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;</span>
-<span class="doccomment">/// re-exports for macros</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">re_exports</span> {
-    <span class="doccomment">/// re-export pending to be used in tokio macros without additional dependency</span>
-    <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">futures::future::pending</span>;
-    <span class="doccomment">/// re-export tokio::runtime to build runtimes in tokio macros without additional dependency</span>
-    <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tokio::runtime</span>;
+<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;
+/// re-exports for macros
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;attributes&quot;</span>)]
+</span><span class="kw">pub mod </span>re_exports {
+    <span class="doccomment">/// re-export pending to be used in tokio macros without additional dependency
+    </span><span class="kw">pub use </span>futures::future::pending;
+    <span class="doccomment">/// re-export tokio::runtime to build runtimes in tokio macros without additional dependency
+    </span><span class="kw">pub use </span>tokio::runtime;
 }
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pyo3_asyncio_macros::tokio_main</span> <span class="kw">as</span> <span class="ident">main</span>;
+<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;attributes&quot;</span>)]
+</span><span class="kw">pub use </span>pyo3_asyncio_macros::tokio_main <span class="kw">as </span>main;
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;</span>
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;testing&lt;/code&gt;&lt;/span&gt;</span>
-<span class="doccomment">/// Registers a `tokio` test with the `pyo3-asyncio` test harness</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;attributes&quot;</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pyo3_asyncio_macros::tokio_test</span> <span class="kw">as</span> <span class="ident">test</span>;
+<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;attributes&lt;/code&gt;&lt;/span&gt;
+/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;testing&lt;/code&gt;&lt;/span&gt;
+/// Registers a `tokio` test with the `pyo3-asyncio` test harness
+</span><span class="attribute">#[cfg(all(feature = <span class="string">&quot;attributes&quot;</span>, feature = <span class="string">&quot;testing&quot;</span>))]
+</span><span class="kw">pub use </span>pyo3_asyncio_macros::tokio_test <span class="kw">as </span>test;
 
-<span class="kw">static</span> <span class="ident">TOKIO_BUILDER</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Builder</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy::new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Mutex::new</span>(<span class="ident">multi_thread</span>()));
-<span class="kw">static</span> <span class="ident">TOKIO_RUNTIME</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">OnceCell::new</span>();
-
-<span class="kw">impl</span> <span class="ident">generic::JoinError</span> <span class="kw">for</span> <span class="ident">task::JoinError</span> {
-    <span class="kw">fn</span> <span class="ident">is_panic</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-        <span class="ident">task::JoinError::is_panic</span>(<span class="self">self</span>)
+<span class="kw">enum </span>Pyo3Runtime {
+    Borrowed(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>Runtime),
+    Owned(Runtime),
+}
+<span class="kw">impl </span>Deref <span class="kw">for </span>Pyo3Runtime {
+    <span class="kw">type </span>Target = Runtime;
+    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Borrowed(rt) =&gt; rt,
+            <span class="self">Self</span>::Owned(rt) =&gt; rt,
+        }
     }
 }
 
-<span class="kw">struct</span> <span class="ident">TokioRuntime</span>;
+<span class="kw">static </span>TOKIO_BUILDER: Lazy&lt;Mutex&lt;Builder&gt;&gt; = Lazy::new(|| Mutex::new(multi_thread()));
+<span class="kw">static </span>TOKIO_RUNTIME: OnceCell&lt;Pyo3Runtime&gt; = OnceCell::new();
 
-<span class="macro">tokio::task_local!</span> {
-    <span class="kw">static</span> <span class="ident">TASK_LOCALS</span>: <span class="ident">UnsyncOnceCell</span><span class="op">&lt;</span><span class="ident">TaskLocals</span><span class="op">&gt;</span>;
+<span class="kw">impl </span>generic::JoinError <span class="kw">for </span>task::JoinError {
+    <span class="kw">fn </span>is_panic(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        task::JoinError::is_panic(<span class="self">self</span>)
+    }
 }
 
-<span class="kw">impl</span> <span class="ident">GenericRuntime</span> <span class="kw">for</span> <span class="ident">TokioRuntime</span> {
-    <span class="kw">type</span> <span class="ident">JoinError</span> <span class="op">=</span> <span class="ident">task::JoinError</span>;
-    <span class="kw">type</span> <span class="ident">JoinHandle</span> <span class="op">=</span> <span class="ident">task::JoinHandle</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="kw">struct </span>TokioRuntime;
 
-    <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident"><span class="self">Self</span>::JoinHandle</span>
-    <span class="kw">where</span>
-        <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="macro">tokio::task_local! </span>{
+    <span class="kw">static </span>TASK_LOCALS: UnsyncOnceCell&lt;TaskLocals&gt;;
+}
+
+<span class="kw">impl </span>GenericRuntime <span class="kw">for </span>TokioRuntime {
+    <span class="kw">type </span>JoinError = task::JoinError;
+    <span class="kw">type </span>JoinHandle = task::JoinHandle&lt;()&gt;;
+
+    <span class="kw">fn </span>spawn&lt;F&gt;(fut: F) -&gt; <span class="self">Self</span>::JoinHandle
+    <span class="kw">where
+        </span>F: Future&lt;Output = ()&gt; + Send + <span class="lifetime">&#39;static</span>,
     {
-        <span class="ident">get_runtime</span>().<span class="ident">spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-            <span class="ident">fut</span>.<span class="kw">await</span>;
+        get_runtime().spawn(<span class="kw">async move </span>{
+            fut.<span class="kw">await</span>;
         })
     }
 }
 
-<span class="kw">impl</span> <span class="ident">ContextExt</span> <span class="kw">for</span> <span class="ident">TokioRuntime</span> {
-    <span class="kw">fn</span> <span class="ident">scope</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">locals</span>: <span class="ident">TaskLocals</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">R</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">R</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="kw">impl </span>ContextExt <span class="kw">for </span>TokioRuntime {
+    <span class="kw">fn </span>scope&lt;F, R&gt;(locals: TaskLocals, fut: F) -&gt; Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = R&gt; + Send&gt;&gt;
+    <span class="kw">where
+        </span>F: Future&lt;Output = R&gt; + Send + <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">let</span> <span class="ident">cell</span> <span class="op">=</span> <span class="ident">UnsyncOnceCell::new</span>();
-        <span class="ident">cell</span>.<span class="ident">set</span>(<span class="ident">locals</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let </span>cell = UnsyncOnceCell::new();
+        cell.set(locals).unwrap();
 
-        <span class="ident">Box::pin</span>(<span class="ident">TASK_LOCALS</span>.<span class="ident">scope</span>(<span class="ident">cell</span>, <span class="ident">fut</span>))
+        Box::pin(TASK_LOCALS.scope(cell, fut))
     }
 
-    <span class="kw">fn</span> <span class="ident">get_task_locals</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskLocals</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">TASK_LOCALS</span>.<span class="ident">try_with</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">get</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">locals</span><span class="op">|</span> <span class="ident">locals</span>.<span class="ident">clone</span>())) {
-            <span class="prelude-val">Ok</span>(<span class="ident">locals</span>) =&gt; <span class="ident">locals</span>,
+    <span class="kw">fn </span>get_task_locals() -&gt; <span class="prelude-ty">Option</span>&lt;TaskLocals&gt; {
+        <span class="kw">match </span>TASK_LOCALS.try_with(|c| c.get().map(|locals| locals.clone())) {
+            <span class="prelude-val">Ok</span>(locals) =&gt; locals,
             <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">SpawnLocalExt</span> <span class="kw">for</span> <span class="ident">TokioRuntime</span> {
-    <span class="kw">fn</span> <span class="ident">spawn_local</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident"><span class="self">Self</span>::JoinHandle</span>
-    <span class="kw">where</span>
-        <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="kw">impl </span>SpawnLocalExt <span class="kw">for </span>TokioRuntime {
+    <span class="kw">fn </span>spawn_local&lt;F&gt;(fut: F) -&gt; <span class="self">Self</span>::JoinHandle
+    <span class="kw">where
+        </span>F: Future&lt;Output = ()&gt; + <span class="lifetime">&#39;static</span>,
     {
-        <span class="ident">tokio::task::spawn_local</span>(<span class="ident">fut</span>)
+        tokio::task::spawn_local(fut)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">LocalContextExt</span> <span class="kw">for</span> <span class="ident">TokioRuntime</span> {
-    <span class="kw">fn</span> <span class="ident">scope_local</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">locals</span>: <span class="ident">TaskLocals</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">R</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">R</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="kw">impl </span>LocalContextExt <span class="kw">for </span>TokioRuntime {
+    <span class="kw">fn </span>scope_local&lt;F, R&gt;(locals: TaskLocals, fut: F) -&gt; Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = R&gt;&gt;&gt;
+    <span class="kw">where
+        </span>F: Future&lt;Output = R&gt; + <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">let</span> <span class="ident">cell</span> <span class="op">=</span> <span class="ident">UnsyncOnceCell::new</span>();
-        <span class="ident">cell</span>.<span class="ident">set</span>(<span class="ident">locals</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let </span>cell = UnsyncOnceCell::new();
+        cell.set(locals).unwrap();
 
-        <span class="ident">Box::pin</span>(<span class="ident">TASK_LOCALS</span>.<span class="ident">scope</span>(<span class="ident">cell</span>, <span class="ident">fut</span>))
+        Box::pin(TASK_LOCALS.scope(cell, fut))
     }
 }
 
-<span class="doccomment">/// Set the task local event loop for the given future</span>
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">scope</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">locals</span>: <span class="ident">TaskLocals</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">R</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">R</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="doccomment">/// Set the task local event loop for the given future
+</span><span class="kw">pub async fn </span>scope&lt;F, R&gt;(locals: TaskLocals, fut: F) -&gt; R
+<span class="kw">where
+    </span>F: Future&lt;Output = R&gt; + Send + <span class="lifetime">&#39;static</span>,
 {
-    <span class="ident">TokioRuntime::scope</span>(<span class="ident">locals</span>, <span class="ident">fut</span>).<span class="kw">await</span>
-}
+    TokioRuntime::scope(locals, fut).<span class="kw">await
+</span>}
 
-<span class="doccomment">/// Set the task local event loop for the given !Send future</span>
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">scope_local</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">locals</span>: <span class="ident">TaskLocals</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">R</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">R</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="doccomment">/// Set the task local event loop for the given !Send future
+</span><span class="kw">pub async fn </span>scope_local&lt;F, R&gt;(locals: TaskLocals, fut: F) -&gt; R
+<span class="kw">where
+    </span>F: Future&lt;Output = R&gt; + <span class="lifetime">&#39;static</span>,
 {
-    <span class="ident">TokioRuntime::scope_local</span>(<span class="ident">locals</span>, <span class="ident">fut</span>).<span class="kw">await</span>
+    TokioRuntime::scope_local(locals, fut).<span class="kw">await
+</span>}
+
+<span class="doccomment">/// Get the current event loop from either Python or Rust async task local context
+///
+/// This function first checks if the runtime has a task-local reference to the Python event loop.
+/// If not, it calls [`get_running_loop`](`crate::get_running_loop`) to get the event loop
+/// associated with the current OS thread.
+</span><span class="kw">pub fn </span>get_current_loop(py: Python) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyAny&gt; {
+    generic::get_current_loop::&lt;TokioRuntime&gt;(py)
 }
 
-<span class="doccomment">/// Get the current event loop from either Python or Rust async task local context</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This function first checks if the runtime has a task-local reference to the Python event loop.</span>
-<span class="doccomment">/// If not, it calls [`get_running_loop`](`crate::get_running_loop`) to get the event loop</span>
-<span class="doccomment">/// associated with the current OS thread.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_current_loop</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span> {
-    <span class="ident">generic::get_current_loop</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span><span class="op">&gt;</span>(<span class="ident">py</span>)
+<span class="doccomment">/// Either copy the task locals from the current task OR get the current running loop and
+/// contextvars from Python.
+</span><span class="kw">pub fn </span>get_current_locals(py: Python) -&gt; PyResult&lt;TaskLocals&gt; {
+    generic::get_current_locals::&lt;TokioRuntime&gt;(py)
 }
 
-<span class="doccomment">/// Either copy the task locals from the current task OR get the current running loop and</span>
-<span class="doccomment">/// contextvars from Python.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_current_locals</span>(<span class="ident">py</span>: <span class="ident">Python</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">TaskLocals</span><span class="op">&gt;</span> {
-    <span class="ident">generic::get_current_locals</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span><span class="op">&gt;</span>(<span class="ident">py</span>)
+<span class="doccomment">/// Initialize the Tokio runtime with a custom build
+</span><span class="kw">pub fn </span>init(builder: Builder) {
+    <span class="kw-2">*</span>TOKIO_BUILDER.lock().unwrap() = builder
 }
 
-<span class="doccomment">/// Initialize the Tokio runtime with a custom build</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="ident">builder</span>: <span class="ident">Builder</span>) {
-    <span class="kw-2">*</span><span class="ident">TOKIO_BUILDER</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>() <span class="op">=</span> <span class="ident">builder</span>
+<span class="doccomment">/// Initialize the Tokio runtime with a custom Tokio runtime
+///
+/// Returns Ok(()) if success and Err(()) if it had been inited.
+</span><span class="kw">pub fn </span>init_with_runtime(runtime: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>Runtime) -&gt; <span class="prelude-ty">Result</span>&lt;(), ()&gt; {
+    TOKIO_RUNTIME
+        .set(Pyo3Runtime::Borrowed(runtime))
+        .map_err(|<span class="kw">_</span>| ())
 }
 
-<span class="doccomment">/// Get a reference to the current tokio runtime</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_runtime</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Runtime</span> {
-    <span class="ident">TOKIO_RUNTIME</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> {
-        <span class="ident">TOKIO_BUILDER</span>
-            .<span class="ident">lock</span>()
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">build</span>()
-            .<span class="ident">expect</span>(<span class="string">&quot;Unable to build Tokio runtime&quot;</span>)
+<span class="doccomment">/// Get a reference to the current tokio runtime
+</span><span class="kw">pub fn </span>get_runtime&lt;<span class="lifetime">&#39;a</span>&gt;() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Runtime {
+    TOKIO_RUNTIME.get_or_init(|| {
+        <span class="kw">let </span>rt = TOKIO_BUILDER
+            .lock()
+            .unwrap()
+            .build()
+            .expect(<span class="string">&quot;Unable to build Tokio runtime&quot;</span>);
+        Pyo3Runtime::Owned(rt)
     })
 }
 
-<span class="kw">fn</span> <span class="ident">multi_thread</span>() -&gt; <span class="ident">Builder</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">Builder::new_multi_thread</span>();
-    <span class="ident">builder</span>.<span class="ident">enable_all</span>();
-    <span class="ident">builder</span>
+<span class="kw">fn </span>multi_thread() -&gt; Builder {
+    <span class="kw">let </span><span class="kw-2">mut </span>builder = Builder::new_multi_thread();
+    builder.enable_all();
+    builder
 }
 
-<span class="doccomment">/// Run the event loop until the given Future completes</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// The event loop runs until the given future is complete.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// After this function returns, the event loop can be resumed with [`run_until_complete`]</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `event_loop` - The Python event loop that should run the future</span>
-<span class="doccomment">/// * `fut` - The future to drive to completion</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// # use std::time::Duration;</span>
-<span class="doccomment">/// #</span>
-<span class="doccomment">/// # use pyo3::prelude::*;</span>
-<span class="doccomment">/// #</span>
-<span class="doccomment">/// # pyo3::prepare_freethreaded_python();</span>
-<span class="doccomment">/// # Python::with_gil(|py| -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">/// # let event_loop = py.import(&quot;asyncio&quot;)?.call_method0(&quot;new_event_loop&quot;)?;</span>
-<span class="doccomment">/// pyo3_asyncio::tokio::run_until_complete(event_loop, async move {</span>
-<span class="doccomment">///     tokio::time::sleep(Duration::from_secs(1)).await;</span>
-<span class="doccomment">///     Ok(())</span>
-<span class="doccomment">/// })?;</span>
-<span class="doccomment">/// # Ok(())</span>
-<span class="doccomment">/// # }).unwrap();</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_until_complete</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">event_loop</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    <span class="ident">T</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="doccomment">/// Run the event loop until the given Future completes
+///
+/// The event loop runs until the given future is complete.
+///
+/// After this function returns, the event loop can be resumed with [`run_until_complete`]
+///
+/// # Arguments
+/// * `event_loop` - The Python event loop that should run the future
+/// * `fut` - The future to drive to completion
+///
+/// # Examples
+///
+/// ```
+/// # use std::time::Duration;
+/// #
+/// # use pyo3::prelude::*;
+/// #
+/// # pyo3::prepare_freethreaded_python();
+/// # Python::with_gil(|py| -&gt; PyResult&lt;()&gt; {
+/// # let event_loop = py.import(&quot;asyncio&quot;)?.call_method0(&quot;new_event_loop&quot;)?;
+/// pyo3_asyncio::tokio::run_until_complete(event_loop, async move {
+///     tokio::time::sleep(Duration::from_secs(1)).await;
+///     Ok(())
+/// })?;
+/// # Ok(())
+/// # }).unwrap();
+/// ```
+</span><span class="kw">pub fn </span>run_until_complete&lt;F, T&gt;(event_loop: <span class="kw-2">&amp;</span>PyAny, fut: F) -&gt; PyResult&lt;T&gt;
+<span class="kw">where
+    </span>F: Future&lt;Output = PyResult&lt;T&gt;&gt; + Send + <span class="lifetime">&#39;static</span>,
+    T: Send + Sync + <span class="lifetime">&#39;static</span>,
 {
-    <span class="ident">generic::run_until_complete</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">event_loop</span>, <span class="ident">fut</span>)
+    generic::run_until_complete::&lt;TokioRuntime, <span class="kw">_</span>, T&gt;(event_loop, fut)
 }
 
-<span class="doccomment">/// Run the event loop until the given Future completes</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
-<span class="doccomment">/// * `fut` - The future to drive to completion</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```no_run</span>
-<span class="doccomment">/// # use std::time::Duration;</span>
-<span class="doccomment">/// #</span>
-<span class="doccomment">/// # use pyo3::prelude::*;</span>
-<span class="doccomment">/// #</span>
-<span class="doccomment">/// fn main() {</span>
-<span class="doccomment">///     Python::with_gil(|py| {</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::run(py, async move {</span>
-<span class="doccomment">///             tokio::time::sleep(Duration::from_secs(1)).await;</span>
-<span class="doccomment">///             Ok(())</span>
-<span class="doccomment">///         })</span>
-<span class="doccomment">///         .map_err(|e| {</span>
-<span class="doccomment">///             e.print_and_set_sys_last_vars(py);</span>
-<span class="doccomment">///         })</span>
-<span class="doccomment">///         .unwrap();</span>
-<span class="doccomment">///     })</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    <span class="ident">T</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="doccomment">/// Run the event loop until the given Future completes
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The future to drive to completion
+///
+/// # Examples
+///
+/// ```no_run
+/// # use std::time::Duration;
+/// #
+/// # use pyo3::prelude::*;
+/// #
+/// fn main() {
+///     Python::with_gil(|py| {
+///         pyo3_asyncio::tokio::run(py, async move {
+///             tokio::time::sleep(Duration::from_secs(1)).await;
+///             Ok(())
+///         })
+///         .map_err(|e| {
+///             e.print_and_set_sys_last_vars(py);
+///         })
+///         .unwrap();
+///     })
+/// }
+/// ```
+</span><span class="kw">pub fn </span>run&lt;F, T&gt;(py: Python, fut: F) -&gt; PyResult&lt;T&gt;
+<span class="kw">where
+    </span>F: Future&lt;Output = PyResult&lt;T&gt;&gt; + Send + <span class="lifetime">&#39;static</span>,
+    T: Send + Sync + <span class="lifetime">&#39;static</span>,
 {
-    <span class="ident">generic::run</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
+    generic::run::&lt;TokioRuntime, F, T&gt;(py, fut)
 }
 
-<span class="doccomment">/// Convert a Rust Future into a Python awaitable</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,</span>
-<span class="doccomment">/// the Rust future will be cancelled as well (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python `contextvars` are preserved when calling async Python functions within the Rust future</span>
-<span class="doccomment">/// via [`into_future`] (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will</span>
-<span class="doccomment">/// unfortunately fail to resolve them when called within the Rust future. This is because the</span>
-<span class="doccomment">/// function is being called from a Rust thread, not inside an actual Python coroutine context.</span>
-<span class="doccomment">/// &gt;</span>
-<span class="doccomment">/// &gt; As a workaround, you can get the `contextvars` from the current task locals using</span>
-<span class="doccomment">/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your</span>
-<span class="doccomment">/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the</span>
-<span class="doccomment">/// synchronous function, and restore the previous context when it returns or raises an exception.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `py` - PyO3 GIL guard</span>
-<span class="doccomment">/// * `locals` - The task locals for the given future</span>
-<span class="doccomment">/// * `fut` - The Rust future to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use std::time::Duration;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// /// Awaitable sleep function</span>
-<span class="doccomment">/// #[pyfunction]</span>
-<span class="doccomment">/// fn sleep_for&lt;&#39;p&gt;(py: Python&lt;&#39;p&gt;, secs: &amp;&#39;p PyAny) -&gt; PyResult&lt;&amp;&#39;p PyAny&gt; {</span>
-<span class="doccomment">///     let secs = secs.extract()?;</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::future_into_py_with_locals(</span>
-<span class="doccomment">///         py,</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::get_current_locals(py)?,</span>
-<span class="doccomment">///         async move {</span>
-<span class="doccomment">///             tokio::time::sleep(Duration::from_secs(secs)).await;</span>
-<span class="doccomment">///             Python::with_gil(|py| Ok(py.None()))</span>
-<span class="doccomment">///         }</span>
-<span class="doccomment">///     )</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">future_into_py_with_locals</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">locals</span>: <span class="ident">TaskLocals</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    <span class="ident">T</span>: <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Convert a Rust Future into a Python awaitable
+///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// &gt;
+/// &gt; As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
+///
+/// # Arguments
+/// * `py` - PyO3 GIL guard
+/// * `locals` - The task locals for the given future
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for&lt;&#39;p&gt;(py: Python&lt;&#39;p&gt;, secs: &amp;&#39;p PyAny) -&gt; PyResult&lt;&amp;&#39;p PyAny&gt; {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::tokio::future_into_py_with_locals(
+///         py,
+///         pyo3_asyncio::tokio::get_current_locals(py)?,
+///         async move {
+///             tokio::time::sleep(Duration::from_secs(secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+/// ```
+</span><span class="kw">pub fn </span>future_into_py_with_locals&lt;F, T&gt;(py: Python, locals: TaskLocals, fut: F) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyAny&gt;
+<span class="kw">where
+    </span>F: Future&lt;Output = PyResult&lt;T&gt;&gt; + Send + <span class="lifetime">&#39;static</span>,
+    T: IntoPy&lt;PyObject&gt;,
 {
-    <span class="ident">generic::future_into_py_with_locals</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">locals</span>, <span class="ident">fut</span>)
+    generic::future_into_py_with_locals::&lt;TokioRuntime, F, T&gt;(py, locals, fut)
 }
 
-<span class="doccomment">/// Convert a Rust Future into a Python awaitable</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,</span>
-<span class="doccomment">/// the Rust future will be cancelled as well (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python `contextvars` are preserved when calling async Python functions within the Rust future</span>
-<span class="doccomment">/// via [`into_future`] (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will</span>
-<span class="doccomment">/// unfortunately fail to resolve them when called within the Rust future. This is because the</span>
-<span class="doccomment">/// function is being called from a Rust thread, not inside an actual Python coroutine context.</span>
-<span class="doccomment">/// &gt;</span>
-<span class="doccomment">/// &gt; As a workaround, you can get the `contextvars` from the current task locals using</span>
-<span class="doccomment">/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your</span>
-<span class="doccomment">/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the</span>
-<span class="doccomment">/// synchronous function, and restore the previous context when it returns or raises an exception.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
-<span class="doccomment">/// * `fut` - The Rust future to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use std::time::Duration;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// /// Awaitable sleep function</span>
-<span class="doccomment">/// #[pyfunction]</span>
-<span class="doccomment">/// fn sleep_for&lt;&#39;p&gt;(py: Python&lt;&#39;p&gt;, secs: &amp;&#39;p PyAny) -&gt; PyResult&lt;&amp;&#39;p PyAny&gt; {</span>
-<span class="doccomment">///     let secs = secs.extract()?;</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::future_into_py(py, async move {</span>
-<span class="doccomment">///         tokio::time::sleep(Duration::from_secs(secs)).await;</span>
-<span class="doccomment">///         Ok(())</span>
-<span class="doccomment">///     })</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">future_into_py</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    <span class="ident">T</span>: <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Convert a Rust Future into a Python awaitable
+///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// &gt;
+/// &gt; As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable sleep function
+/// #[pyfunction]
+/// fn sleep_for&lt;&#39;p&gt;(py: Python&lt;&#39;p&gt;, secs: &amp;&#39;p PyAny) -&gt; PyResult&lt;&amp;&#39;p PyAny&gt; {
+///     let secs = secs.extract()?;
+///     pyo3_asyncio::tokio::future_into_py(py, async move {
+///         tokio::time::sleep(Duration::from_secs(secs)).await;
+///         Ok(())
+///     })
+/// }
+/// ```
+</span><span class="kw">pub fn </span>future_into_py&lt;F, T&gt;(py: Python, fut: F) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyAny&gt;
+<span class="kw">where
+    </span>F: Future&lt;Output = PyResult&lt;T&gt;&gt; + Send + <span class="lifetime">&#39;static</span>,
+    T: IntoPy&lt;PyObject&gt;,
 {
-    <span class="ident">generic::future_into_py</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
+    generic::future_into_py::&lt;TokioRuntime, <span class="kw">_</span>, T&gt;(py, fut)
 }
 
-<span class="doccomment">/// Convert a `!Send` Rust Future into a Python awaitable</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,</span>
-<span class="doccomment">/// the Rust future will be cancelled as well (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python `contextvars` are preserved when calling async Python functions within the Rust future</span>
-<span class="doccomment">/// via [`into_future`] (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will</span>
-<span class="doccomment">/// unfortunately fail to resolve them when called within the Rust future. This is because the</span>
-<span class="doccomment">/// function is being called from a Rust thread, not inside an actual Python coroutine context.</span>
-<span class="doccomment">/// &gt;</span>
-<span class="doccomment">/// &gt; As a workaround, you can get the `contextvars` from the current task locals using</span>
-<span class="doccomment">/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your</span>
-<span class="doccomment">/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the</span>
-<span class="doccomment">/// synchronous function, and restore the previous context when it returns or raises an exception.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `py` - PyO3 GIL guard</span>
-<span class="doccomment">/// * `locals` - The task locals for the given future</span>
-<span class="doccomment">/// * `fut` - The Rust future to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use std::{rc::Rc, time::Duration};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// /// Awaitable non-send sleep function</span>
-<span class="doccomment">/// #[pyfunction]</span>
-<span class="doccomment">/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
-<span class="doccomment">///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py</span>
-<span class="doccomment">///     let secs = Rc::new(secs);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::local_future_into_py_with_locals(</span>
-<span class="doccomment">///         py,</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::get_current_locals(py)?,</span>
-<span class="doccomment">///         async move {</span>
-<span class="doccomment">///             tokio::time::sleep(Duration::from_secs(*secs)).await;</span>
-<span class="doccomment">///             Python::with_gil(|py| Ok(py.None()))</span>
-<span class="doccomment">///         }</span>
-<span class="doccomment">///     )</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]</span>
-<span class="doccomment">/// #[pyo3_asyncio::tokio::main]</span>
-<span class="doccomment">/// async fn main() -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">///     let locals = Python::with_gil(|py| -&gt; PyResult&lt;_&gt; {</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::get_current_locals(py)</span>
-<span class="doccomment">///     })?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead</span>
-<span class="doccomment">///     // we use spawn_blocking in order to use LocalSet::block_on</span>
-<span class="doccomment">///     tokio::task::spawn_blocking(move || {</span>
-<span class="doccomment">///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to</span>
-<span class="doccomment">///         // pyo3_asyncio::tokio::local_future_into_py will panic.</span>
-<span class="doccomment">///         tokio::task::LocalSet::new().block_on(</span>
-<span class="doccomment">///             pyo3_asyncio::tokio::get_runtime(),</span>
-<span class="doccomment">///             pyo3_asyncio::tokio::scope_local(locals, async {</span>
-<span class="doccomment">///                 Python::with_gil(|py| {</span>
-<span class="doccomment">///                     let py_future = sleep_for(py, 1)?;</span>
-<span class="doccomment">///                     pyo3_asyncio::tokio::into_future(py_future)</span>
-<span class="doccomment">///                 })?</span>
-<span class="doccomment">///                 .await?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///                 Ok(())</span>
-<span class="doccomment">///             })</span>
-<span class="doccomment">///         )</span>
-<span class="doccomment">///     }).await.unwrap()</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
-<span class="doccomment">/// # fn main() {}</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">local_future_into_py_with_locals</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(
-    <span class="ident">py</span>: <span class="ident">Python</span>,
-    <span class="ident">locals</span>: <span class="ident">TaskLocals</span>,
-    <span class="ident">fut</span>: <span class="ident">F</span>,
-) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    <span class="ident">T</span>: <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Convert a `!Send` Rust Future into a Python awaitable
+///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// &gt;
+/// &gt; As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
+///
+/// # Arguments
+/// * `py` - PyO3 GIL guard
+/// * `locals` - The task locals for the given future
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::{rc::Rc, time::Duration};
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable non-send sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;&amp;PyAny&gt; {
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py
+///     let secs = Rc::new(secs);
+///
+///     pyo3_asyncio::tokio::local_future_into_py_with_locals(
+///         py,
+///         pyo3_asyncio::tokio::get_current_locals(py)?,
+///         async move {
+///             tokio::time::sleep(Duration::from_secs(*secs)).await;
+///             Python::with_gil(|py| Ok(py.None()))
+///         }
+///     )
+/// }
+///
+/// # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]
+/// #[pyo3_asyncio::tokio::main]
+/// async fn main() -&gt; PyResult&lt;()&gt; {
+///     let locals = Python::with_gil(|py| -&gt; PyResult&lt;_&gt; {
+///         pyo3_asyncio::tokio::get_current_locals(py)
+///     })?;
+///
+///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
+///     // we use spawn_blocking in order to use LocalSet::block_on
+///     tokio::task::spawn_blocking(move || {
+///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to
+///         // pyo3_asyncio::tokio::local_future_into_py will panic.
+///         tokio::task::LocalSet::new().block_on(
+///             pyo3_asyncio::tokio::get_runtime(),
+///             pyo3_asyncio::tokio::scope_local(locals, async {
+///                 Python::with_gil(|py| {
+///                     let py_future = sleep_for(py, 1)?;
+///                     pyo3_asyncio::tokio::into_future(py_future)
+///                 })?
+///                 .await?;
+///
+///                 Ok(())
+///             })
+///         )
+///     }).await.unwrap()
+/// }
+/// # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]
+/// # fn main() {}
+/// ```
+</span><span class="attribute">#[deprecated(
+    since = <span class="string">&quot;0.18.0&quot;</span>,
+    note = <span class="string">&quot;Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)&quot;
+</span>)]
+#[allow(deprecated)]
+</span><span class="kw">pub fn </span>local_future_into_py_with_locals&lt;F, T&gt;(
+    py: Python,
+    locals: TaskLocals,
+    fut: F,
+) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyAny&gt;
+<span class="kw">where
+    </span>F: Future&lt;Output = PyResult&lt;T&gt;&gt; + <span class="lifetime">&#39;static</span>,
+    T: IntoPy&lt;PyObject&gt;,
 {
-    <span class="ident">generic::local_future_into_py_with_locals</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">locals</span>, <span class="ident">fut</span>)
+    generic::local_future_into_py_with_locals::&lt;TokioRuntime, <span class="kw">_</span>, T&gt;(py, locals, fut)
 }
 
-<span class="doccomment">/// Convert a `!Send` Rust Future into a Python awaitable</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,</span>
-<span class="doccomment">/// the Rust future will be cancelled as well (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Python `contextvars` are preserved when calling async Python functions within the Rust future</span>
-<span class="doccomment">/// via [`into_future`] (new behaviour in `v0.15`).</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will</span>
-<span class="doccomment">/// unfortunately fail to resolve them when called within the Rust future. This is because the</span>
-<span class="doccomment">/// function is being called from a Rust thread, not inside an actual Python coroutine context.</span>
-<span class="doccomment">/// &gt;</span>
-<span class="doccomment">/// &gt; As a workaround, you can get the `contextvars` from the current task locals using</span>
-<span class="doccomment">/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your</span>
-<span class="doccomment">/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the</span>
-<span class="doccomment">/// synchronous function, and restore the previous context when it returns or raises an exception.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `py` - The current PyO3 GIL guard</span>
-<span class="doccomment">/// * `fut` - The Rust future to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use std::{rc::Rc, time::Duration};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// /// Awaitable non-send sleep function</span>
-<span class="doccomment">/// #[pyfunction]</span>
-<span class="doccomment">/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;&amp;PyAny&gt; {</span>
-<span class="doccomment">///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py</span>
-<span class="doccomment">///     let secs = Rc::new(secs);</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::local_future_into_py(py, async move {</span>
-<span class="doccomment">///         tokio::time::sleep(Duration::from_secs(*secs)).await;</span>
-<span class="doccomment">///         Ok(())</span>
-<span class="doccomment">///     })</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]</span>
-<span class="doccomment">/// #[pyo3_asyncio::tokio::main]</span>
-<span class="doccomment">/// async fn main() -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">///     let locals = Python::with_gil(|py| {</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::get_current_locals(py).unwrap()</span>
-<span class="doccomment">///     });</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead</span>
-<span class="doccomment">///     // we use spawn_blocking in order to use LocalSet::block_on</span>
-<span class="doccomment">///     tokio::task::spawn_blocking(move || {</span>
-<span class="doccomment">///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to</span>
-<span class="doccomment">///         // pyo3_asyncio::tokio::local_future_into_py will panic.</span>
-<span class="doccomment">///         tokio::task::LocalSet::new().block_on(</span>
-<span class="doccomment">///             pyo3_asyncio::tokio::get_runtime(),</span>
-<span class="doccomment">///             pyo3_asyncio::tokio::scope_local(locals, async {</span>
-<span class="doccomment">///                 Python::with_gil(|py| {</span>
-<span class="doccomment">///                     let py_future = sleep_for(py, 1)?;</span>
-<span class="doccomment">///                     pyo3_asyncio::tokio::into_future(py_future)</span>
-<span class="doccomment">///                 })?</span>
-<span class="doccomment">///                 .await?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///                 Ok(())</span>
-<span class="doccomment">///             })</span>
-<span class="doccomment">///         )</span>
-<span class="doccomment">///     }).await.unwrap()</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]</span>
-<span class="doccomment">/// # fn main() {}</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">local_future_into_py</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>: <span class="ident">Python</span>, <span class="ident">fut</span>: <span class="ident">F</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PyAny</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    <span class="ident">T</span>: <span class="ident">IntoPy</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Convert a `!Send` Rust Future into a Python awaitable
+///
+/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
+/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+///
+/// Python `contextvars` are preserved when calling async Python functions within the Rust future
+/// via [`into_future`] (new behaviour in `v0.15`).
+///
+/// &gt; Although `contextvars` are preserved for async Python functions, synchronous functions will
+/// unfortunately fail to resolve them when called within the Rust future. This is because the
+/// function is being called from a Rust thread, not inside an actual Python coroutine context.
+/// &gt;
+/// &gt; As a workaround, you can get the `contextvars` from the current task locals using
+/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
+/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
+/// synchronous function, and restore the previous context when it returns or raises an exception.
+///
+/// # Arguments
+/// * `py` - The current PyO3 GIL guard
+/// * `fut` - The Rust future to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::{rc::Rc, time::Duration};
+///
+/// use pyo3::prelude::*;
+///
+/// /// Awaitable non-send sleep function
+/// #[pyfunction]
+/// fn sleep_for(py: Python, secs: u64) -&gt; PyResult&lt;&amp;PyAny&gt; {
+///     // Rc is non-send so it cannot be passed into pyo3_asyncio::tokio::future_into_py
+///     let secs = Rc::new(secs);
+///     pyo3_asyncio::tokio::local_future_into_py(py, async move {
+///         tokio::time::sleep(Duration::from_secs(*secs)).await;
+///         Ok(())
+///     })
+/// }
+///
+/// # #[cfg(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;))]
+/// #[pyo3_asyncio::tokio::main]
+/// async fn main() -&gt; PyResult&lt;()&gt; {
+///     let locals = Python::with_gil(|py| {
+///         pyo3_asyncio::tokio::get_current_locals(py).unwrap()
+///     });
+///
+///     // the main coroutine is running in a Send context, so we cannot use LocalSet here. Instead
+///     // we use spawn_blocking in order to use LocalSet::block_on
+///     tokio::task::spawn_blocking(move || {
+///         // LocalSet allows us to work with !Send futures within tokio. Without it, any calls to
+///         // pyo3_asyncio::tokio::local_future_into_py will panic.
+///         tokio::task::LocalSet::new().block_on(
+///             pyo3_asyncio::tokio::get_runtime(),
+///             pyo3_asyncio::tokio::scope_local(locals, async {
+///                 Python::with_gil(|py| {
+///                     let py_future = sleep_for(py, 1)?;
+///                     pyo3_asyncio::tokio::into_future(py_future)
+///                 })?
+///                 .await?;
+///
+///                 Ok(())
+///             })
+///         )
+///     }).await.unwrap()
+/// }
+/// # #[cfg(not(all(feature = &quot;tokio-runtime&quot;, feature = &quot;attributes&quot;)))]
+/// # fn main() {}
+/// ```
+</span><span class="attribute">#[deprecated(
+    since = <span class="string">&quot;0.18.0&quot;</span>,
+    note = <span class="string">&quot;Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)&quot;
+</span>)]
+#[allow(deprecated)]
+</span><span class="kw">pub fn </span>local_future_into_py&lt;F, T&gt;(py: Python, fut: F) -&gt; PyResult&lt;<span class="kw-2">&amp;</span>PyAny&gt;
+<span class="kw">where
+    </span>F: Future&lt;Output = PyResult&lt;T&gt;&gt; + <span class="lifetime">&#39;static</span>,
+    T: IntoPy&lt;PyObject&gt;,
 {
-    <span class="ident">generic::local_future_into_py</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span>, <span class="kw">_</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">py</span>, <span class="ident">fut</span>)
+    generic::local_future_into_py::&lt;TokioRuntime, <span class="kw">_</span>, T&gt;(py, fut)
 }
 
-<span class="doccomment">/// Convert a Python `awaitable` into a Rust Future</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A</span>
-<span class="doccomment">/// completion handler sends the result of this Task through a</span>
-<span class="doccomment">/// `futures::channel::oneshot::Sender&lt;PyResult&lt;PyObject&gt;&gt;` and the future returned by this function</span>
-<span class="doccomment">/// simply awaits the result through the `futures::channel::oneshot::Receiver&lt;PyResult&lt;PyObject&gt;&gt;`.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `awaitable` - The Python `awaitable` to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use std::time::Duration;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// const PYTHON_CODE: &amp;&#39;static str = r#&quot;</span>
-<span class="doccomment">/// import asyncio</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async def py_sleep(duration):</span>
-<span class="doccomment">///     await asyncio.sleep(duration)</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async fn py_sleep(seconds: f32) -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">///     let test_mod = Python::with_gil(|py| -&gt; PyResult&lt;PyObject&gt; {</span>
-<span class="doccomment">///         Ok(</span>
-<span class="doccomment">///             PyModule::from_code(</span>
-<span class="doccomment">///                 py,</span>
-<span class="doccomment">///                 PYTHON_CODE,</span>
-<span class="doccomment">///                 &quot;test_into_future/test_mod.py&quot;,</span>
-<span class="doccomment">///                 &quot;test_mod&quot;</span>
-<span class="doccomment">///             )?</span>
-<span class="doccomment">///             .into()</span>
-<span class="doccomment">///         )</span>
-<span class="doccomment">///     })?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     Python::with_gil(|py| {</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::into_future(</span>
-<span class="doccomment">///             test_mod</span>
-<span class="doccomment">///                 .call_method1(py, &quot;py_sleep&quot;, (seconds.into_py(py),))?</span>
-<span class="doccomment">///                 .as_ref(py),</span>
-<span class="doccomment">///         )</span>
-<span class="doccomment">///     })?</span>
-<span class="doccomment">///     .await?;</span>
-<span class="doccomment">///     Ok(())</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_future</span>(<span class="ident">awaitable</span>: <span class="kw-2">&amp;</span><span class="ident">PyAny</span>) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span> {
-    <span class="ident">generic::into_future</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span><span class="op">&gt;</span>(<span class="ident">awaitable</span>)
+<span class="doccomment">/// Convert a Python `awaitable` into a Rust Future
+///
+/// This function converts the `awaitable` into a Python Task using `run_coroutine_threadsafe`. A
+/// completion handler sends the result of this Task through a
+/// `futures::channel::oneshot::Sender&lt;PyResult&lt;PyObject&gt;&gt;` and the future returned by this function
+/// simply awaits the result through the `futures::channel::oneshot::Receiver&lt;PyResult&lt;PyObject&gt;&gt;`.
+///
+/// # Arguments
+/// * `awaitable` - The Python `awaitable` to be converted
+///
+/// # Examples
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use pyo3::prelude::*;
+///
+/// const PYTHON_CODE: &amp;&#39;static str = r#&quot;
+/// import asyncio
+///
+/// async def py_sleep(duration):
+///     await asyncio.sleep(duration)
+/// &quot;#;
+///
+/// async fn py_sleep(seconds: f32) -&gt; PyResult&lt;()&gt; {
+///     let test_mod = Python::with_gil(|py| -&gt; PyResult&lt;PyObject&gt; {
+///         Ok(
+///             PyModule::from_code(
+///                 py,
+///                 PYTHON_CODE,
+///                 &quot;test_into_future/test_mod.py&quot;,
+///                 &quot;test_mod&quot;
+///             )?
+///             .into()
+///         )
+///     })?;
+///
+///     Python::with_gil(|py| {
+///         pyo3_asyncio::tokio::into_future(
+///             test_mod
+///                 .call_method1(py, &quot;py_sleep&quot;, (seconds.into_py(py),))?
+///                 .as_ref(py),
+///         )
+///     })?
+///     .await?;
+///     Ok(())
+/// }
+/// ```
+</span><span class="kw">pub fn </span>into_future(awaitable: <span class="kw-2">&amp;</span>PyAny) -&gt; PyResult&lt;<span class="kw">impl </span>Future&lt;Output = PyResult&lt;PyObject&gt;&gt; + Send&gt; {
+    generic::into_future::&lt;TokioRuntime&gt;(awaitable)
 }
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `locals` - The current task locals</span>
-<span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">/// use futures::{StreamExt, TryStreamExt};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// const TEST_MOD: &amp;str = r#&quot;</span>
-<span class="doccomment">/// import asyncio</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async def gen():</span>
-<span class="doccomment">///     for i in range(10):</span>
-<span class="doccomment">///         await asyncio.sleep(0.1)</span>
-<span class="doccomment">///         yield i</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]</span>
-<span class="doccomment">/// # #[pyo3_asyncio::tokio::main]</span>
-<span class="doccomment">/// # async fn main() -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">/// let stream = Python::with_gil(|py| {</span>
-<span class="doccomment">///     let test_mod = PyModule::from_code(</span>
-<span class="doccomment">///         py,</span>
-<span class="doccomment">///         TEST_MOD,</span>
-<span class="doccomment">///         &quot;test_rust_coroutine/test_mod.py&quot;,</span>
-<span class="doccomment">///         &quot;test_mod&quot;,</span>
-<span class="doccomment">///     )?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::into_stream_with_locals_v1(</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::get_current_locals(py)?,</span>
-<span class="doccomment">///         test_mod.call_method0(&quot;gen&quot;)?</span>
-<span class="doccomment">///     )</span>
-<span class="doccomment">/// })?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let vals = stream</span>
-<span class="doccomment">///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item?.as_ref(py).extract()?) }))</span>
-<span class="doccomment">///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()</span>
-<span class="doccomment">///     .await?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Ok(())</span>
-<span class="doccomment">/// # }</span>
-<span class="doccomment">/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]</span>
-<span class="doccomment">/// # fn main() {}</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_with_locals_v1</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>(
-    <span class="ident">locals</span>: <span class="ident">TaskLocals</span>,
-    <span class="ident">gen</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span>,
-) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">futures::Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span> {
-    <span class="ident">generic::into_stream_with_locals_v1</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span><span class="op">&gt;</span>(<span class="ident">locals</span>, <span class="ident">gen</span>)
+<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+///
+/// # Arguments
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &amp;str = r#&quot;
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i
+/// &quot;#;
+///
+/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]
+/// # #[pyo3_asyncio::tokio::main]
+/// # async fn main() -&gt; PyResult&lt;()&gt; {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         &quot;test_rust_coroutine/test_mod.py&quot;,
+///         &quot;test_mod&quot;,
+///     )?;
+///
+///     pyo3_asyncio::tokio::into_stream_with_locals_v1(
+///         pyo3_asyncio::tokio::get_current_locals(py)?,
+///         test_mod.call_method0(&quot;gen&quot;)?
+///     )
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]
+/// # fn main() {}
+/// ```
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;unstable-streams&quot;</span>)]
+</span><span class="kw">pub fn </span>into_stream_with_locals_v1&lt;<span class="lifetime">&#39;p</span>&gt;(
+    locals: TaskLocals,
+    gen: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p </span>PyAny,
+) -&gt; PyResult&lt;<span class="kw">impl </span>futures::Stream&lt;Item = PyResult&lt;PyObject&gt;&gt; + <span class="lifetime">&#39;static</span>&gt; {
+    generic::into_stream_with_locals_v1::&lt;TokioRuntime&gt;(locals, gen)
 }
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">/// use futures::{StreamExt, TryStreamExt};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// const TEST_MOD: &amp;str = r#&quot;</span>
-<span class="doccomment">/// import asyncio</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async def gen():</span>
-<span class="doccomment">///     for i in range(10):</span>
-<span class="doccomment">///         await asyncio.sleep(0.1)</span>
-<span class="doccomment">///         yield i</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]</span>
-<span class="doccomment">/// # #[pyo3_asyncio::tokio::main]</span>
-<span class="doccomment">/// # async fn main() -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">/// let stream = Python::with_gil(|py| {</span>
-<span class="doccomment">///     let test_mod = PyModule::from_code(</span>
-<span class="doccomment">///         py,</span>
-<span class="doccomment">///         TEST_MOD,</span>
-<span class="doccomment">///         &quot;test_rust_coroutine/test_mod.py&quot;,</span>
-<span class="doccomment">///         &quot;test_mod&quot;,</span>
-<span class="doccomment">///     )?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::into_stream_v1(test_mod.call_method0(&quot;gen&quot;)?)</span>
-<span class="doccomment">/// })?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let vals = stream</span>
-<span class="doccomment">///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item?.as_ref(py).extract()?) }))</span>
-<span class="doccomment">///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()</span>
-<span class="doccomment">///     .await?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Ok(())</span>
-<span class="doccomment">/// # }</span>
-<span class="doccomment">/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]</span>
-<span class="doccomment">/// # fn main() {}</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_v1</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>(
-    <span class="ident">gen</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span>,
-) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">futures::Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">PyResult</span><span class="op">&lt;</span><span class="ident">PyObject</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span> {
-    <span class="ident">generic::into_stream_v1</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span><span class="op">&gt;</span>(<span class="ident">gen</span>)
+<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+///
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &amp;str = r#&quot;
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i
+/// &quot;#;
+///
+/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]
+/// # #[pyo3_asyncio::tokio::main]
+/// # async fn main() -&gt; PyResult&lt;()&gt; {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         &quot;test_rust_coroutine/test_mod.py&quot;,
+///         &quot;test_mod&quot;,
+///     )?;
+///
+///     pyo3_asyncio::tokio::into_stream_v1(test_mod.call_method0(&quot;gen&quot;)?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item?.as_ref(py).extract()?) }))
+///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]
+/// # fn main() {}
+/// ```
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;unstable-streams&quot;</span>)]
+</span><span class="kw">pub fn </span>into_stream_v1&lt;<span class="lifetime">&#39;p</span>&gt;(
+    gen: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p </span>PyAny,
+) -&gt; PyResult&lt;<span class="kw">impl </span>futures::Stream&lt;Item = PyResult&lt;PyObject&gt;&gt; + <span class="lifetime">&#39;static</span>&gt; {
+    generic::into_stream_v1::&lt;TokioRuntime&gt;(gen)
 }
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `locals` - The current task locals</span>
-<span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">/// use futures::{StreamExt, TryStreamExt};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// const TEST_MOD: &amp;str = r#&quot;</span>
-<span class="doccomment">/// import asyncio</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async def gen():</span>
-<span class="doccomment">///     for i in range(10):</span>
-<span class="doccomment">///         await asyncio.sleep(0.1)</span>
-<span class="doccomment">///         yield i</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]</span>
-<span class="doccomment">/// # #[pyo3_asyncio::tokio::main]</span>
-<span class="doccomment">/// # async fn main() -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">/// let stream = Python::with_gil(|py| {</span>
-<span class="doccomment">///     let test_mod = PyModule::from_code(</span>
-<span class="doccomment">///         py,</span>
-<span class="doccomment">///         TEST_MOD,</span>
-<span class="doccomment">///         &quot;test_rust_coroutine/test_mod.py&quot;,</span>
-<span class="doccomment">///         &quot;test_mod&quot;,</span>
-<span class="doccomment">///     )?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::into_stream_with_locals_v2(</span>
-<span class="doccomment">///         pyo3_asyncio::tokio::get_current_locals(py)?,</span>
-<span class="doccomment">///         test_mod.call_method0(&quot;gen&quot;)?</span>
-<span class="doccomment">///     )</span>
-<span class="doccomment">/// })?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let vals = stream</span>
-<span class="doccomment">///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item.as_ref(py).extract()?) }))</span>
-<span class="doccomment">///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()</span>
-<span class="doccomment">///     .await?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Ok(())</span>
-<span class="doccomment">/// # }</span>
-<span class="doccomment">/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]</span>
-<span class="doccomment">/// # fn main() {}</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_with_locals_v2</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>(
-    <span class="ident">locals</span>: <span class="ident">TaskLocals</span>,
-    <span class="ident">gen</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span>,
-) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">futures::Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span> {
-    <span class="ident">generic::into_stream_with_locals_v2</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span><span class="op">&gt;</span>(<span class="ident">locals</span>, <span class="ident">gen</span>)
+<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+///
+/// # Arguments
+/// * `locals` - The current task locals
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &amp;str = r#&quot;
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i
+/// &quot;#;
+///
+/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]
+/// # #[pyo3_asyncio::tokio::main]
+/// # async fn main() -&gt; PyResult&lt;()&gt; {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         &quot;test_rust_coroutine/test_mod.py&quot;,
+///         &quot;test_mod&quot;,
+///     )?;
+///
+///     pyo3_asyncio::tokio::into_stream_with_locals_v2(
+///         pyo3_asyncio::tokio::get_current_locals(py)?,
+///         test_mod.call_method0(&quot;gen&quot;)?
+///     )
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]
+/// # fn main() {}
+/// ```
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;unstable-streams&quot;</span>)]
+</span><span class="kw">pub fn </span>into_stream_with_locals_v2&lt;<span class="lifetime">&#39;p</span>&gt;(
+    locals: TaskLocals,
+    gen: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p </span>PyAny,
+) -&gt; PyResult&lt;<span class="kw">impl </span>futures::Stream&lt;Item = PyObject&gt; + <span class="lifetime">&#39;static</span>&gt; {
+    generic::into_stream_with_locals_v2::&lt;TokioRuntime&gt;(locals, gen)
 }
 
-<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// **This API is marked as unstable** and is only available when the</span>
-<span class="doccomment">/// `unstable-streams` crate feature is enabled. This comes with no</span>
-<span class="doccomment">/// stability guarantees, and could be changed or removed at any time.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `gen` - The Python async generator to be converted</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use pyo3::prelude::*;</span>
-<span class="doccomment">/// use futures::{StreamExt, TryStreamExt};</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// const TEST_MOD: &amp;str = r#&quot;</span>
-<span class="doccomment">/// import asyncio</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// async def gen():</span>
-<span class="doccomment">///     for i in range(10):</span>
-<span class="doccomment">///         await asyncio.sleep(0.1)</span>
-<span class="doccomment">///         yield i</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]</span>
-<span class="doccomment">/// # #[pyo3_asyncio::tokio::main]</span>
-<span class="doccomment">/// # async fn main() -&gt; PyResult&lt;()&gt; {</span>
-<span class="doccomment">/// let stream = Python::with_gil(|py| {</span>
-<span class="doccomment">///     let test_mod = PyModule::from_code(</span>
-<span class="doccomment">///         py,</span>
-<span class="doccomment">///         TEST_MOD,</span>
-<span class="doccomment">///         &quot;test_rust_coroutine/test_mod.py&quot;,</span>
-<span class="doccomment">///         &quot;test_mod&quot;,</span>
-<span class="doccomment">///     )?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///     pyo3_asyncio::tokio::into_stream_v2(test_mod.call_method0(&quot;gen&quot;)?)</span>
-<span class="doccomment">/// })?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let vals = stream</span>
-<span class="doccomment">///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item.as_ref(py).extract()?) }))</span>
-<span class="doccomment">///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()</span>
-<span class="doccomment">///     .await?;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Ok(())</span>
-<span class="doccomment">/// # }</span>
-<span class="doccomment">/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]</span>
-<span class="doccomment">/// # fn main() {}</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;unstable-streams&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_stream_v2</span><span class="op">&lt;</span><span class="lifetime">&#39;p</span><span class="op">&gt;</span>(
-    <span class="ident">gen</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p</span> <span class="ident">PyAny</span>,
-) -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">futures::Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">PyObject</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span> {
-    <span class="ident">generic::into_stream_v2</span>::<span class="op">&lt;</span><span class="ident">TokioRuntime</span><span class="op">&gt;</span>(<span class="ident">gen</span>)
+<span class="doccomment">/// &lt;span class=&quot;module-item stab portability&quot; style=&quot;display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;&quot;&gt;&lt;code&gt;unstable-streams&lt;/code&gt;&lt;/span&gt; Convert an async generator into a stream
+///
+/// **This API is marked as unstable** and is only available when the
+/// `unstable-streams` crate feature is enabled. This comes with no
+/// stability guarantees, and could be changed or removed at any time.
+///
+/// # Arguments
+/// * `gen` - The Python async generator to be converted
+///
+/// # Examples
+/// ```
+/// use pyo3::prelude::*;
+/// use futures::{StreamExt, TryStreamExt};
+///
+/// const TEST_MOD: &amp;str = r#&quot;
+/// import asyncio
+///
+/// async def gen():
+///     for i in range(10):
+///         await asyncio.sleep(0.1)
+///         yield i
+/// &quot;#;
+///
+/// # #[cfg(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;))]
+/// # #[pyo3_asyncio::tokio::main]
+/// # async fn main() -&gt; PyResult&lt;()&gt; {
+/// let stream = Python::with_gil(|py| {
+///     let test_mod = PyModule::from_code(
+///         py,
+///         TEST_MOD,
+///         &quot;test_rust_coroutine/test_mod.py&quot;,
+///         &quot;test_mod&quot;,
+///     )?;
+///
+///     pyo3_asyncio::tokio::into_stream_v2(test_mod.call_method0(&quot;gen&quot;)?)
+/// })?;
+///
+/// let vals = stream
+///     .map(|item| Python::with_gil(|py| -&gt; PyResult&lt;i32&gt; { Ok(item.as_ref(py).extract()?) }))
+///     .try_collect::&lt;Vec&lt;i32&gt;&gt;()
+///     .await?;
+///
+/// assert_eq!((0..10).collect::&lt;Vec&lt;i32&gt;&gt;(), vals);
+///
+/// Ok(())
+/// # }
+/// # #[cfg(not(all(feature = &quot;unstable-streams&quot;, feature = &quot;attributes&quot;)))]
+/// # fn main() {}
+/// ```
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;unstable-streams&quot;</span>)]
+</span><span class="kw">pub fn </span>into_stream_v2&lt;<span class="lifetime">&#39;p</span>&gt;(
+    gen: <span class="kw-2">&amp;</span><span class="lifetime">&#39;p </span>PyAny,
+) -&gt; PyResult&lt;<span class="kw">impl </span>futures::Stream&lt;Item = PyObject&gt; + <span class="lifetime">&#39;static</span>&gt; {
+    generic::into_stream_v2::&lt;TokioRuntime&gt;(gen)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.1 (90743e729 2023-01-10)" ></div></body></html>

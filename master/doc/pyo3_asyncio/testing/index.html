@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="testing Utilities for writing PyO3 Asyncio tests"><meta name="keywords" content="rust, rustlang, rust-lang, testing"><title>pyo3_asyncio::testing - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pyo3_asyncio/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pyo3_asyncio/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"><a href="#">Module testing</a></h2><div class="sidebar-elems"><section><div class="block"><ul><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div></section></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pyo3_asyncio/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="main-heading"><h1 class="fqn"><span class="in-band">Module <a href="../index.html">pyo3_asyncio</a>::<wbr><a class="mod" href="#">testing</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../src/pyo3_asyncio/testing.rs.html#1-357">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p><span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Utilities for writing PyO3 Asyncio tests</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="testing Utilities for writing PyO3 Asyncio tests"><meta name="keywords" content="rust, rustlang, rust-lang, testing"><title>pyo3_asyncio::testing - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pyo3_asyncio/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pyo3_asyncio/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"><a href="#">Module testing</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1 class="fqn">Module <a href="../index.html">pyo3_asyncio</a>::<wbr><a class="mod" href="#">testing</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../src/pyo3_asyncio/testing.rs.html#1-357">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p><span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>testing</code></span> Utilities for writing PyO3 Asyncio tests</p>
 <h2 id="pyo3-asyncio-testing-utilities"><a href="#pyo3-asyncio-testing-utilities">PyO3 Asyncio Testing Utilities</a></h2>
 <p>This module provides some utilities for parsing test arguments as well as running and filtering
 a sequence of tests.</p>
@@ -25,80 +25,82 @@ projects.</p>
 <p>We’ll also want to provide the test’s main function. Most of the functionality that the test harness needs is packed in the <a href="https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/testing/fn.main.html"><code>pyo3_asyncio::testing::main</code></a> function. This function will parse the test’s CLI arguments, collect and pass the functions marked with <a href="https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/async_std/attr.test.html"><code>#[pyo3_asyncio::async_std::test]</code></a> or <a href="https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/tokio/attr.test.html"><code>#[pyo3_asyncio::tokio::test]</code></a> and pass them into the test harness for running and filtering.</p>
 <p><code>pytests/test_example.rs</code> for the <code>tokio</code> runtime:</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attribute">#[<span class="ident">pyo3_asyncio::tokio::main</span>]</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">main</span>() -&gt; <span class="ident">pyo3::PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="ident">pyo3_asyncio::testing::main</span>().<span class="kw">await</span>
-}</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attribute">#[pyo3_asyncio::tokio::main]
+</span><span class="kw">async fn </span>main() -&gt; pyo3::PyResult&lt;()&gt; {
+    pyo3_asyncio::testing::main().<span class="kw">await
+</span>}</code></pre></div>
 <p><code>pytests/test_example.rs</code> for the <code>async-std</code> runtime:</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attribute">#[<span class="ident">pyo3_asyncio::async_std::main</span>]</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">main</span>() -&gt; <span class="ident">pyo3::PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="ident">pyo3_asyncio::testing::main</span>().<span class="kw">await</span>
-}</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attribute">#[pyo3_asyncio::async_std::main]
+</span><span class="kw">async fn </span>main() -&gt; pyo3::PyResult&lt;()&gt; {
+    pyo3_asyncio::testing::main().<span class="kw">await
+</span>}</code></pre></div>
 <h3 id="cargo-configuration"><a href="#cargo-configuration">Cargo Configuration</a></h3>
 <p>Next, we need to add our test file to the Cargo manifest by adding the following section to the
 <code>Cargo.toml</code></p>
 <div class="example-wrap"><pre class="language-toml"><code>[[test]]
 name = &quot;test_example&quot;
 path = &quot;pytests/test_example.rs&quot;
-harness = false</code></pre></div>
+harness = false
+</code></pre></div>
 <p>Also add the <code>testing</code> and <code>attributes</code> features to the <code>pyo3-asyncio</code> dependency and select your preferred runtime:</p>
-<div class="example-wrap"><pre class="language-toml"><code>pyo3-asyncio = { version = &quot;0.13&quot;, features = [&quot;testing&quot;, &quot;attributes&quot;, &quot;async-std-runtime&quot;] }</code></pre></div>
+<div class="example-wrap"><pre class="language-toml"><code>pyo3-asyncio = { version = &quot;0.13&quot;, features = [&quot;testing&quot;, &quot;attributes&quot;, &quot;async-std-runtime&quot;] }
+</code></pre></div>
 <p>At this point, you should be able to run the test via <code>cargo test</code></p>
 <h4 id="adding-tests-to-the-pyo3-asyncio-test-harness"><a href="#adding-tests-to-the-pyo3-asyncio-test-harness">Adding Tests to the PyO3 Asyncio Test Harness</a></h4>
 <p>We can add tests anywhere in the test crate with the runtime’s corresponding <code>#[test]</code> attribute:</p>
 <p>For <code>async-std</code> use the <a href="https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/async_std/attr.test.html"><code>pyo3_asyncio::async_std::test</code></a> attribute:</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">time::Duration</span>, <span class="ident">thread</span>};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">mod </span>tests {
+    <span class="kw">use </span>std::{time::Duration, thread};
 
-    <span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+    <span class="kw">use </span>pyo3::prelude::<span class="kw-2">*</span>;
 
-    <span class="comment">// tests can be async</span>
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::async_std::test</span>]</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">test_async_sleep</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">async_std::task::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">1</span>)).<span class="kw">await</span>;
+    <span class="comment">// tests can be async
+    </span><span class="attribute">#[pyo3_asyncio::async_std::test]
+    </span><span class="kw">async fn </span>test_async_sleep() -&gt; PyResult&lt;()&gt; {
+        async_std::task::sleep(Duration::from_secs(<span class="number">1</span>)).<span class="kw">await</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="comment">// they can also be synchronous</span>
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::async_std::test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_blocking_sleep</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">1</span>));
+    <span class="comment">// they can also be synchronous
+    </span><span class="attribute">#[pyo3_asyncio::async_std::test]
+    </span><span class="kw">fn </span>test_blocking_sleep() -&gt; PyResult&lt;()&gt; {
+        thread::sleep(Duration::from_secs(<span class="number">1</span>));
         <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="attribute">#[<span class="ident">pyo3_asyncio::async_std::main</span>]</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">main</span>() -&gt; <span class="ident">pyo3::PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="ident">pyo3_asyncio::testing::main</span>().<span class="kw">await</span>
-}</code></pre></div>
+<span class="attribute">#[pyo3_asyncio::async_std::main]
+</span><span class="kw">async fn </span>main() -&gt; pyo3::PyResult&lt;()&gt; {
+    pyo3_asyncio::testing::main().<span class="kw">await
+</span>}</code></pre></div>
 <p>For <code>tokio</code> use the <a href="https://docs.rs/pyo3-asyncio/latest/pyo3_asyncio/tokio/attr.test.html"><code>pyo3_asyncio::tokio::test</code></a> attribute:</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">time::Duration</span>, <span class="ident">thread</span>};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">mod </span>tests {
+    <span class="kw">use </span>std::{time::Duration, thread};
 
-    <span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+    <span class="kw">use </span>pyo3::prelude::<span class="kw-2">*</span>;
 
-    <span class="comment">// tests can be async</span>
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::tokio::test</span>]</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">test_async_sleep</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">tokio::time::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">1</span>)).<span class="kw">await</span>;
+    <span class="comment">// tests can be async
+    </span><span class="attribute">#[pyo3_asyncio::tokio::test]
+    </span><span class="kw">async fn </span>test_async_sleep() -&gt; PyResult&lt;()&gt; {
+        tokio::time::sleep(Duration::from_secs(<span class="number">1</span>)).<span class="kw">await</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="comment">// they can also be synchronous</span>
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::tokio::test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_blocking_sleep</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">thread::sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">1</span>));
+    <span class="comment">// they can also be synchronous
+    </span><span class="attribute">#[pyo3_asyncio::tokio::test]
+    </span><span class="kw">fn </span>test_blocking_sleep() -&gt; PyResult&lt;()&gt; {
+        thread::sleep(Duration::from_secs(<span class="number">1</span>));
         <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="attribute">#[<span class="ident">pyo3_asyncio::tokio::main</span>]</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">main</span>() -&gt; <span class="ident">pyo3::PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="ident">pyo3_asyncio::testing::main</span>().<span class="kw">await</span>
-}</code></pre></div>
+<span class="attribute">#[pyo3_asyncio::tokio::main]
+</span><span class="kw">async fn </span>main() -&gt; pyo3::PyResult&lt;()&gt; {
+    pyo3_asyncio::testing::main().<span class="kw">await
+</span>}</code></pre></div>
 <h3 id="lib-tests"><a href="#lib-tests">Lib Tests</a></h3>
 <p>Unfortunately, as we mentioned at the beginning, these utilities will only run in integration
 tests and doc tests. Running lib tests are out of the question since we need control over the
@@ -106,31 +108,26 @@ main function. You can however perform compilation checks for lib tests. This is
 useful in doc tests than it is for lib tests, but the option is there if you want it.</p>
 <p><code>my-crate/src/lib.rs</code></p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">pyo3::prelude</span>::<span class="kw-2">*</span>;
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">mod </span>tests {
+    <span class="kw">use </span>pyo3::prelude::<span class="kw-2">*</span>;
 
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::async_std::test</span>]</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">test_async_std_async_test_compiles</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="attribute">#[pyo3_asyncio::async_std::test]
+    </span><span class="kw">async fn </span>test_async_std_async_test_compiles() -&gt; PyResult&lt;()&gt; {
         <span class="prelude-val">Ok</span>(())
     }
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::async_std::test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_async_std_sync_test_compiles</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="attribute">#[pyo3_asyncio::async_std::test]
+    </span><span class="kw">fn </span>test_async_std_sync_test_compiles() -&gt; PyResult&lt;()&gt; {
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::tokio::test</span>]</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">test_tokio_async_test_compiles</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="attribute">#[pyo3_asyncio::tokio::test]
+    </span><span class="kw">async fn </span>test_tokio_async_test_compiles() -&gt; PyResult&lt;()&gt; {
         <span class="prelude-val">Ok</span>(())
     }
-    <span class="attribute">#[<span class="ident">pyo3_asyncio::tokio::test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_tokio_sync_test_compiles</span>() -&gt; <span class="ident">PyResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="attribute">#[pyo3_asyncio::tokio::test]
+    </span><span class="kw">fn </span>test_tokio_sync_test_compiles() -&gt; PyResult&lt;()&gt; {
         <span class="prelude-val">Ok</span>(())
     }
 }
 </code></pre></div>
-</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Args.html" title="pyo3_asyncio::testing::Args struct">Args</a></div><div class="item-right docblock-short"><p>Args that should be provided to the test program</p>
-</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Test.html" title="pyo3_asyncio::testing::Test struct">Test</a></div><div class="item-right docblock-short"><p>The structure used by the <code>#[test]</code> macros to provide a test to the <code>pyo3-asyncio</code> test harness.</p>
-</div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.main.html" title="pyo3_asyncio::testing::main fn">main</a></div><div class="item-right docblock-short"><p>Parses test arguments and passes the tests to the <code>pyo3-asyncio</code> test harness</p>
-</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.parse_args.html" title="pyo3_asyncio::testing::parse_args fn">parse_args</a></div><div class="item-right docblock-short"><p>Parse the test args from the command line</p>
-</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.test_harness.html" title="pyo3_asyncio::testing::test_harness fn">test_harness</a></div><div class="item-right docblock-short"><p>Run a sequence of tests while applying any necessary filtering from the <code>Args</code></p>
-</div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Args.html" title="pyo3_asyncio::testing::Args struct">Args</a></div><div class="item-right docblock-short">Args that should be provided to the test program</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Test.html" title="pyo3_asyncio::testing::Test struct">Test</a></div><div class="item-right docblock-short">The structure used by the <code>#[test]</code> macros to provide a test to the <code>pyo3-asyncio</code> test harness.</div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.main.html" title="pyo3_asyncio::testing::main fn">main</a></div><div class="item-right docblock-short">Parses test arguments and passes the tests to the <code>pyo3-asyncio</code> test harness</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.parse_args.html" title="pyo3_asyncio::testing::parse_args fn">parse_args</a></div><div class="item-right docblock-short">Parse the test args from the command line</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.test_harness.html" title="pyo3_asyncio::testing::test_harness fn">test_harness</a></div><div class="item-right docblock-short">Run a sequence of tests while applying any necessary filtering from the <code>Args</code></div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pyo3_asyncio" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.1 (90743e729 2023-01-10)" ></div></body></html>
