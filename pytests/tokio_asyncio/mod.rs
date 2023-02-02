@@ -92,6 +92,7 @@ fn test_local_future_into_py(event_loop: PyObject) -> PyResult<()> {
         Python::with_gil(|py| {
             let non_send_secs = Rc::new(1);
 
+            #[allow(deprecated)]
             let py_future = pyo3_asyncio::tokio::local_future_into_py_with_locals(
                 py,
                 TaskLocals::new(event_loop.as_ref(py)),
@@ -175,6 +176,7 @@ async fn test_cancel() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::tokio::test]
+#[allow(deprecated)]
 fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
     let locals = Python::with_gil(|py| -> PyResult<TaskLocals> {
         Ok(TaskLocals::new(event_loop.as_ref(py)).copy_context(py)?)
@@ -186,6 +188,8 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
             let completed = Arc::new(Mutex::new(false));
             let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
                 let completed = Arc::clone(&completed);
+
+                #[allow(deprecated)]
                 Ok(pyo3_asyncio::tokio::local_future_into_py(py, async move {
                     tokio::time::sleep(Duration::from_secs(1)).await;
                     *completed.lock().unwrap() = true;

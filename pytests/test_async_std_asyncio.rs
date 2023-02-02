@@ -117,6 +117,7 @@ async fn test_local_future_into_py() -> PyResult<()> {
     Python::with_gil(|py| {
         let non_send_secs = Rc::new(1);
 
+        #[allow(deprecated)]
         let py_future = pyo3_asyncio::async_std::local_future_into_py(py, async move {
             async_std::task::sleep(Duration::from_secs(*non_send_secs)).await;
             Ok(())

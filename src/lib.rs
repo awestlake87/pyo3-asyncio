@@ -300,7 +300,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.17"
+//! version = "0.18"
 //! features = ["attributes"]
 //! ```
 //!
@@ -313,7 +313,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.17"
+//! version = "0.18"
 //! features = ["async-std-runtime"]
 //! ```
 //!
@@ -326,7 +326,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.17"
+//! version = "0.18"
 //! features = ["tokio-runtime"]
 //! ```
 //!
@@ -339,7 +339,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.17"
+//! version = "0.18"
 //! features = ["testing"]
 //! ```
 
@@ -520,7 +520,7 @@ struct PyTaskCompleter {
 
 #[pymethods]
 impl PyTaskCompleter {
-    #[args(task)]
+    #[pyo3(signature = (task))]
     pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
         debug_assert!(task.call_method0("done")?.extract()?);
         let result = match task.call_method0("result") {

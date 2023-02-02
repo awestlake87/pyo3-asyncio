@@ -9,7 +9,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.17"
+//! version = "0.18"
 //! features = ["unstable-streams"]
 //! ```
 
@@ -379,6 +379,11 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.18.0",
+    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
+)]
+#[allow(deprecated)]
 pub fn local_future_into_py_with_locals<F, T>(
     py: Python,
     locals: TaskLocals,
@@ -444,6 +449,11 @@ where
 /// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.18.0",
+    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
+)]
+#[allow(deprecated)]
 pub fn local_future_into_py<F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<T>> + 'static,

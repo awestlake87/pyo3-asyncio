@@ -9,10 +9,11 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.17"
+//! version = "0.18"
 //! features = ["unstable-streams"]
 //! ```
 
+use std::ops::Deref;
 use std::{future::Future, pin::Pin, sync::Mutex};
 
 use ::tokio::{
@@ -50,8 +51,22 @@ pub use pyo3_asyncio_macros::tokio_main as main;
 #[cfg(all(feature = "attributes", feature = "testing"))]
 pub use pyo3_asyncio_macros::tokio_test as test;
 
+enum Pyo3Runtime {
+    Borrowed(&'static Runtime),
+    Owned(Runtime),
+}
+impl Deref for Pyo3Runtime {
+    type Target = Runtime;
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Borrowed(rt) => rt,
+            Self::Owned(rt) => rt,
+        }
+    }
+}
+
 static TOKIO_BUILDER: Lazy<Mutex<Builder>> = Lazy::new(|| Mutex::new(multi_thread()));
-static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
+static TOKIO_RUNTIME: OnceCell<Pyo3Runtime> = OnceCell::new();
 
 impl generic::JoinError for task::JoinError {
     fn is_panic(&self) -> bool {
@@ -155,14 +170,24 @@ pub fn init(builder: Builder) {
     *TOKIO_BUILDER.lock().unwrap() = builder
 }
 
+/// Initialize the Tokio runtime with a custom Tokio runtime
+///
+/// Returns Ok(()) if success and Err(()) if it had been inited.
+pub fn init_with_runtime(runtime: &'static Runtime) -> Result<(), ()> {
+    TOKIO_RUNTIME
+        .set(Pyo3Runtime::Borrowed(runtime))
+        .map_err(|_| ())
+}
+
 /// Get a reference to the current tokio runtime
 pub fn get_runtime<'a>() -> &'a Runtime {
     TOKIO_RUNTIME.get_or_init(|| {
-        TOKIO_BUILDER
+        let rt = TOKIO_BUILDER
             .lock()
             .unwrap()
             .build()
-            .expect("Unable to build Tokio runtime")
+            .expect("Unable to build Tokio runtime");
+        Pyo3Runtime::Owned(rt)
     })
 }
 
@@ -412,6 +437,11 @@ where
 /// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.18.0",
+    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
+)]
+#[allow(deprecated)]
 pub fn local_future_into_py_with_locals<F, T>(
     py: Python,
     locals: TaskLocals,
@@ -492,6 +522,11 @@ where
 /// # #[cfg(not(all(feature = "tokio-runtime", feature = "attributes")))]
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.18.0",
+    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
+)]
+#[allow(deprecated)]
 pub fn local_future_into_py<F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     F: Future<Output = PyResult<T>> + 'static,

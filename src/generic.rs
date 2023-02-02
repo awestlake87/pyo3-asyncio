@@ -9,7 +9,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.17"
+//! version = "0.18"
 //! features = ["unstable-streams"]
 //! ```
 
@@ -29,7 +29,6 @@ use once_cell::sync::OnceCell;
 use pin_project_lite::pin_project;
 use pyo3::prelude::*;
 
-#[allow(deprecated)]
 use crate::{
     asyncio, call_soon_threadsafe, close, create_future, dump_err, err::RustPanic,
     get_running_loop, into_future_with_locals, TaskLocals,
@@ -930,6 +929,10 @@ where
 ///     )
 /// }
 /// ```
+#[deprecated(
+    since = "0.18.0",
+    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
+)]
 pub fn local_future_into_py_with_locals<R, F, T>(
     py: Python,
     locals: TaskLocals,
@@ -1119,6 +1122,11 @@ where
 ///     })
 /// }
 /// ```
+#[deprecated(
+    since = "0.18.0",
+    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
+)]
+#[allow(deprecated)]
 pub fn local_future_into_py<R, F, T>(py: Python, fut: F) -> PyResult<&PyAny>
 where
     R: Runtime + ContextExt + SpawnLocalExt + LocalContextExt,
