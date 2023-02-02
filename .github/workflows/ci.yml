@@ -21,7 +21,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          profile: minimal
           components: rustfmt
       - name: Check python formatting (black)
         run: black --check .
@@ -35,7 +34,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          profile: minimal
           components: clippy
       - run: make clippy
 
@@ -127,8 +125,6 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.platform.rust-target }}
-          profile: minimal
-          default: true
 
       - if: matrix.platform.os == 'ubuntu-latest'
         name: Prepare LD_LIBRARY_PATH (Ubuntu only)
@@ -180,7 +176,6 @@ jobs:
         with:
           toolchain: nightly
           override: true
-          profile: minimal
       - name: Install pyo3-asyncio test dependencies
         run: |
           python -m pip install -U uvloop
