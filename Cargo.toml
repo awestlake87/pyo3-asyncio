@@ -1,7 +1,7 @@
 [package]
 name = "pyo3-asyncio"
 description = "PyO3 utilities for Python's Asyncio library"
-version = "0.17.0"
+version = "0.18.0"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
 readme = "README.md"
 keywords = ["pyo3", "python", "ffi", "async", "asyncio"]
@@ -111,13 +111,13 @@ required-features = ["async-std-runtime", "testing"]
 
 [dependencies]
 async-channel = { version = "1.6", optional = true }
-clap = { version = "3.2", optional = true }
+clap = { version = "4.1", optional = true }
 futures = "0.3"
 inventory = { version = "0.3", optional = true }
 once_cell = "1.14"
 pin-project-lite = "0.2"
 pyo3 = "0.18"
-pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.17.0", optional = true }
+pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.18.0", optional = true }
 
 [dev-dependencies]
 pyo3 = { version = "0.18", features = ["macros"] }
@@ -128,6 +128,6 @@ features = ["unstable"]
 optional = true
 
 [dependencies.tokio]
-version = "1.13"
+version = "1.25"
 features = ["full"]
 optional = true
