@@ -129,5 +129,5 @@ optional = true
 
 [dependencies.tokio]
 version = "1.25"
-features = ["full"]
+features = ["rt", "rt-multi-thread", "time"]
 optional = true
