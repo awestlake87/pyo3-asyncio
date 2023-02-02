@@ -16,7 +16,7 @@ jobs:
     outputs:
       tag_name: ${{ steps.prepare_tag.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
         # This adds the docs to gh-pages-build/doc
       - name: Build the doc
@@ -38,7 +38,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./gh-pages-build/
           destination_dir: ${{ steps.prepare_tag.outputs.tag_name }}
-          full_commit_message: 'Upload documentation for ${{ steps.prepare_tag.outputs.tag_name }}'
+          full_commit_message: "Upload documentation for ${{ steps.prepare_tag.outputs.tag_name }}"
 
   release:
     needs: deploy
@@ -57,5 +57,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public/
-          full_commit_message: 'Release ${{ needs.deploy.outputs.tag_name }}'
+          full_commit_message: "Release ${{ needs.deploy.outputs.tag_name }}"
           keep_files: true
