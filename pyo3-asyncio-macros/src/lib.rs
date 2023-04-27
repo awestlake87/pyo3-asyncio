@@ -250,7 +250,8 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         Ok(result) => result,
                         Err(e) => {
                             assert!(e.is_panic());
-                            Err(pyo3::exceptions::PyException::new_err("rust future panicked"))
+                            let panic_message = get_panic_message(&e.into_panic());
+                            Err(pyo3::exceptions::PyException::new_err(format!("rust future panicked: {}", panic_message)))
                         }
                     }
                 })
@@ -265,7 +266,8 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         Ok(result) => result,
                         Err(e) => {
                             assert!(e.is_panic());
-                            Err(pyo3::exceptions::PyException::new_err("rust future panicked"))
+                            let panic_message = get_panic_message(&e.into_panic());
+                            Err(pyo3::exceptions::PyException::new_err(format!("rust future panicked: {}", panic_message)))
                         }
                     }
                 })
@@ -305,4 +307,14 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     result.into()
+}
+
+fn get_panic_message(any: &dyn Any) -> &str {
+    if let Ok(str_slice) = any.downcast_ref::<&str>() {
+        str_slice
+    } else if let Ok(string) = any.downcast_ref::<String>() {
+        &string
+    } else {
+        "unknown error"
+    }
 }
