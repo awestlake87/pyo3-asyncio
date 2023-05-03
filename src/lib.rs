@@ -362,6 +362,11 @@ pub mod err;
 
 pub mod generic;
 
+#[pymodule]
+fn pyo3_asyncio(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add("RustPanic", py.get_type::<err::exceptions::RustPanic>())?;
+}
+
 /// Test README
 #[doc(hidden)]
 pub mod doc_test {
