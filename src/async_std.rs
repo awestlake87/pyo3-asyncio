@@ -48,6 +48,9 @@ impl JoinError for AsyncStdJoinErr {
     fn is_panic(&self) -> bool {
         true
     }
+    fn into_panic(self) -> Box<dyn Any + Send + 'static> {
+        self.0
+    }
 }
 
 async_std::task_local! {
