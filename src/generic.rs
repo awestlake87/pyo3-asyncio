@@ -38,6 +38,8 @@ use crate::{
 pub trait JoinError {
     /// Check if the spawned task exited because of a panic
     fn is_panic(&self) -> bool;
+    /// Get the panic object associated with the error.  Panics if `is_panic` is not true.
+    fn into_panic(self) -> Box<dyn std::any::Any + Send + 'static>;
 }
 
 /// Generic Rust async/await runtime
@@ -609,10 +611,14 @@ where
                         return;
                     }
 
+                    let panic_message = format!(
+                        "rust future panicked: {}",
+                        get_panic_message(&e.into_panic())
+                    );
                     let _ = set_result(
                         locals.event_loop.as_ref(py),
                         future_tx2.as_ref(py),
-                        Err(RustPanic::new_err("rust future panicked")),
+                        Err(RustPanic::new_err(panic_message)),
                     )
                     .map_err(dump_err(py));
                 });
@@ -621,6 +627,16 @@ where
     });
 
     Ok(py_fut)
+}
+
+fn get_panic_message(any: &dyn std::any::Any) -> &str {
+    if let Some(str_slice) = any.downcast_ref::<&str>() {
+        str_slice
+    } else if let Some(string) = any.downcast_ref::<String>() {
+        &string
+    } else {
+        "unknown error"
+    }
 }
 
 pin_project! {
@@ -993,10 +1009,14 @@ where
                         return;
                     }
 
+                    let panic_message = format!(
+                        "rust future panicked: {}",
+                        get_panic_message(&e.into_panic())
+                    );
                     let _ = set_result(
                         locals.event_loop.as_ref(py),
                         future_tx2.as_ref(py),
-                        Err(RustPanic::new_err("Rust future panicked")),
+                        Err(RustPanic::new_err(panic_message)),
                     )
                     .map_err(dump_err(py));
                 });
