@@ -245,19 +245,39 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
         // Optionally pass an event_loop parameter to blocking tasks
         let task = if sig.inputs.is_empty() {
             quote! {
+                fn get_panic_message(any: &dyn std::any::Any) -> &str {
+                    if let Some(str_slice) = any.downcast_ref::<&str>() {
+                        str_slice
+                    } else if let Some(string) = any.downcast_ref::<String>() {
+                        &string
+                    } else {
+                        "unknown error"
+                    }
+                }
+
                 Box::pin(async move {
                     match pyo3_asyncio::tokio::get_runtime().spawn_blocking(move || #name()).await {
                         Ok(result) => result,
                         Err(e) => {
                             assert!(e.is_panic());
                             let panic_message = get_panic_message(&e.into_panic());
-                            Err(pyo3::exceptions::PyException::new_err(format!("rust future panicked: {}", panic_message)))
+                            Err(pyo3_asyncio::err::RustPanic::new_err(format!("rust future panicked: {}", panic_message)))
                         }
                     }
                 })
             }
         } else {
             quote! {
+                fn get_panic_message(any: &dyn std::any::Any) -> &str {
+                    if let Some(str_slice) = any.downcast_ref::<&str>() {
+                        str_slice
+                    } else if let Some(string) = any.downcast_ref::<String>() {
+                        &string
+                    } else {
+                        "unknown error"
+                    }
+                }
+
                 let event_loop = Python::with_gil(|py| {
                     pyo3_asyncio::tokio::get_current_loop(py).unwrap().into()
                 });
@@ -267,7 +287,7 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         Err(e) => {
                             assert!(e.is_panic());
                             let panic_message = get_panic_message(&e.into_panic());
-                            Err(pyo3::exceptions::PyException::new_err(format!("rust future panicked: {}", panic_message)))
+                            Err(pyo3_asyncio::err::RustPanic::new_err(format!("rust future panicked: {}", panic_message)))
                         }
                     }
                 })
@@ -307,14 +327,4 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     result.into()
-}
-
-fn get_panic_message(any: &dyn Any) -> &str {
-    if let Ok(str_slice) = any.downcast_ref::<&str>() {
-        str_slice
-    } else if let Ok(string) = any.downcast_ref::<String>() {
-        &string
-    } else {
-        "unknown error"
-    }
 }
