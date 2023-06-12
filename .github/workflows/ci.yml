@@ -91,7 +91,7 @@ jobs:
             platform: { os: "windows-latest", python-architecture: "x86" }
         include:
           # Test minimal supported Rust version
-          - rust: 1.48.0
+          - rust: 1.56.0
             python-version: "3.10"
             platform:
               {
@@ -131,16 +131,6 @@ jobs:
       - if: matrix.platform.os == 'ubuntu-latest'
         name: Prepare LD_LIBRARY_PATH (Ubuntu only)
         run: echo LD_LIBRARY_PATH=${pythonLocation}/lib >> $GITHUB_ENV
-
-      - if: matrix.msrv == 'MSRV'
-        name: Prepare minimal package versions (MSRV only)
-        run: |
-          set -x
-          cargo update -p tokio --precise 1.13.1
-          cargo update -p indexmap --precise 1.6.2
-          cargo update -p parking_lot:0.12.1 --precise 0.11.2
-          cargo update -p async-global-executor --precise 2.2.0
-          cargo update -p once_cell --precise 1.14.0
 
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
