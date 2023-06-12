@@ -52,8 +52,8 @@ Here we initialize the runtime, import Python's `asyncio` library and run the gi
 ```toml
 # Cargo.toml dependencies
 [dependencies]
-pyo3 = { version = "0.18" }
-pyo3-asyncio = { version = "0.18", features = ["attributes", "async-std-runtime"] }
+pyo3 = { version = "0.19" }
+pyo3-asyncio = { version = "0.19", features = ["attributes", "async-std-runtime"] }
 async-std = "1.9"
 ```
 
@@ -82,8 +82,8 @@ attribute.
 ```toml
 # Cargo.toml dependencies
 [dependencies]
-pyo3 = { version = "0.18" }
-pyo3-asyncio = { version = "0.18", features = ["attributes", "tokio-runtime"] }
+pyo3 = { version = "0.19" }
+pyo3-asyncio = { version = "0.19", features = ["attributes", "tokio-runtime"] }
 tokio = "1.9"
 ```
 
@@ -127,8 +127,8 @@ For `async-std`:
 
 ```toml
 [dependencies]
-pyo3 = { version = "0.18", features = ["extension-module"] }
-pyo3-asyncio = { version = "0.18", features = ["async-std-runtime"] }
+pyo3 = { version = "0.19", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.19", features = ["async-std-runtime"] }
 async-std = "1.9"
 ```
 
@@ -136,8 +136,8 @@ For `tokio`:
 
 ```toml
 [dependencies]
-pyo3 = { version = "0.18", features = ["extension-module"] }
-pyo3-asyncio = { version = "0.18", features = ["tokio-runtime"] }
+pyo3 = { version = "0.19", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.19", features = ["tokio-runtime"] }
 tokio = "1.9"
 ```
 
@@ -431,8 +431,8 @@ name = "my_async_module"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.18", features = ["extension-module"] }
-pyo3-asyncio = { version = "0.18", features = ["tokio-runtime"] }
+pyo3 = { version = "0.19", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.19", features = ["tokio-runtime"] }
 async-std = "1.9"
 tokio = "1.9"
 ```
@@ -491,8 +491,8 @@ event loop before we can install the `uvloop` policy.
 ```toml
 [dependencies]
 async-std = "1.9"
-pyo3 = "0.18"
-pyo3-asyncio = { version = "0.18", features = ["async-std-runtime"] }
+pyo3 = "0.19"
+pyo3-asyncio = { version = "0.19", features = ["async-std-runtime"] }
 ```
 
 ```rust no_run
