@@ -11,7 +11,7 @@ documentation = "https://docs.rs/crate/pyo3-asyncio/"
 categories = ["api-bindings", "development-tools::ffi"]
 license = "Apache-2.0"
 exclude = ["/.gitignore", "/codecov.yml", "/Makefile"]
-edition = "2018"
+edition = "2021"
 
 [workspace]
 members = ["pyo3-asyncio-macros"]
