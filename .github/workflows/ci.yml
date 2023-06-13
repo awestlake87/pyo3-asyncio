@@ -91,7 +91,7 @@ jobs:
             platform: { os: "windows-latest", python-architecture: "x86" }
         include:
           # Test minimal supported Rust version
-          - rust: 1.56.1
+          - rust: 1.62.0
             python-version: "3.10"
             platform:
               {
@@ -128,9 +128,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.platform.rust-target }}
 
-      - if: matrix.platform.os == 'ubuntu-latest'
-        name: Prepare LD_LIBRARY_PATH (Ubuntu only)
-        run: echo LD_LIBRARY_PATH=${pythonLocation}/lib >> $GIHUB_ENV
+      # - if: matrix.platform.os == 'ubuntu-latest'
+      #   name: Prepare LD_LIBRARY_PATH (Ubuntu only)
+      #   run: echo LD_LIBRARY_PATH=${pythonLocation}/lib >> $GIHUB_ENV
 
       - name: Build (no features)
         run: cargo build --no-default-features --verbose --target ${{ matrix.platform.rust-target }}
