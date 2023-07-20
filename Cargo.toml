@@ -1,7 +1,7 @@
 [package]
 name = "pyo3-asyncio"
 description = "PyO3 utilities for Python's Asyncio library"
-version = "0.18.0"
+version = "0.19.0"
 authors = ["Andrew J Westlake <awestlake87@yahoo.com>"]
 readme = "README.md"
 keywords = ["pyo3", "python", "ffi", "async", "asyncio"]
@@ -11,7 +11,7 @@ documentation = "https://docs.rs/crate/pyo3-asyncio/"
 categories = ["api-bindings", "development-tools::ffi"]
 license = "Apache-2.0"
 exclude = ["/.gitignore", "/codecov.yml", "/Makefile"]
-edition = "2018"
+edition = "2021"
 
 [workspace]
 members = ["pyo3-asyncio-macros"]
@@ -116,11 +116,11 @@ futures = "0.3"
 inventory = { version = "0.3", optional = true }
 once_cell = "1.14"
 pin-project-lite = "0.2"
-pyo3 = "0.18"
-pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.18.0", optional = true }
+pyo3 = "0.19"
+pyo3-asyncio-macros = { path = "pyo3-asyncio-macros", version = "=0.19.0", optional = true }
 
 [dev-dependencies]
-pyo3 = { version = "0.18", features = ["macros"] }
+pyo3 = { version = "0.19", features = ["macros"] }
 
 [dependencies.async-std]
 version = "1.12"
