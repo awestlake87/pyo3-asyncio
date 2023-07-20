@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["pending","re-export pending to be used in tokio macros without additional dependency Creates a future which never resolves, representing a computation that never finishes."]],"mod":[["runtime","re-export tokio::runtime to build runtimes in tokio macros without additional dependency The Tokio runtime."]]};
+window.SIDEBAR_ITEMS = {"fn":["pending"],"mod":["runtime"]};
