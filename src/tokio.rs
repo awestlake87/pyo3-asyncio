@@ -72,6 +72,9 @@ impl generic::JoinError for task::JoinError {
     fn is_panic(&self) -> bool {
         task::JoinError::is_panic(self)
     }
+    fn into_panic(self) -> Box<dyn std::any::Any + Send + 'static> {
+        task::JoinError::into_panic(self)
+    }
 }
 
 struct TokioRuntime;
