@@ -645,7 +645,7 @@ fn get_panic_message(any: &dyn std::any::Any) -> &str {
     if let Some(str_slice) = any.downcast_ref::<&str>() {
         str_slice
     } else if let Some(string) = any.downcast_ref::<String>() {
-        &string
+        string
     } else {
         "unknown error"
     }

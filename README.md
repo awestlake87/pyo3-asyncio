@@ -3,7 +3,7 @@
 [![Actions Status](https://github.com/awestlake87/pyo3-asyncio/workflows/CI/badge.svg)](https://github.com/awestlake87/pyo3-asyncio/actions)
 [![codecov](https://codecov.io/gh/awestlake87/pyo3-asyncio/branch/master/graph/badge.svg)](https://codecov.io/gh/awestlake87/pyo3-asyncio)
 [![crates.io](https://img.shields.io/crates/v/pyo3-asyncio)](https://crates.io/crates/pyo3-asyncio)
-[![minimum rustc 1.62](https://img.shields.io/badge/rustc-1.62+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![minimum rustc 1.63](https://img.shields.io/badge/rustc-1.63+-blue.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 
 [Rust](http://www.rust-lang.org/) bindings for [Python](https://www.python.org/)'s [Asyncio Library](https://docs.python.org/3/library/asyncio.html). This crate facilitates interactions between Rust Futures and Python Coroutines and manages the lifecycle of their corresponding event loops.
 
