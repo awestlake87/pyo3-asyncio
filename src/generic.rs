@@ -9,7 +9,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.19"
+//! version = "0.20"
 //! features = ["unstable-streams"]
 //! ```
 
@@ -38,6 +38,8 @@ use crate::{
 pub trait JoinError {
     /// Check if the spawned task exited because of a panic
     fn is_panic(&self) -> bool;
+    /// Get the panic object associated with the error.  Panics if `is_panic` is not true.
+    fn into_panic(self) -> Box<dyn std::any::Any + Send + 'static>;
 }
 
 /// Generic Rust async/await runtime
@@ -120,7 +122,7 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -131,6 +133,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -221,7 +226,7 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -232,6 +237,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -350,7 +358,7 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 /// # Examples
 ///
 /// ```no_run
-/// # use std::{pin::Pin, future::Future, task::{Context, Poll}, time::Duration};
+/// # use std::{any::Any, pin::Pin, future::Future, task::{Context, Poll}, time::Duration};
 /// #
 /// # use pyo3::prelude::*;
 /// #
@@ -363,6 +371,9 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -474,7 +485,7 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -485,6 +496,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -609,10 +623,14 @@ where
                         return;
                     }
 
+                    let panic_message = format!(
+                        "rust future panicked: {}",
+                        get_panic_message(&e.into_panic())
+                    );
                     let _ = set_result(
                         locals.event_loop.as_ref(py),
                         future_tx2.as_ref(py),
-                        Err(RustPanic::new_err("rust future panicked")),
+                        Err(RustPanic::new_err(panic_message)),
                     )
                     .map_err(dump_err(py));
                 });
@@ -621,6 +639,16 @@ where
     });
 
     Ok(py_fut)
+}
+
+fn get_panic_message(any: &dyn std::any::Any) -> &str {
+    if let Some(str_slice) = any.downcast_ref::<&str>() {
+        str_slice
+    } else if let Some(string) = any.downcast_ref::<String>() {
+        string
+    } else {
+        "unknown error"
+    }
 }
 
 pin_project! {
@@ -728,7 +756,7 @@ impl PyDoneCallback {
 /// # Examples
 ///
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -739,6 +767,9 @@ impl PyDoneCallback {
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -834,7 +865,7 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -845,6 +876,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -993,10 +1027,14 @@ where
                         return;
                     }
 
+                    let panic_message = format!(
+                        "rust future panicked: {}",
+                        get_panic_message(&e.into_panic())
+                    );
                     let _ = set_result(
                         locals.event_loop.as_ref(py),
                         future_tx2.as_ref(py),
-                        Err(RustPanic::new_err("Rust future panicked")),
+                        Err(RustPanic::new_err(panic_message)),
                     )
                     .map_err(dump_err(py));
                 });
@@ -1031,7 +1069,7 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -1042,6 +1080,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -1148,7 +1189,7 @@ where
 ///
 /// # Examples
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -1159,6 +1200,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -1292,7 +1336,7 @@ where
 ///
 /// # Examples
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -1303,6 +1347,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -1496,7 +1543,7 @@ async def forward(gen, sender):
 ///
 /// # Examples
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -1507,6 +1554,9 @@ async def forward(gen, sender):
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }
@@ -1641,7 +1691,7 @@ where
 ///
 /// # Examples
 /// ```no_run
-/// # use std::{task::{Context, Poll}, pin::Pin, future::Future};
+/// # use std::{any::Any, task::{Context, Poll}, pin::Pin, future::Future};
 /// #
 /// # use pyo3_asyncio::{
 /// #     TaskLocals,
@@ -1652,6 +1702,9 @@ where
 /// #
 /// # impl JoinError for MyCustomJoinError {
 /// #     fn is_panic(&self) -> bool {
+/// #         unreachable!()
+/// #     }
+/// #     fn into_panic(self) -> Box<(dyn Any + Send + 'static)> {
 /// #         unreachable!()
 /// #     }
 /// # }

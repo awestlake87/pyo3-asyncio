@@ -9,7 +9,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.19"
+//! version = "0.20"
 //! features = ["unstable-streams"]
 //! ```
 
@@ -47,6 +47,9 @@ struct AsyncStdJoinErr(Box<dyn Any + Send + 'static>);
 impl JoinError for AsyncStdJoinErr {
     fn is_panic(&self) -> bool {
         true
+    }
+    fn into_panic(self) -> Box<dyn Any + Send + 'static> {
+        self.0
     }
 }
 

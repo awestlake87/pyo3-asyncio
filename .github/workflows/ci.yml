@@ -91,7 +91,7 @@ jobs:
             platform: { os: "windows-latest", python-architecture: "x86" }
         include:
           # Test minimal supported Rust version
-          - rust: 1.62.0
+          - rust: 1.63.0
             python-version: "3.10"
             platform:
               {
@@ -155,9 +155,6 @@ jobs:
     env:
       RUST_BACKTRACE: 1
       RUSTFLAGS: "-D warnings"
-      # TODO: this is a hack to workaround compile_error! warnings about auto-initialize on PyPy
-      # Once cargo's `resolver = "2"` is stable (~ MSRV Rust 1.52), remove this.
-      PYO3_CI: 1
 
   coverage:
     needs: [fmt]

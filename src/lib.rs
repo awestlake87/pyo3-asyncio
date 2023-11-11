@@ -300,7 +300,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.19"
+//! version = "0.20"
 //! features = ["attributes"]
 //! ```
 //!
@@ -313,7 +313,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.19"
+//! version = "0.20"
 //! features = ["async-std-runtime"]
 //! ```
 //!
@@ -326,7 +326,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.19"
+//! version = "0.20"
 //! features = ["tokio-runtime"]
 //! ```
 //!
@@ -339,7 +339,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.19"
+//! version = "0.20"
 //! features = ["testing"]
 //! ```
 
@@ -361,6 +361,12 @@ pub mod tokio;
 pub mod err;
 
 pub mod generic;
+
+#[pymodule]
+fn pyo3_asyncio(py: Python, m: &PyModule) -> PyResult<()> {
+    m.add("RustPanic", py.get_type::<err::RustPanic>())?;
+    Ok(())
+}
 
 /// Test README
 #[doc(hidden)]

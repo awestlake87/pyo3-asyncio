@@ -9,7 +9,7 @@
 //!
 //! ```toml
 //! [dependencies.pyo3-asyncio]
-//! version = "0.19"
+//! version = "0.20"
 //! features = ["unstable-streams"]
 //! ```
 
@@ -71,6 +71,9 @@ static TOKIO_RUNTIME: OnceCell<Pyo3Runtime> = OnceCell::new();
 impl generic::JoinError for task::JoinError {
     fn is_panic(&self) -> bool {
         task::JoinError::is_panic(self)
+    }
+    fn into_panic(self) -> Box<dyn std::any::Any + Send + 'static> {
+        task::JoinError::into_panic(self)
     }
 }
 
