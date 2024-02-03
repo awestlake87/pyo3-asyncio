@@ -98,7 +98,7 @@ pub fn async_std_main(_attr: TokenStream, item: TokenStream) -> TokenStream {
 #[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
 #[proc_macro_attribute]
 pub fn tokio_main(args: TokenStream, item: TokenStream) -> TokenStream {
-    tokio::main(args, item, true)
+    tokio::main(args.into(), item.into(), true).into()
 }
 
 /// Registers an `async-std` test with the `pyo3-asyncio` test harness.

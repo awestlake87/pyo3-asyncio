@@ -1,7 +1,6 @@
-use proc_macro::TokenStream;
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::spanned::Spanned;
+use syn::{parse::Parser, spanned::Spanned};
 
 #[derive(Clone, Copy, PartialEq)]
 enum RuntimeFlavor {
@@ -47,7 +46,7 @@ impl Configuration {
         }
     }
 
-    fn set_flavor(&mut self, runtime: syn::Lit, span: Span) -> Result<(), syn::Error> {
+    fn set_flavor(&mut self, runtime: &syn::Lit, span: Span) -> Result<(), syn::Error> {
         if self.flavor.is_some() {
             return Err(syn::Error::new(span, "`flavor` set multiple times."));
         }
@@ -61,7 +60,7 @@ impl Configuration {
 
     fn set_worker_threads(
         &mut self,
-        worker_threads: syn::Lit,
+        worker_threads: &syn::Lit,
         span: Span,
     ) -> Result<(), syn::Error> {
         if self.worker_threads.is_some() {
@@ -107,7 +106,7 @@ impl Configuration {
     }
 }
 
-fn parse_int(int: syn::Lit, span: Span, field: &str) -> Result<usize, syn::Error> {
+fn parse_int(int: &syn::Lit, span: Span, field: &str) -> Result<usize, syn::Error> {
     match int {
         syn::Lit::Int(lit) => match lit.base10_parse::<usize>() {
             Ok(value) => Ok(value),
@@ -123,7 +122,7 @@ fn parse_int(int: syn::Lit, span: Span, field: &str) -> Result<usize, syn::Error
     }
 }
 
-fn parse_string(int: syn::Lit, span: Span, field: &str) -> Result<String, syn::Error> {
+fn parse_string(int: &syn::Lit, span: Span, field: &str) -> Result<String, syn::Error> {
     match int {
         syn::Lit::Str(s) => Ok(s.value()),
         syn::Lit::Verbatim(s) => Ok(s.to_string()),
@@ -136,7 +135,7 @@ fn parse_string(int: syn::Lit, span: Span, field: &str) -> Result<String, syn::E
 
 fn parse_knobs(
     input: syn::ItemFn,
-    args: syn::AttributeArgs,
+    args: syn::punctuated::Punctuated<syn::Meta, syn::Token![,]>,
     is_test: bool,
     rt_multi_thread: bool,
 ) -> Result<TokenStream, syn::Error> {
@@ -156,18 +155,22 @@ fn parse_knobs(
 
     for arg in args {
         match arg {
-            syn::NestedMeta::Meta(syn::Meta::NameValue(namevalue)) => {
+            syn::Meta::NameValue(namevalue) => {
                 let ident = namevalue.path.get_ident();
                 if ident.is_none() {
                     let msg = "Must have specified ident";
                     return Err(syn::Error::new_spanned(namevalue, msg));
                 }
+                let lit = match &namevalue.value {
+                    syn::Expr::Lit(syn::ExprLit { lit, .. }) => lit,
+                    expr => return Err(syn::Error::new_spanned(expr, "Must be a literal")),
+                };
                 match ident.unwrap().to_string().to_lowercase().as_str() {
                     "worker_threads" => {
-                        config.set_worker_threads(namevalue.lit.clone(), namevalue.span())?;
+                        config.set_worker_threads(lit, Spanned::span(lit))?;
                     }
                     "flavor" => {
-                        config.set_flavor(namevalue.lit.clone(), namevalue.span())?;
+                        config.set_flavor(lit, Spanned::span(lit))?;
                     }
                     "core_threads" => {
                         let msg = "Attribute `core_threads` is renamed to `worker_threads`";
@@ -179,7 +182,7 @@ fn parse_knobs(
                     }
                 }
             }
-            syn::NestedMeta::Meta(syn::Meta::Path(path)) => {
+            syn::Meta::Path(path) => {
                 let ident = path.get_ident();
                 if ident.is_none() {
                     let msg = "Must have specified ident";
@@ -273,20 +276,31 @@ fn parse_knobs(
         }
     };
 
-    Ok(result.into())
+    Ok(result)
 }
 
 #[cfg(not(test))] // Work around for rust-lang/rust#62127
 pub(crate) fn main(args: TokenStream, item: TokenStream, rt_multi_thread: bool) -> TokenStream {
-    let input = syn::parse_macro_input!(item as syn::ItemFn);
-    let args = syn::parse_macro_input!(args as syn::AttributeArgs);
+    let input = match syn::parse2::<syn::ItemFn>(item) {
+        Ok(input) => {
+            if input.sig.ident == "main" && !input.sig.inputs.is_empty() {
+                let msg = "the main function cannot accept arguments";
+                return syn::Error::new_spanned(&input.sig.ident, msg)
+                    .to_compile_error()
+                    .into();
+            }
 
-    if input.sig.ident == "main" && !input.sig.inputs.is_empty() {
-        let msg = "the main function cannot accept arguments";
-        return syn::Error::new_spanned(&input.sig.ident, msg)
-            .to_compile_error()
-            .into();
+            input
+        }
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    let args =
+        syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated.parse2(args);
+
+    match args {
+        Ok(args) => parse_knobs(input, args, false, rt_multi_thread)
+            .unwrap_or_else(|e| e.to_compile_error().into()),
+        Err(e) => return e.to_compile_error().into(),
     }
-
-    parse_knobs(input, args, false, rt_multi_thread).unwrap_or_else(|e| e.to_compile_error().into())
 }

@@ -20,7 +20,7 @@ use futures::FutureExt;
 use pyo3::prelude::*;
 
 use crate::{
-    generic::{self, ContextExt, JoinError, LocalContextExt, Runtime, SpawnLocalExt},
+    generic::{self, JoinError, LocalContextExt, Runtime},
     TaskLocals,
 };
 
@@ -74,9 +74,7 @@ impl Runtime for AsyncStdRuntime {
                 .map_err(|e| AsyncStdJoinErr(e))
         })
     }
-}
 
-impl ContextExt for AsyncStdRuntime {
     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
     where
         F: Future<Output = R> + Send + 'static,
@@ -94,18 +92,6 @@ impl ContextExt for AsyncStdRuntime {
             Ok(locals) => locals,
             Err(_) => None,
         }
-    }
-}
-
-impl SpawnLocalExt for AsyncStdRuntime {
-    fn spawn_local<F>(fut: F) -> Self::JoinHandle
-    where
-        F: Future<Output = ()> + 'static,
-    {
-        task::spawn_local(async move {
-            fut.await;
-            Ok(())
-        })
     }
 }
 
@@ -322,147 +308,6 @@ where
     T: IntoPy<PyObject>,
 {
     generic::future_into_py::<AsyncStdRuntime, _, T>(py, fut)
-}
-
-/// Convert a `!Send` Rust Future into a Python awaitable
-///
-/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
-/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
-///
-/// Python `contextvars` are preserved when calling async Python functions within the Rust future
-/// via [`into_future`] (new behaviour in `v0.15`).
-///
-/// > Although `contextvars` are preserved for async Python functions, synchronous functions will
-/// unfortunately fail to resolve them when called within the Rust future. This is because the
-/// function is being called from a Rust thread, not inside an actual Python coroutine context.
-/// >
-/// > As a workaround, you can get the `contextvars` from the current task locals using
-/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
-/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
-/// synchronous function, and restore the previous context when it returns or raises an exception.
-///
-/// # Arguments
-/// * `py` - PyO3 GIL guard
-/// * `locals` - The task locals for the given future
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::{rc::Rc, time::Duration};
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable non-send sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::future_into_py
-///     let secs = Rc::new(secs);
-///     Ok(pyo3_asyncio::async_std::local_future_into_py_with_locals(
-///         py,
-///         pyo3_asyncio::async_std::get_current_locals(py)?,
-///         async move {
-///             async_std::task::sleep(Duration::from_secs(*secs)).await;
-///             Python::with_gil(|py| Ok(py.None()))
-///         }
-///     )?.into())
-/// }
-///
-/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     Python::with_gil(|py| {
-///         let py_future = sleep_for(py, 1)?;
-///         pyo3_asyncio::async_std::into_future(py_future)
-///     })?
-///     .await?;
-///
-///     Ok(())
-/// }
-/// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-/// # fn main() {}
-/// ```
-#[deprecated(
-    since = "0.18.0",
-    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
-)]
-#[allow(deprecated)]
-pub fn local_future_into_py_with_locals<F, T>(
-    py: Python,
-    locals: TaskLocals,
-    fut: F,
-) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<T>> + 'static,
-    T: IntoPy<PyObject>,
-{
-    generic::local_future_into_py_with_locals::<AsyncStdRuntime, _, T>(py, locals, fut)
-}
-
-/// Convert a `!Send` Rust Future into a Python awaitable
-///
-/// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
-/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
-///
-/// Python `contextvars` are preserved when calling async Python functions within the Rust future
-/// via [`into_future`] (new behaviour in `v0.15`).
-///
-/// > Although `contextvars` are preserved for async Python functions, synchronous functions will
-/// unfortunately fail to resolve them when called within the Rust future. This is because the
-/// function is being called from a Rust thread, not inside an actual Python coroutine context.
-/// >
-/// > As a workaround, you can get the `contextvars` from the current task locals using
-/// [`get_current_locals`] and [`TaskLocals::context`](`crate::TaskLocals::context`), then wrap your
-/// synchronous function in a call to `contextvars.Context.run`. This will set the context, call the
-/// synchronous function, and restore the previous context when it returns or raises an exception.
-///
-/// # Arguments
-/// * `py` - The current PyO3 GIL guard
-/// * `fut` - The Rust future to be converted
-///
-/// # Examples
-///
-/// ```
-/// use std::{rc::Rc, time::Duration};
-///
-/// use pyo3::prelude::*;
-///
-/// /// Awaitable non-send sleep function
-/// #[pyfunction]
-/// fn sleep_for(py: Python, secs: u64) -> PyResult<&PyAny> {
-///     // Rc is non-send so it cannot be passed into pyo3_asyncio::async_std::future_into_py
-///     let secs = Rc::new(secs);
-///     pyo3_asyncio::async_std::local_future_into_py(py, async move {
-///         async_std::task::sleep(Duration::from_secs(*secs)).await;
-///         Ok(())
-///     })
-/// }
-///
-/// # #[cfg(all(feature = "async-std-runtime", feature = "attributes"))]
-/// #[pyo3_asyncio::async_std::main]
-/// async fn main() -> PyResult<()> {
-///     Python::with_gil(|py| {
-///         let py_future = sleep_for(py, 1)?;
-///         pyo3_asyncio::async_std::into_future(py_future)
-///     })?
-///     .await?;
-///
-///     Ok(())
-/// }
-/// # #[cfg(not(all(feature = "async-std-runtime", feature = "attributes")))]
-/// # fn main() {}
-/// ```
-#[deprecated(
-    since = "0.18.0",
-    note = "Questionable whether these conversions have real-world utility (see https://github.com/awestlake87/pyo3-asyncio/issues/59#issuecomment-1008038497 and let me know if you disagree!)"
-)]
-#[allow(deprecated)]
-pub fn local_future_into_py<F, T>(py: Python, fut: F) -> PyResult<&PyAny>
-where
-    F: Future<Output = PyResult<T>> + 'static,
-    T: IntoPy<PyObject>,
-{
-    generic::local_future_into_py::<AsyncStdRuntime, _, T>(py, fut)
 }
 
 /// Convert a Python `awaitable` into a Rust Future
