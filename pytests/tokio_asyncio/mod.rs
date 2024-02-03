@@ -1,5 +1,4 @@
 use std::{
-    rc::Rc,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -9,7 +8,6 @@ use pyo3::{
     types::{IntoPyDict, PyType},
     wrap_pyfunction, wrap_pymodule,
 };
-use pyo3_asyncio::TaskLocals;
 
 #[cfg(feature = "unstable-streams")]
 use futures::{StreamExt, TryStreamExt};
@@ -87,33 +85,6 @@ async fn test_other_awaitables() -> PyResult<()> {
 }
 
 #[pyo3_asyncio::tokio::test]
-fn test_local_future_into_py(event_loop: PyObject) -> PyResult<()> {
-    tokio::task::LocalSet::new().block_on(pyo3_asyncio::tokio::get_runtime(), async {
-        Python::with_gil(|py| {
-            let non_send_secs = Rc::new(1);
-
-            #[allow(deprecated)]
-            let py_future = pyo3_asyncio::tokio::local_future_into_py_with_locals(
-                py,
-                TaskLocals::new(event_loop.as_ref(py)),
-                async move {
-                    tokio::time::sleep(Duration::from_secs(*non_send_secs)).await;
-                    Ok(())
-                },
-            )?;
-
-            pyo3_asyncio::into_future_with_locals(
-                &TaskLocals::new(event_loop.as_ref(py)),
-                py_future,
-            )
-        })?
-        .await?;
-
-        Ok(())
-    })
-}
-
-#[pyo3_asyncio::tokio::test]
 async fn test_panic() -> PyResult<()> {
     let fut = Python::with_gil(|py| -> PyResult<_> {
         pyo3_asyncio::tokio::into_future(pyo3_asyncio::tokio::future_into_py::<_, ()>(py, async {
@@ -173,59 +144,6 @@ async fn test_cancel() -> PyResult<()> {
     }
 
     Ok(())
-}
-
-#[pyo3_asyncio::tokio::test]
-#[allow(deprecated)]
-fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
-    let locals = Python::with_gil(|py| -> PyResult<TaskLocals> {
-        Ok(TaskLocals::new(event_loop.as_ref(py)).copy_context(py)?)
-    })?;
-
-    tokio::task::LocalSet::new().block_on(
-        pyo3_asyncio::tokio::get_runtime(),
-        pyo3_asyncio::tokio::scope_local(locals, async {
-            let completed = Arc::new(Mutex::new(false));
-            let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
-                let completed = Arc::clone(&completed);
-
-                #[allow(deprecated)]
-                Ok(pyo3_asyncio::tokio::local_future_into_py(py, async move {
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                    *completed.lock().unwrap() = true;
-                    Ok(())
-                })?
-                .into())
-            })?;
-
-            if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
-                py_future.as_ref(py).call_method0("cancel")?;
-                pyo3_asyncio::tokio::into_future(py_future.as_ref(py))
-            })?
-            .await
-            {
-                Python::with_gil(|py| -> PyResult<()> {
-                    assert!(e.value(py).is_instance(
-                        py.import("asyncio")?
-                            .getattr("CancelledError")?
-                            .downcast::<PyType>()
-                            .unwrap()
-                    )?);
-                    Ok(())
-                })?;
-            } else {
-                panic!("expected CancelledError");
-            }
-
-            tokio::time::sleep(Duration::from_secs(1)).await;
-
-            if *completed.lock().unwrap() {
-                panic!("future still completed")
-            }
-
-            Ok(())
-        }),
-    )
 }
 
 /// This module is implemented in Rust.
