@@ -198,7 +198,7 @@ where
         },
     )?;
 
-    event_loop.call_method1("run_until_complete", (coro,))?;
+    event_loop.call_method1(pyo3::intern!(py, "run_until_complete"), (coro,))?;
 
     let result = result_rx.lock().unwrap().take().unwrap();
     Ok(result)
@@ -289,7 +289,7 @@ where
     F: Future<Output = PyResult<T>> + Send + 'static,
     T: Send + Sync + 'static,
 {
-    let event_loop = asyncio(py)?.call_method0("new_event_loop")?;
+    let event_loop = asyncio(py)?.call_method0(pyo3::intern!(py, "new_event_loop"))?;
 
     let result = run_until_complete::<R, F, T>(event_loop, fut);
 
@@ -299,7 +299,7 @@ where
 }
 
 fn cancelled(future: &PyAny) -> PyResult<bool> {
-    future.getattr("cancelled")?.call0()?.is_true()
+    future.getattr(pyo3::intern!(future.py(), "cancelled"))?.call0()?.is_true()
 }
 
 #[pyclass]
@@ -323,8 +323,8 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
     let none = py.None().into_ref(py);
 
     let (complete, val) = match result {
-        Ok(val) => (future.getattr("set_result")?, val.into_py(py)),
-        Err(err) => (future.getattr("set_exception")?, err.into_py(py)),
+        Ok(val) => (future.getattr(pyo3::intern!(py, "set_result"))?, val.into_py(py)),
+        Err(err) => (future.getattr(pyo3::intern!(py, "set_exception"))?, err.into_py(py)),
     };
     call_soon_threadsafe(event_loop, none, (CheckedCompletor, future, complete, val))?;
 
@@ -558,7 +558,7 @@ where
 
     let py_fut = create_future(locals.event_loop.clone().into_ref(py))?;
     py_fut.call_method1(
-        "add_done_callback",
+        pyo3::intern!(py, "add_done_callback"),
         (PyDoneCallback {
             cancel_tx: Some(cancel_tx),
         },),
@@ -927,8 +927,9 @@ pub fn into_stream_with_locals_v1<'p, R>(
 where
     R: Runtime,
 {
+    let py = gen.py();
     let (tx, rx) = async_channel::bounded(1);
-    let anext = PyObject::from(gen.getattr("__anext__")?);
+    let anext = PyObject::from(gen.getattr(pyo3::intern!(py, "__anext__"))?);
 
     drop(R::spawn(async move {
         loop {
@@ -1150,23 +1151,7 @@ impl SenderGlue {
 }
 
 #[cfg(feature = "unstable-streams")]
-const STREAM_GLUE: &str = r#"
-import asyncio
-
-async def forward(gen, sender):
-    async for item in gen:
-        should_continue = sender.send(item)
-
-        if asyncio.iscoroutine(should_continue):
-            should_continue = await should_continue
-
-        if should_continue:
-            continue
-        else:
-            break
-
-    sender.close()
-"#;
+const STREAM_GLUE: &str = include_str!("./stream_glue.py");
 
 /// <span class="module-item stab portability" style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"><code>unstable-streams</code></span> Convert an async generator into a stream
 ///
@@ -1294,11 +1279,11 @@ where
     let (tx, rx) = mpsc::channel(10);
 
     locals.event_loop(py).call_method1(
-        "call_soon_threadsafe",
+        pyo3::intern!(py, "call_soon_threadsafe"),
         (
-            locals.event_loop(py).getattr("create_task")?,
+            locals.event_loop(py).getattr(pyo3::intern!(py, "create_task"))?,
             glue.call_method1(
-                "forward",
+                pyo3::intern!(py, "forward"),
                 (
                     gen,
                     SenderGlue {
