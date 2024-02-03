@@ -27,7 +27,7 @@ use once_cell::{
 use pyo3::prelude::*;
 
 use crate::{
-    generic::{self, ContextExt, LocalContextExt, Runtime as GenericRuntime, SpawnLocalExt},
+    generic::{self, LocalContextExt, Runtime as GenericRuntime},
     TaskLocals,
 };
 
@@ -95,9 +95,7 @@ impl GenericRuntime for TokioRuntime {
             fut.await;
         })
     }
-}
 
-impl ContextExt for TokioRuntime {
     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
     where
         F: Future<Output = R> + Send + 'static,
@@ -113,15 +111,6 @@ impl ContextExt for TokioRuntime {
             Ok(locals) => locals,
             Err(_) => None,
         }
-    }
-}
-
-impl SpawnLocalExt for TokioRuntime {
-    fn spawn_local<F>(fut: F) -> Self::JoinHandle
-    where
-        F: Future<Output = ()> + 'static,
-    {
-        tokio::task::spawn_local(fut)
     }
 }
 

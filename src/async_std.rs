@@ -20,7 +20,7 @@ use futures::FutureExt;
 use pyo3::prelude::*;
 
 use crate::{
-    generic::{self, ContextExt, JoinError, LocalContextExt, Runtime, SpawnLocalExt},
+    generic::{self, JoinError, LocalContextExt, Runtime},
     TaskLocals,
 };
 
@@ -74,9 +74,7 @@ impl Runtime for AsyncStdRuntime {
                 .map_err(|e| AsyncStdJoinErr(e))
         })
     }
-}
 
-impl ContextExt for AsyncStdRuntime {
     fn scope<F, R>(locals: TaskLocals, fut: F) -> Pin<Box<dyn Future<Output = R> + Send>>
     where
         F: Future<Output = R> + Send + 'static,
@@ -94,18 +92,6 @@ impl ContextExt for AsyncStdRuntime {
             Ok(locals) => locals,
             Err(_) => None,
         }
-    }
-}
-
-impl SpawnLocalExt for AsyncStdRuntime {
-    fn spawn_local<F>(fut: F) -> Self::JoinHandle
-    where
-        F: Future<Output = ()> + 'static,
-    {
-        task::spawn_local(async move {
-            fut.await;
-            Ok(())
-        })
     }
 }
 
