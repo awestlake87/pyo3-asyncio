@@ -567,7 +567,7 @@ where
     let future_tx1 = PyObject::from(py_fut);
     let future_tx2 = future_tx1.clone();
 
-    R::spawn(async move {
+    drop(R::spawn(async move {
         let locals2 = locals.clone();
 
         if let Err(e) = R::spawn(async move {
@@ -617,7 +617,7 @@ where
                 });
             }
         }
-    });
+    }));
 
     Ok(py_fut)
 }
@@ -930,7 +930,7 @@ where
     let (tx, rx) = async_channel::bounded(1);
     let anext = PyObject::from(gen.getattr("__anext__")?);
 
-    R::spawn(async move {
+    drop(R::spawn(async move {
         loop {
             let fut = Python::with_gil(|py| -> PyResult<_> {
                 into_future_with_locals(&locals, anext.as_ref(py).call0()?)
@@ -959,7 +959,7 @@ where
                 break;
             }
         }
-    });
+    }));
 
     Ok(rx)
 }
