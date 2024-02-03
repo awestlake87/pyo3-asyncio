@@ -299,7 +299,10 @@ where
 }
 
 fn cancelled(future: &PyAny) -> PyResult<bool> {
-    future.getattr(pyo3::intern!(future.py(), "cancelled"))?.call0()?.is_true()
+    future
+        .getattr(pyo3::intern!(future.py(), "cancelled"))?
+        .call0()?
+        .is_true()
 }
 
 #[pyclass]
@@ -323,8 +326,14 @@ fn set_result(event_loop: &PyAny, future: &PyAny, result: PyResult<PyObject>) ->
     let none = py.None().into_ref(py);
 
     let (complete, val) = match result {
-        Ok(val) => (future.getattr(pyo3::intern!(py, "set_result"))?, val.into_py(py)),
-        Err(err) => (future.getattr(pyo3::intern!(py, "set_exception"))?, err.into_py(py)),
+        Ok(val) => (
+            future.getattr(pyo3::intern!(py, "set_result"))?,
+            val.into_py(py),
+        ),
+        Err(err) => (
+            future.getattr(pyo3::intern!(py, "set_exception"))?,
+            err.into_py(py),
+        ),
     };
     call_soon_threadsafe(event_loop, none, (CheckedCompletor, future, complete, val))?;
 
@@ -1281,7 +1290,9 @@ where
     locals.event_loop(py).call_method1(
         pyo3::intern!(py, "call_soon_threadsafe"),
         (
-            locals.event_loop(py).getattr(pyo3::intern!(py, "create_task"))?,
+            locals
+                .event_loop(py)
+                .getattr(pyo3::intern!(py, "create_task"))?,
             glue.call_method1(
                 pyo3::intern!(py, "forward"),
                 (

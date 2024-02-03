@@ -411,7 +411,9 @@ static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 fn ensure_future<'p>(py: Python<'p>, awaitable: &'p PyAny) -> PyResult<&'p PyAny> {
     ENSURE_FUTURE
         .get_or_try_init(|| -> PyResult<PyObject> {
-            Ok(asyncio(py)?.getattr(pyo3::intern!(py, "ensure_future"))?.into())
+            Ok(asyncio(py)?
+                .getattr(pyo3::intern!(py, "ensure_future"))?
+                .into())
         })?
         .as_ref(py)
         .call1((awaitable,))
@@ -457,7 +459,9 @@ pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
         .get_or_try_init(|| -> PyResult<PyObject> {
             let asyncio = asyncio(py)?;
 
-            Ok(asyncio.getattr(pyo3::intern!(py, "get_running_loop"))?.into())
+            Ok(asyncio
+                .getattr(pyo3::intern!(py, "get_running_loop"))?
+                .into())
         })?
         .as_ref(py)
         .call0()
@@ -465,7 +469,10 @@ pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
 
 fn contextvars(py: Python) -> PyResult<&PyAny> {
     Ok(CONTEXTVARS
-        .get_or_try_init(|| py.import(pyo3::intern!(py, "contextvars")).map(|m| m.into()))?
+        .get_or_try_init(|| {
+            py.import(pyo3::intern!(py, "contextvars"))
+                .map(|m| m.into())
+        })?
         .as_ref(py))
 }
 
@@ -579,7 +586,11 @@ fn call_soon_threadsafe(
     let kwargs = PyDict::new(py);
     kwargs.set_item(pyo3::intern!(py, "context"), context)?;
 
-    event_loop.call_method(pyo3::intern!(py, "call_soon_threadsafe"), args, Some(kwargs))?;
+    event_loop.call_method(
+        pyo3::intern!(py, "call_soon_threadsafe"),
+        args,
+        Some(kwargs),
+    )?;
     Ok(())
 }
 
