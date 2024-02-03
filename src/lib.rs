@@ -357,6 +357,9 @@ pub mod async_std;
 #[cfg(feature = "tokio-runtime")]
 pub mod tokio;
 
+#[cfg(feature = "wyfo-async")]
+pub mod wyfo;
+
 /// Errors and exceptions related to PyO3 Asyncio
 pub mod err;
 

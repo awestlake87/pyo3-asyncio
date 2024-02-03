@@ -322,3 +322,100 @@ pub fn tokio_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     result.into()
 }
+
+/// Registers a `tokio` test with the `pyo3-asyncio` test harness.
+///
+/// This attribute is meant to mirror the `#[test]` attribute and allow you to mark a function for
+/// testing within an integration test. Like the `#[tokio::test]` attribute, it will accept `async`
+/// test functions, but it will also accept blocking functions as well.
+///
+/// # Examples
+/// ```ignore
+/// use std::{time::Duration, thread};
+///
+/// use pyo3::prelude::*;
+///
+/// // async test function
+/// #[pyo3_asyncio::tokio::test]
+/// async fn test_async_sleep() -> PyResult<()> {
+///     tokio::time::sleep(Duration::from_secs(1)).await;
+///     Ok(())
+/// }
+///
+/// // blocking test function
+/// #[pyo3_asyncio::tokio::test]
+/// fn test_blocking_sleep() -> PyResult<()> {
+///     thread::sleep(Duration::from_secs(1));
+///     Ok(())
+/// }
+///
+/// // blocking test functions can optionally accept an event_loop parameter
+/// #[pyo3_asyncio::tokio::test]
+/// fn test_blocking_sleep_with_event_loop(event_loop: PyObject) -> PyResult<()> {
+///     thread::sleep(Duration::from_secs(1));
+///     Ok(())
+/// }
+/// ```
+#[cfg(not(test))] // NOTE: exporting main breaks tests, we should file an issue.
+#[proc_macro_attribute]
+pub fn wyfo_test(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(item as syn::ItemFn);
+
+    let sig = &input.sig;
+    let name = &input.sig.ident;
+    let body = &input.block;
+    let vis = &input.vis;
+
+    let fn_impl = if input.sig.asyncness.is_none() {
+        // Optionally pass an event_loop parameter to blocking tasks
+        let task = if sig.inputs.is_empty() {
+            quote! {
+                Box::pin(async move {
+                    #name()
+                })
+            }
+        } else {
+            quote! {
+                let event_loop = Python::with_gil(|py| {
+                    pyo3_asyncio::tokio::get_current_loop(py).unwrap().into()
+                });
+                Box::pin(async move {
+                    #name(event_loop)
+                })
+            }
+        };
+
+        quote! {
+            #vis fn #name() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
+                #sig {
+                    #body
+                }
+
+                #task
+            }
+        }
+    } else {
+        quote! {
+            #vis fn #name() -> std::pin::Pin<Box<dyn std::future::Future<Output = pyo3::PyResult<()>> + Send>> {
+                #sig {
+                    #body
+                }
+
+                Box::pin(#name())
+            }
+        }
+    };
+
+    let result = quote! {
+        #fn_impl
+
+        pyo3_asyncio::inventory::submit! {
+            pyo3_asyncio::testing::Test {
+                name: concat!(std::module_path!(), "::", stringify!(#name)),
+                test_fn: &#name
+            }
+        }
+    };
+
+    result.into()
+}

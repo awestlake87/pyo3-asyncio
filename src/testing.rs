@@ -190,12 +190,16 @@ use pyo3::prelude::*;
 /// These args are meant to mirror the default test harness's args.
 /// > Currently only `--filter` is supported.
 pub struct Args {
-    filter: Option<String>,
+    pub filter: Option<String>,
+    pub concurrent: bool,
 }
 
 impl Default for Args {
     fn default() -> Self {
-        Self { filter: None }
+        Self {
+            filter: None,
+            concurrent: true,
+        }
     }
 }
 
@@ -243,6 +247,7 @@ pub fn parse_args() -> Args {
         filter: matches
             .get_one::<String>("TESTNAME")
             .map(|name| name.clone()),
+        concurrent: true,
     }
 }
 
@@ -270,8 +275,9 @@ inventory::collect!(Test);
 
 /// Run a sequence of tests while applying any necessary filtering from the `Args`
 pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
-    stream::iter(tests)
-        .for_each_concurrent(Some(4), |test| {
+    let filtered = tests
+        .into_iter()
+        .filter(|test| {
             let mut ignore = false;
 
             if let Some(filter) = args.filter.as_ref() {
@@ -280,15 +286,23 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
                 }
             }
 
-            async move {
-                if !ignore {
-                    test.task().await.unwrap();
-
-                    println!("test {} ... ok", test.name);
-                }
-            }
+            !ignore
         })
-        .await;
+        .collect::<Vec<_>>();
+
+    if args.concurrent {
+        stream::iter(filtered)
+            .for_each_concurrent(Some(4), |test| async move {
+                test.task().await.unwrap();
+                println!("test {} ... ok", test.name);
+            })
+            .await;
+    } else {
+        for test in filtered {
+            test.task().await.unwrap();
+            println!("test {} ... ok", test.name);
+        }
+    }
 
     Ok(())
 }
@@ -315,6 +329,14 @@ pub async fn test_harness(tests: Vec<Test>, args: Args) -> PyResult<()> {
 pub async fn main() -> PyResult<()> {
     let args = parse_args();
 
+    main_with_args(args).await
+}
+
+/// Passes the tests to the `pyo3-asyncio` test harness
+///
+/// This function collects the test structures from the `inventory` boilerplate and forwards them to
+/// the test harness.
+pub async fn main_with_args(args: Args) -> PyResult<()> {
     test_harness(
         inventory::iter::<Test>().map(|test| test.clone()).collect(),
         args,

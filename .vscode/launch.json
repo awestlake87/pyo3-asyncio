@@ -1,0 +1,372 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'pyo3-asyncio'",
+      "cargo": {
+        "args": ["test", "--no-run", "--lib", "--package=pyo3-asyncio"],
+        "filter": {
+          "name": "pyo3-asyncio",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example 'async_std'",
+      "cargo": {
+        "args": ["build", "--example=async_std", "--package=pyo3-asyncio"],
+        "filter": {
+          "name": "async_std",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in example 'async_std'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--example=async_std",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "async_std",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example 'tokio'",
+      "cargo": {
+        "args": ["build", "--example=tokio", "--package=pyo3-asyncio"],
+        "filter": {
+          "name": "tokio",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in example 'tokio'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--example=tokio",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "tokio",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example 'tokio_current_thread'",
+      "cargo": {
+        "args": [
+          "build",
+          "--example=tokio_current_thread",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "tokio_current_thread",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in example 'tokio_current_thread'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--example=tokio_current_thread",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "tokio_current_thread",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example 'tokio_multi_thread'",
+      "cargo": {
+        "args": [
+          "build",
+          "--example=tokio_multi_thread",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "tokio_multi_thread",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in example 'tokio_multi_thread'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--example=tokio_multi_thread",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "tokio_multi_thread",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_async_std_asyncio'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_async_std_asyncio",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_async_std_asyncio",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_async_std_run_forever'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_async_std_run_forever",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_async_std_run_forever",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_tokio_current_thread_asyncio'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_tokio_current_thread_asyncio",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_tokio_current_thread_asyncio",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_tokio_current_thread_run_forever'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_tokio_current_thread_run_forever",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_tokio_current_thread_run_forever",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_tokio_multi_thread_asyncio'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_tokio_multi_thread_asyncio",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_tokio_multi_thread_asyncio",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_tokio_multi_thread_run_forever'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_tokio_multi_thread_run_forever",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_tokio_multi_thread_run_forever",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_async_std_uvloop'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_async_std_uvloop",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_async_std_uvloop",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_tokio_current_thread_uvloop'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_tokio_current_thread_uvloop",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_tokio_current_thread_uvloop",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_tokio_multi_thread_uvloop'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_tokio_multi_thread_uvloop",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_tokio_multi_thread_uvloop",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_race_condition_regression'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_race_condition_regression",
+          "--package=pyo3-asyncio"
+        ],
+        "filter": {
+          "name": "test_race_condition_regression",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'test_wyfo_multi_thread_asyncio'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=test_wyfo_multi_thread_asyncio",
+          "--package=pyo3-asyncio",
+          "--features=wyfo-async,tokio-runtime,testing,attributes"
+        ],
+        "filter": {
+          "name": "test_wyfo_multi_thread_asyncio",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

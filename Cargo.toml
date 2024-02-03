@@ -21,6 +21,7 @@ async-std-runtime = ["async-std"]
 attributes = ["pyo3-asyncio-macros"]
 testing = ["clap", "inventory"]
 tokio-runtime = ["tokio"]
+wyfo-async = ["pyo3-async", "tokio"]
 unstable-streams = ["async-channel"]
 default = []
 
@@ -109,6 +110,12 @@ path = "pytests/test_race_condition_regression.rs"
 harness = false
 required-features = ["async-std-runtime", "testing"]
 
+[[test]]
+name = "test_wyfo_multi_thread_asyncio"
+path = "pytests/test_wyfo_multi_thread_asyncio.rs"
+harness = false
+required-features = ["wyfo-async", "tokio-runtime", "testing", "attributes"]
+
 [dependencies]
 async-channel = { version = "2.1", optional = true }
 clap = { version = "4.4", optional = true }
@@ -130,4 +137,8 @@ optional = true
 [dependencies.tokio]
 version = "1.36"
 features = ["rt", "rt-multi-thread", "time"]
+optional = true
+
+[dependencies.pyo3-async]
+version = "0.3.2"
 optional = true
