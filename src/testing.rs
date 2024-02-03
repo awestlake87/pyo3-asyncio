@@ -190,7 +190,9 @@ use pyo3::prelude::*;
 /// These args are meant to mirror the default test harness's args.
 /// > Currently only `--filter` is supported.
 pub struct Args {
+    /// Filter down to tests containing this string
     pub filter: Option<String>,
+    /// Execute tests concurrently
     pub concurrent: bool,
 }
 
