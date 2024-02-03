@@ -111,47 +111,47 @@ async fn test_other_awaitables() -> PyResult<()> {
 //     }
 // }
 
-// #[pyo3_asyncio::tokio::test]
-// async fn test_cancel() -> PyResult<()> {
-//     let completed = Arc::new(Mutex::new(false));
+#[pyo3_asyncio::tokio::test]
+async fn test_cancel() -> PyResult<()> {
+    let completed = Arc::new(Mutex::new(false));
 
-//     let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
-//         let completed = Arc::clone(&completed);
-//         Ok(pyo3_asyncio::wyfo::future_into_py(py, async move {
-//             tokio::time::sleep(Duration::from_secs(1)).await;
-//             *completed.lock().unwrap() = true;
+    let py_future = Python::with_gil(|py| -> PyResult<PyObject> {
+        let completed = Arc::clone(&completed);
+        Ok(pyo3_asyncio::wyfo::future_into_py(py, async move {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            *completed.lock().unwrap() = true;
 
-//             Ok(())
-//         })?
-//         .into())
-//     })?;
+            Ok(())
+        })?
+        .into())
+    })?;
 
-//     if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
-//         py_future.as_ref(py).call_method0("cancel")?;
-//         pyo3_asyncio::wyfo::into_future(py_future.as_ref(py))
-//     })?
-//     .await
-//     {
-//         Python::with_gil(|py| -> PyResult<()> {
-//             assert!(e.value(py).is_instance(
-//                 py.import("asyncio")?
-//                     .getattr("CancelledError")?
-//                     .downcast::<PyType>()
-//                     .unwrap()
-//             )?);
-//             Ok(())
-//         })?;
-//     } else {
-//         panic!("expected CancelledError");
-//     }
+    if let Err(e) = Python::with_gil(|py| -> PyResult<_> {
+        py_future.as_ref(py).call_method0("cancel")?;
+        pyo3_asyncio::wyfo::into_future(py_future.as_ref(py))
+    })?
+    .await
+    {
+        Python::with_gil(|py| -> PyResult<()> {
+            assert!(e.value(py).is_instance(
+                py.import("asyncio")?
+                    .getattr("CancelledError")?
+                    .downcast::<PyType>()
+                    .unwrap()
+            )?);
+            Ok(())
+        })?;
+    } else {
+        panic!("expected CancelledError");
+    }
 
-//     tokio::time::sleep(Duration::from_secs(1)).await;
-//     if *completed.lock().unwrap() {
-//         panic!("future still completed")
-//     }
+    tokio_sleep(Duration::from_secs(1)).await;
+    if *completed.lock().unwrap() {
+        panic!("future still completed")
+    }
 
-//     Ok(())
-// }
+    Ok(())
+}
 
 /// This module is implemented in Rust.
 #[pymodule]

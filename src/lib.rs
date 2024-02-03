@@ -411,7 +411,7 @@ static CONTEXTVARS: OnceCell<PyObject> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
-fn ensure_future<'p>(py: Python<'p>, awaitable: &'p PyAny) -> PyResult<&'p PyAny> {
+fn ensure_future<'p>(py: Python<'p>, awaitable: impl IntoPy<Py<PyAny>>) -> PyResult<&'p PyAny> {
     ENSURE_FUTURE
         .get_or_try_init(|| -> PyResult<PyObject> {
             Ok(asyncio(py)?

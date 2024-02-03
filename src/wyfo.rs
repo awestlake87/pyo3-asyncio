@@ -99,9 +99,10 @@ where
     F: Future<Output = PyResult<T>> + Send + 'static,
     T: Send + IntoPy<PyObject>,
 {
-    Ok(pyo3_async::asyncio::Coroutine::from_future(fut)
-        .into_py(py)
-        .into_ref(py))
+    Ok(ensure_future(
+        py,
+        pyo3_async::asyncio::Coroutine::from_future(fut),
+    )?)
 }
 
 /// Convert a Python `awaitable` into a Rust Future
