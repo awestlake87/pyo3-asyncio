@@ -110,7 +110,7 @@ harness = false
 required-features = ["async-std-runtime", "testing"]
 
 [dependencies]
-async-channel = { version = "1.6", optional = true }
+async-channel = { version = "2.2", optional = true }
 clap = { version = "3.2", optional = true }
 futures = "0.3"
 inventory = { version = "0.3", optional = true }
