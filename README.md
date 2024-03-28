@@ -149,7 +149,7 @@ Export an async function that makes use of `async-std`:
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::async_std::future_into_py(py, async {
         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
         Ok(())
@@ -173,7 +173,7 @@ If you want to use `tokio` instead, here's what your module should look like:
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Ok(())
@@ -289,7 +289,7 @@ async fn rust_sleep() {
 }
 
 #[pyfunction]
-fn call_rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn call_rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::async_std::future_into_py(py, async move {
         rust_sleep().await;
         Ok(())
@@ -443,7 +443,7 @@ tokio = "1.9"
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Ok(())
