@@ -88,7 +88,7 @@
 //!
 //! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
-//! fn sleep(py: Python) -> PyResult<&PyAny> {
+//! fn sleep(py: Python) -> PyResult<Bound<PyAny>> {
 //!     // Construct the task locals structure with the current running loop and context
 //!     let locals = pyo3_asyncio::TaskLocals::with_running_loop(py)?.copy_context(py)?;
 //!
@@ -100,7 +100,7 @@
 //!             // event loop from earlier.
 //!             pyo3_asyncio::into_future_with_locals(
 //!                 &locals,
-//!                 py.import("asyncio")?.call_method1("sleep", (1,))?
+//!                 py.import_bound("asyncio")?.call_method1("sleep", (1,))?
 //!             )
 //!         })?;
 //!
@@ -155,7 +155,7 @@
 //!
 //! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
-//! fn sleep(py: Python) -> PyResult<&PyAny> {
+//! fn sleep(py: Python) -> PyResult<Bound<PyAny>> {
 //!     // get the current event loop through task-local data
 //!     // OR `asyncio.get_running_loop` and `contextvars.copy_context`
 //!     let locals = pyo3_asyncio::tokio::get_current_locals(py)?;
@@ -169,7 +169,7 @@
 //!                 pyo3_asyncio::into_future_with_locals(
 //!                     // Now we can get the current locals through task-local data
 //!                     &pyo3_asyncio::tokio::get_current_locals(py)?,
-//!                     py.import("asyncio")?.call_method1("sleep", (1,))?
+//!                     py.import_bound("asyncio")?.call_method1("sleep", (1,))?
 //!                 )
 //!             })?;
 //!
@@ -182,7 +182,7 @@
 //!
 //! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
-//! fn wrap_sleep(py: Python) -> PyResult<&PyAny> {
+//! fn wrap_sleep(py: Python) -> PyResult<Bound<PyAny>> {
 //!     // get the current event loop through task-local data
 //!     // OR `asyncio.get_running_loop` and `contextvars.copy_context`
 //!     let locals = pyo3_asyncio::tokio::get_current_locals(py)?;
@@ -240,11 +240,11 @@
 //!
 //! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
-//! fn sleep(py: Python) -> PyResult<&PyAny> {
+//! fn sleep(py: Python) -> PyResult<Bound<PyAny>> {
 //!     pyo3_asyncio::tokio::future_into_py(py, async move {
 //!         let py_sleep = Python::with_gil(|py| {
 //!             pyo3_asyncio::tokio::into_future(
-//!                 py.import("asyncio")?.call_method1("sleep", (1,))?
+//!                 py.import_bound("asyncio")?.call_method1("sleep", (1,))?
 //!             )
 //!         })?;
 //!
@@ -256,7 +256,7 @@
 //!
 //! # #[cfg(feature = "tokio-runtime")]
 //! #[pyfunction]
-//! fn wrap_sleep(py: Python) -> PyResult<&PyAny> {
+//! fn wrap_sleep(py: Python) -> PyResult<Bound<PyAny>> {
 //!     pyo3_asyncio::tokio::future_into_py(py, async move {
 //!         let py_sleep = Python::with_gil(|py| {
 //!             pyo3_asyncio::tokio::into_future(sleep(py)?)
@@ -363,8 +363,8 @@ pub mod err;
 pub mod generic;
 
 #[pymodule]
-fn pyo3_asyncio(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add("RustPanic", py.get_type::<err::RustPanic>())?;
+fn pyo3_asyncio(py: Python, m: Bound<PyModule>) -> PyResult<()> {
+    m.add("RustPanic", py.get_type_bound::<err::RustPanic>())?;
     Ok(())
 }
 
@@ -408,20 +408,20 @@ static CONTEXTVARS: OnceCell<PyObject> = OnceCell::new();
 static ENSURE_FUTURE: OnceCell<PyObject> = OnceCell::new();
 static GET_RUNNING_LOOP: OnceCell<PyObject> = OnceCell::new();
 
-fn ensure_future<'p>(py: Python<'p>, awaitable: &'p PyAny) -> PyResult<&'p PyAny> {
+fn ensure_future<'p>(py: Python<'p>, awaitable: Bound<'p, PyAny>) -> PyResult<Bound<'p, PyAny>> {
     ENSURE_FUTURE
         .get_or_try_init(|| -> PyResult<PyObject> {
             Ok(asyncio(py)?.getattr("ensure_future")?.into())
         })?
-        .as_ref(py)
+        .bind(py)
         .call1((awaitable,))
 }
 
-fn create_future(event_loop: &PyAny) -> PyResult<&PyAny> {
+fn create_future(event_loop: Bound<PyAny>) -> PyResult<Bound<PyAny>> {
     event_loop.call_method0("create_future")
 }
 
-fn close(event_loop: &PyAny) -> PyResult<()> {
+fn close(event_loop: Bound<PyAny>) -> PyResult<()> {
     event_loop.call_method1(
         "run_until_complete",
         (event_loop.call_method0("shutdown_asyncgens")?,),
@@ -440,16 +440,16 @@ fn close(event_loop: &PyAny) -> PyResult<()> {
     Ok(())
 }
 
-fn asyncio(py: Python) -> PyResult<&PyAny> {
+fn asyncio(py: Python) -> PyResult<Bound<PyAny>> {
     ASYNCIO
-        .get_or_try_init(|| Ok(py.import("asyncio")?.into()))
-        .map(|asyncio| asyncio.as_ref(py))
+        .get_or_try_init(|| Ok(py.import_bound("asyncio")?.into()))
+        .map(|asyncio| asyncio.clone().into_bound(py))
 }
 
 /// Get a reference to the Python Event Loop from Rust
 ///
 /// Equivalent to `asyncio.get_running_loop()` in Python 3.7+.
-pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
+pub fn get_running_loop(py: Python) -> PyResult<Bound<PyAny>> {
     // Ideally should call get_running_loop, but calls get_event_loop for compatibility when
     // get_running_loop is not available.
     GET_RUNNING_LOOP
@@ -458,17 +458,18 @@ pub fn get_running_loop(py: Python) -> PyResult<&PyAny> {
 
             Ok(asyncio.getattr("get_running_loop")?.into())
         })?
-        .as_ref(py)
+        .bind(py)
         .call0()
 }
 
-fn contextvars(py: Python) -> PyResult<&PyAny> {
+fn contextvars(py: Python) -> PyResult<Bound<PyAny>> {
     Ok(CONTEXTVARS
-        .get_or_try_init(|| py.import("contextvars").map(|m| m.into()))?
-        .as_ref(py))
+        .get_or_try_init(|| py.import_bound("contextvars").map(|m| m.into()))?
+        .clone()
+        .into_bound(py))
 }
 
-fn copy_context(py: Python) -> PyResult<&PyAny> {
+fn copy_context(py: Python) -> PyResult<Bound<PyAny>> {
     contextvars(py)?.call_method0("copy_context")
 }
 
@@ -483,9 +484,9 @@ pub struct TaskLocals {
 
 impl TaskLocals {
     /// At a minimum, TaskLocals must store the event loop.
-    pub fn new(event_loop: &PyAny) -> Self {
+    pub fn new(event_loop: Bound<PyAny>) -> Self {
         Self {
-            event_loop: event_loop.into(),
+            event_loop: event_loop.clone().into(),
             context: event_loop.py().None(),
         }
     }
@@ -496,7 +497,7 @@ impl TaskLocals {
     }
 
     /// Manually provide the contextvars for the current task.
-    pub fn with_context(self, context: &PyAny) -> Self {
+    pub fn with_context(self, context: Bound<PyAny>) -> Self {
         Self {
             context: context.into(),
             ..self
@@ -509,13 +510,13 @@ impl TaskLocals {
     }
 
     /// Get a reference to the event loop
-    pub fn event_loop<'p>(&self, py: Python<'p>) -> &'p PyAny {
-        self.event_loop.clone().into_ref(py)
+    pub fn event_loop<'p>(&self, py: Python<'p>) -> Bound<'p, PyAny> {
+        self.event_loop.clone().into_bound(py)
     }
 
     /// Get a reference to the python context
-    pub fn context<'p>(&self, py: Python<'p>) -> &'p PyAny {
-        self.context.clone().into_ref(py)
+    pub fn context<'p>(&self, py: Python<'p>) -> Bound<'p, PyAny> {
+        self.context.clone().into_bound(py)
     }
 }
 
@@ -527,7 +528,7 @@ struct PyTaskCompleter {
 #[pymethods]
 impl PyTaskCompleter {
     #[pyo3(signature = (task))]
-    pub fn __call__(&mut self, task: &PyAny) -> PyResult<()> {
+    pub fn __call__(&mut self, task: Bound<PyAny>) -> PyResult<()> {
         debug_assert!(task.call_method0("done")?.extract()?);
         let result = match task.call_method0("result") {
             Ok(val) => Ok(val.into()),
@@ -558,7 +559,7 @@ struct PyEnsureFuture {
 impl PyEnsureFuture {
     pub fn __call__(&mut self) -> PyResult<()> {
         Python::with_gil(|py| {
-            let task = ensure_future(py, self.awaitable.as_ref(py))?;
+            let task = ensure_future(py, self.awaitable.clone().into_bound(py))?;
             let on_complete = PyTaskCompleter { tx: self.tx.take() };
             task.call_method1("add_done_callback", (on_complete,))?;
 
@@ -568,16 +569,16 @@ impl PyEnsureFuture {
 }
 
 fn call_soon_threadsafe(
-    event_loop: &PyAny,
-    context: &PyAny,
+    event_loop: Bound<PyAny>,
+    context: Bound<PyAny>,
     args: impl IntoPy<Py<PyTuple>>,
 ) -> PyResult<()> {
     let py = event_loop.py();
 
-    let kwargs = PyDict::new(py);
+    let kwargs = PyDict::new_bound(py);
     kwargs.set_item("context", context)?;
 
-    event_loop.call_method("call_soon_threadsafe", args, Some(kwargs))?;
+    event_loop.call_method("call_soon_threadsafe", args, Some(&kwargs))?;
     Ok(())
 }
 
@@ -625,7 +626,7 @@ fn call_soon_threadsafe(
 ///             &pyo3_asyncio::tokio::get_current_locals(py)?,
 ///             test_mod
 ///                 .call_method1(py, "py_sleep", (seconds.into_py(py),))?
-///                 .as_ref(py),
+///                 .into_bound(py),
 ///         )
 ///     })?
 ///     .await?;
@@ -634,7 +635,7 @@ fn call_soon_threadsafe(
 /// ```
 pub fn into_future_with_locals(
     locals: &TaskLocals,
-    awaitable: &PyAny,
+    awaitable: Bound<PyAny>,
 ) -> PyResult<impl Future<Output = PyResult<PyObject>> + Send> {
     let py = awaitable.py();
     let (tx, rx) = oneshot::channel();
@@ -652,7 +653,7 @@ pub fn into_future_with_locals(
         match rx.await {
             Ok(item) => item,
             Err(_) => Python::with_gil(|py| {
-                Err(PyErr::from_value(
+                Err(PyErr::from_value_bound(
                     asyncio(py)?.call_method0("CancelledError")?,
                 ))
             }),

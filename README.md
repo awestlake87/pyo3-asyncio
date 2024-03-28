@@ -65,7 +65,7 @@ use pyo3::prelude::*;
 #[pyo3_asyncio::async_std::main]
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
-        let asyncio = py.import("asyncio")?;
+        let asyncio = py.import_bound("asyncio")?;
         // convert asyncio.sleep into a Rust Future
         pyo3_asyncio::async_std::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
@@ -95,7 +95,7 @@ use pyo3::prelude::*;
 #[pyo3_asyncio::tokio::main]
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
-        let asyncio = py.import("asyncio")?;
+        let asyncio = py.import_bound("asyncio")?;
         // convert asyncio.sleep into a Rust Future
         pyo3_asyncio::tokio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
@@ -149,7 +149,7 @@ Export an async function that makes use of `async-std`:
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::async_std::future_into_py(py, async {
         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
         Ok(())
@@ -173,7 +173,7 @@ If you want to use `tokio` instead, here's what your module should look like:
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Ok(())
@@ -237,7 +237,7 @@ use pyo3::prelude::*;
 async fn main() -> PyResult<()> {
     let future = Python::with_gil(|py| -> PyResult<_> {
         // import the module containing the py_sleep function
-        let example = py.import("example")?;
+        let example = py.import_bound("example")?;
 
         // calling the py_sleep method like a normal function
         // returns a coroutine
@@ -289,7 +289,7 @@ async fn rust_sleep() {
 }
 
 #[pyfunction]
-fn call_rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn call_rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::async_std::future_into_py(py, async move {
         rust_sleep().await;
         Ok(())
@@ -356,7 +356,7 @@ async fn main() -> PyResult<()> {
     // PyO3 is initialized - Ready to go
 
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        let asyncio = py.import("asyncio")?;
+        let asyncio = py.import_bound("asyncio")?;
 
         // convert asyncio.sleep into a Rust Future
         pyo3_asyncio::async_std::into_future(
@@ -443,7 +443,7 @@ tokio = "1.9"
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+fn rust_sleep(py: Python) -> PyResult<Bound<PyAny>> {
     pyo3_asyncio::tokio::future_into_py(py, async {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Ok(())
@@ -504,7 +504,7 @@ fn main() -> PyResult<()> {
     pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
-        let uvloop = py.import("uvloop")?;
+        let uvloop = py.import_bound("uvloop")?;
         uvloop.call_method0("install")?;
 
         // store a reference for the assertion
@@ -514,7 +514,7 @@ fn main() -> PyResult<()> {
             // verify that we are on a uvloop.Loop
             Python::with_gil(|py| -> PyResult<()> {
                 assert!(uvloop
-                    .as_ref(py)
+                    .bind(py)
                     .getattr("Loop")?
                     .downcast::<PyType>()
                     .unwrap()
@@ -601,7 +601,7 @@ To make things a bit easier, I decided to keep most of the old API alongside the
        pyo3::prepare_freethreaded_python();
 
        Python::with_gil(|py| {
-           let asyncio = py.import("asyncio")?;
+           let asyncio = py.import_bound("asyncio")?;
 
            let event_loop = asyncio.call_method0("new_event_loop")?;
            asyncio.call_method1("set_event_loop", (event_loop,))?;
@@ -614,11 +614,11 @@ To make things a bit easier, I decided to keep most of the old API alongside the
                // Stop the event loop manually
                Python::with_gil(|py| {
                    event_loop_hdl
-                       .as_ref(py)
+                       .bind(py)
                        .call_method1(
                            "call_soon_threadsafe",
                            (event_loop_hdl
-                               .as_ref(py)
+                               .bind(py)
                                .getattr("stop")
                                .unwrap(),),
                        )

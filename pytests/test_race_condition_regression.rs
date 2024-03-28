@@ -1,7 +1,7 @@
 use pyo3::{prelude::*, wrap_pyfunction};
 
 #[pyfunction]
-fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+fn sleep<'p>(py: Python<'p>, secs: Bound<PyAny>) -> PyResult<Bound<PyAny>> {
     let secs = secs.extract()?;
 
     pyo3_asyncio::async_std::future_into_py(py, async move {

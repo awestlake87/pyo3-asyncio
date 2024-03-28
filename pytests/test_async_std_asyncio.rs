@@ -18,7 +18,7 @@ use pyo3_asyncio::TaskLocals;
 use futures::{StreamExt, TryStreamExt};
 
 #[pyfunction]
-fn sleep<'p>(py: Python<'p>, secs: &'p PyAny) -> PyResult<&'p PyAny> {
+fn sleep<'p>(py: Python<'p>, secs: Bound<PyAny>) -> PyResult<Bound<PyAny>> {
     let secs = secs.extract()?;
 
     pyo3_asyncio::async_std::future_into_py(py, async move {
@@ -258,7 +258,7 @@ fn test_local_cancel(event_loop: PyObject) -> PyResult<()> {
 fn test_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     #![allow(deprecated)]
     #[pyfunction(name = "sleep")]
-    fn sleep_(py: Python) -> PyResult<&PyAny> {
+    fn sleep_(py: Python) -> PyResult<Bound<PyAny>> {
         pyo3_asyncio::async_std::future_into_py(py, async move {
             async_std::task::sleep(Duration::from_millis(500)).await;
             Ok(())
@@ -305,7 +305,7 @@ fn test_multiple_asyncio_run() -> PyResult<()> {
 fn cvars_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     #![allow(deprecated)]
     #[pyfunction]
-    pub(crate) fn async_callback(py: Python, callback: PyObject) -> PyResult<&PyAny> {
+    pub(crate) fn async_callback(py: Python, callback: PyObject) -> PyResult<Bound<PyAny>> {
         pyo3_asyncio::async_std::future_into_py(py, async move {
             Python::with_gil(|py| {
                 pyo3_asyncio::async_std::into_future(callback.as_ref(py).call0()?)
