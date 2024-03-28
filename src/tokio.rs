@@ -272,10 +272,10 @@ where
 /// Convert a Rust Future into a Python awaitable
 ///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
-/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+/// the Rust future will be cancelled as well (new behavior in `v0.15`).
 ///
 /// Python `contextvars` are preserved when calling async Python functions within the Rust future
-/// via [`into_future`] (new behaviour in `v0.15`).
+/// via [`into_future`] (new behavior in `v0.15`).
 ///
 /// > Although `contextvars` are preserved for async Python functions, synchronous functions will
 /// unfortunately fail to resolve them when called within the Rust future. This is because the
@@ -327,10 +327,10 @@ where
 /// Convert a Rust Future into a Python awaitable
 ///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
-/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+/// the Rust future will be cancelled as well (new behavior in `v0.15`).
 ///
 /// Python `contextvars` are preserved when calling async Python functions within the Rust future
-/// via [`into_future`] (new behaviour in `v0.15`).
+/// via [`into_future`] (new behavior in `v0.15`).
 ///
 /// > Although `contextvars` are preserved for async Python functions, synchronous functions will
 /// unfortunately fail to resolve them when called within the Rust future. This is because the
@@ -373,10 +373,10 @@ where
 /// Convert a `!Send` Rust Future into a Python awaitable
 ///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
-/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+/// the Rust future will be cancelled as well (new behavior in `v0.15`).
 ///
 /// Python `contextvars` are preserved when calling async Python functions within the Rust future
-/// via [`into_future`] (new behaviour in `v0.15`).
+/// via [`into_future`] (new behavior in `v0.15`).
 ///
 /// > Although `contextvars` are preserved for async Python functions, synchronous functions will
 /// unfortunately fail to resolve them when called within the Rust future. This is because the
@@ -464,10 +464,10 @@ where
 /// Convert a `!Send` Rust Future into a Python awaitable
 ///
 /// If the `asyncio.Future` returned by this conversion is cancelled via `asyncio.Future.cancel`,
-/// the Rust future will be cancelled as well (new behaviour in `v0.15`).
+/// the Rust future will be cancelled as well (new behavior in `v0.15`).
 ///
 /// Python `contextvars` are preserved when calling async Python functions within the Rust future
-/// via [`into_future`] (new behaviour in `v0.15`).
+/// via [`into_future`] (new behavior in `v0.15`).
 ///
 /// > Although `contextvars` are preserved for async Python functions, synchronous functions will
 /// unfortunately fail to resolve them when called within the Rust future. This is because the
