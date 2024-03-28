@@ -396,7 +396,7 @@ RuntimeError: no running event loop
 ```
 
 What's happening here is that we are calling `rust_sleep` _before_ the future is
-actually running on the event loop created by `asyncio.run`. This is counter-intuitive, but expected behavior, and unfortunately there doesn't seem to be a good way of solving this problem within PyO3 Asyncio itself.
+actually running on the event loop created by `asyncio.run`. This is counter-intuitive, but expected behaviour, and unfortunately there doesn't seem to be a good way of solving this problem within PyO3 Asyncio itself.
 
 However, we can make this example work with a simple workaround:
 
@@ -541,7 +541,7 @@ fn main() -> PyResult<()> {
 
 So what's changed from `v0.13` to `v0.14`?
 
-Well, a lot actually. There were some pretty major flaws in the initialization behavior of `v0.13`. While it would have been nicer to address these issues without changing the public API, I decided it'd be better to break some of the old API rather than completely change the underlying behavior of the existing functions. I realize this is going to be a bit of a headache, so hopefully this section will help you through it.
+Well, a lot actually. There were some pretty major flaws in the initialization behaviour of `v0.13`. While it would have been nicer to address these issues without changing the public API, I decided it'd be better to break some of the old API rather than completely change the underlying behaviour of the existing functions. I realize this is going to be a bit of a headache, so hopefully this section will help you through it.
 
 To make things a bit easier, I decided to keep most of the old API alongside the new one (with some deprecation warnings to encourage users to move away from it). It should be possible to use the `v0.13` API alongside the newer `v0.14` API, which should allow you to upgrade your application piecemeal rather than all at once.
 
@@ -569,7 +569,7 @@ To make things a bit easier, I decided to keep most of the old API alongside the
 ### Upgrading Your Code to 0.14
 
 1. Fix PyO3 0.14 initialization.
-   - PyO3 0.14 feature gated its automatic initialization behavior behind "auto-initialize". You can either enable the "auto-initialize" behavior in your project or add a call to `pyo3::prepare_freethreaded_python()` to the start of your program.
+   - PyO3 0.14 feature gated its automatic initialization behaviour behind "auto-initialize". You can either enable the "auto-initialize" behaviour in your project or add a call to `pyo3::prepare_freethreaded_python()` to the start of your program.
    - If you're using the `#[pyo3_asyncio::<runtime>::main]` proc macro attributes, then you can skip this step. `#[pyo3_asyncio::<runtime>::main]` will call `pyo3::prepare_freethreaded_python()` at the start regardless of your project's "auto-initialize" feature.
 2. Fix the tokio initialization.
 
@@ -646,7 +646,7 @@ To make things a bit easier, I decided to keep most of the old API alongside the
 There have been a few changes to the API in order to support proper cancellation from Python and the `contextvars` module.
 
 - Any instance of `cancellable_future_into_py` and `local_cancellable_future_into_py` conversions can be replaced with their`future_into_py` and `local_future_into_py` counterparts.
-  > Cancellation support became the default behavior in 0.15.
+  > Cancellation support became the default behaviour in 0.15.
 - Instances of `*_with_loop` conversions should be replaced with the newer `*_with_locals` conversions.
 
   ```rust no_run
