@@ -65,7 +65,7 @@ use pyo3::prelude::*;
 #[pyo3_asyncio::async_std::main]
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
-        let asyncio = py.import("asyncio")?;
+        let asyncio = py.import_bound("asyncio")?;
         // convert asyncio.sleep into a Rust Future
         pyo3_asyncio::async_std::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
@@ -95,7 +95,7 @@ use pyo3::prelude::*;
 #[pyo3_asyncio::tokio::main]
 async fn main() -> PyResult<()> {
     let fut = Python::with_gil(|py| {
-        let asyncio = py.import("asyncio")?;
+        let asyncio = py.import_bound("asyncio")?;
         // convert asyncio.sleep into a Rust Future
         pyo3_asyncio::tokio::into_future(asyncio.call_method1("sleep", (1.into_py(py),))?)
     })?;
@@ -237,7 +237,7 @@ use pyo3::prelude::*;
 async fn main() -> PyResult<()> {
     let future = Python::with_gil(|py| -> PyResult<_> {
         // import the module containing the py_sleep function
-        let example = py.import("example")?;
+        let example = py.import_bound("example")?;
 
         // calling the py_sleep method like a normal function
         // returns a coroutine
@@ -356,7 +356,7 @@ async fn main() -> PyResult<()> {
     // PyO3 is initialized - Ready to go
 
     let fut = Python::with_gil(|py| -> PyResult<_> {
-        let asyncio = py.import("asyncio")?;
+        let asyncio = py.import_bound("asyncio")?;
 
         // convert asyncio.sleep into a Rust Future
         pyo3_asyncio::async_std::into_future(
@@ -504,7 +504,7 @@ fn main() -> PyResult<()> {
     pyo3::prepare_freethreaded_python();
 
     Python::with_gil(|py| {
-        let uvloop = py.import("uvloop")?;
+        let uvloop = py.import_bound("uvloop")?;
         uvloop.call_method0("install")?;
 
         // store a reference for the assertion
@@ -514,7 +514,7 @@ fn main() -> PyResult<()> {
             // verify that we are on a uvloop.Loop
             Python::with_gil(|py| -> PyResult<()> {
                 assert!(uvloop
-                    .as_ref(py)
+                    .bind(py)
                     .getattr("Loop")?
                     .downcast::<PyType>()
                     .unwrap()
@@ -569,7 +569,7 @@ To make things a bit easier, I decided to keep most of the old API alongside the
 ### Upgrading Your Code to 0.14
 
 1. Fix PyO3 0.14 initialization.
-   - PyO3 0.14 feature gated its automatic initialization behaviour behind "auto-initialize". You can either enable the "auto-initialize" behaviour in your project or add a call to `pyo3::prepare_freethreaded_python()` to the start of your program.
+   - PyO3 0.14 feature gated its automatic initialization behavior behind "auto-initialize". You can either enable the "auto-initialize" behavior in your project or add a call to `pyo3::prepare_freethreaded_python()` to the start of your program.
    - If you're using the `#[pyo3_asyncio::<runtime>::main]` proc macro attributes, then you can skip this step. `#[pyo3_asyncio::<runtime>::main]` will call `pyo3::prepare_freethreaded_python()` at the start regardless of your project's "auto-initialize" feature.
 2. Fix the tokio initialization.
 
@@ -601,7 +601,7 @@ To make things a bit easier, I decided to keep most of the old API alongside the
        pyo3::prepare_freethreaded_python();
 
        Python::with_gil(|py| {
-           let asyncio = py.import("asyncio")?;
+           let asyncio = py.import_bound("asyncio")?;
 
            let event_loop = asyncio.call_method0("new_event_loop")?;
            asyncio.call_method1("set_event_loop", (event_loop,))?;
@@ -614,11 +614,11 @@ To make things a bit easier, I decided to keep most of the old API alongside the
                // Stop the event loop manually
                Python::with_gil(|py| {
                    event_loop_hdl
-                       .as_ref(py)
+                       .bind(py)
                        .call_method1(
                            "call_soon_threadsafe",
                            (event_loop_hdl
-                               .as_ref(py)
+                               .bind(py)
                                .getattr("stop")
                                .unwrap(),),
                        )
@@ -646,7 +646,7 @@ To make things a bit easier, I decided to keep most of the old API alongside the
 There have been a few changes to the API in order to support proper cancellation from Python and the `contextvars` module.
 
 - Any instance of `cancellable_future_into_py` and `local_cancellable_future_into_py` conversions can be replaced with their`future_into_py` and `local_future_into_py` counterparts.
-  > Cancellation support became the default behaviour in 0.15.
+  > Cancellation support became the default behavior in 0.15.
 - Instances of `*_with_loop` conversions should be replaced with the newer `*_with_locals` conversions.
 
   ```rust no_run
